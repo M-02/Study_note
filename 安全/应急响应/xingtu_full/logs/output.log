@@ -2,19 +2,19 @@
 运行前检查...
 设置的host为:default
 日志路径为:D:\Downloads\daishen.ltd.log
-加载系统配置文件:D:\BaiduNetdiskDownload\安全\应急响应\xingtu_full\conf\config.ini
-加载分析规则文件:D:\BaiduNetdiskDownload\安全\应急响应\xingtu_full\conf\rules.ini
+加载系统配置文件:D:\BaiduNetdiskDownload\笔记\安全\应急响应\xingtu_full\conf\config.ini
+加载分析规则文件:D:\BaiduNetdiskDownload\笔记\安全\应急响应\xingtu_full\conf\rules.ini
 当前分配的系统内存为：437M
 检查完毕！
 
 开始分析，请耐心等待(分析1G日志大约需要200秒)...
 
-当前文件为：daishen.ltd.log;文件大小为：41M
+当前文件为：daishen.ltd.log;文件大小为：2M
 
 本次进行了[Web攻击分析、日常分析]
-共分析了183757条访问日志
-分析耗时:35秒
-其中异常访问25519条
+共分析了14975条访问日志
+分析耗时:20秒
+其中异常访问337条
 常规日志分析报告已生成
 
 分析结果请打开[星图安装目录result文件夹]查看

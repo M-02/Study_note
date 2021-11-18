@@ -1,9 +1,9 @@
 #### docker
 
-```shell
+```bash
 docker -v  															查看版本
 docker version  													版本详细状态
-docker info 																	  		运行状态
+docker info 														运行状态
 ```
 
 
@@ -48,7 +48,7 @@ NAMES              ：容器的名字(可以自动,也可以手工指定)
 
 ```shell
 交互式的容器:工具类:开发,测试,临时性的任务
-docker container run -it - -name= ="o1dguo_ cent76"  --rm 9f38484d220f     退出自动删除
+docker container run -it - -name= ="oldguo_ cent76"  --rm 9f38484d220f     退出自动删除
 
 守护式容器：网络服务
 docker container run -d -p 8080:80   --name="nginx1"  nginx 

@@ -1,3 +1,12 @@
+简要回顾Nmap简单的扫描方式：
+
+- 1 全面扫描：nmap-T4 -A target ip   
+- 2 主机发现：nmap-T4 -sn target ip   
+- 3 端口扫描：nmap-T4 target ip   
+- 4 服务扫描：nmap-T4 -sV target ip   
+- 5 操作系统扫描：nmap-T4 -O targetip
+  上述的扫描方式能满足一般的信息搜集需求。而若想利用Nmap探索出特定的场景中更详细的信息，则需仔细地设计Nmap命令行参数，以便精确地控制Nmap的扫描行为。
+
 # 端口扫描
 
 ```bash
