@@ -1,0 +1,371 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day08-操作命令以及目录结构
+==================================	
+00. 课程介绍部分
+    1. 重要目录中数据文件
+	2. 操作系统安装软件方法
+	3. 如何查看系统一些硬件信息
+	4. vi使用方法
+ 
+01. 课程知识回顾
+    /etc目录下面重要文件进行讲解
+	1. 主机名配置文件
+	   centos6
+	   /etc/sysconfig/network
+	   centos7
+	   /etc/hostname
+	   
+	   查看主机名称方法
+	   hostname
+	   设置主机名称方法
+	   centos6
+	   临时修改
+	   hostname 主机名
+	   永久修改
+	   vi /etc/sysconfig/network
+	   centos7 
+	   永久修改
+	   hostnamectl set-hostname 
+	
+	2. 本地解析文件
+	   /etc/hosts
+	   作用：建立名称和地址的对应关系
+	   
+	3. 磁盘挂载文件
+       /etc/fstab	
+	   作用：实现磁盘设备开机自动挂载
+	   
+	4. 开机自动加载文件
+	   /etc/rc.local
+	   作用：文件中的命令信息，在开机时会自动执行
+	   mount /dev/cdrom /mnt
+	   注意：在文件中添加信息 echo "mount /dev/cdrom /mnt" >>/etc/rc.local
+	   
+	5. 系统运行级别 （基础面试题）
+	   centos6 （级别）
+	   0  关机级别
+	   1  单用户级别（重置密码）
+	   2  多用户级别 无网络
+	   3  多用户级别 有网络
+	   4  预留
+	   5  图形化级别
+	   6  重启级别
+	   
+	   查看当前级别：runlevel
+	   修改当前级别：
+	   临时修改
+	   init 级别数值
+	   永久修改
+	   vi /etc/inittab
+	   
+	   centos7 （target）
+	   /usr/lib/systemd/system/runlevel*target
+	   通过以上路径信息，可以获得centos7对应centos6运行级别的关系
+	   /usr/lib/systemd/system/runlevel0.target -> poweroff.target
+       /usr/lib/systemd/system/runlevel1.target -> rescue.target
+       /usr/lib/systemd/system/runlevel2.target -> multi-user.target
+       /usr/lib/systemd/system/runlevel3.target -> multi-user.target
+       /usr/lib/systemd/system/runlevel4.target -> multi-user.target
+       /usr/lib/systemd/system/runlevel5.target -> graphical.target
+       /usr/lib/systemd/system/runlevel6.target -> reboot.target
+
+	   查看运行target
+	   systemctl get-default
+	   修改运行target
+	   systemctl set-default graphical.target
+	   
+	6. 变量信息和别名信息配置文件
+       /etc/profile == /etc/bashrc
+       作用：	   
+	   # System wide environment and startup programs, for login setup
+	     01. 设置环境变量信息和程序启动相关的信息，？为了对登录之后系统环境做准备？
+       # Functions and aliases go in /etc/bashrc
+	     02. 可以配置函数（？）和别名功能 最好配置在/etc/bashrc
+	   
+	   变量：
+	   作用：
+	   01. 普通变量：使简化脚本的编写
+	   02. 环境变量：系统的环境配置有关 PATH(可以让命令操作可简便)
+	   
+	   别名：
+	   作用：
+	   1. 让命令操作更简单 长的命令-短命令（别名）
+	   2. 让危险操作更安全 rm别名=echo
+	   
+	   别名设置方法：
+	   临时设置：
+	   alias 别名='命令信息'
+	   
+	   
+03. 别名如何永久设置
+    需求：让rm命令等价echo "command not exec"?
+    第一个里程：编写profile文件
+    vi /etc/profile
+    alias rm='echo command not exec'
+
+    第二个里程：加载profile文件内容
+    source 
+	========================================
+	补充：系统中将命令分为俩个大类
+	01. 外置命令  需要进行安装
+	02. 内置命令  所有系统都内置的命令 
+	查看内置或外置命令方法
+	[root@oldboyedu ~]# type cd
+    cd is a shell builtin
+    [root@oldboyedu ~]# type mkdir
+    mkdir is /usr/bin/mkdir
+    ========================================
+
+    第三个里程：修改用户家目录中.bashrc
+    查看隐藏数据方法
+	[root@oldboyedu ~]# ls -a
+    .  ..  anaconda-ks.cfg  .bash_history  .bash_logout  .bash_profile  .bashrc  .cshrc  .tcshrc
+	说明：linux系统中隐藏文件都是以点开头
+    vi /root/.bashrc
+	#alias rm='rm -i'
+
+    总结：和环境变量配置以及别名配置相关的文件有哪些
+	
+	01 /etc/profile == /etc/bashrc        国法（全局生效）      强奸法：违背妇女和儿童意志
+	02 ~/.bashrc    == ~/.bash_profile    家规（指定用户生效）  不能和男生发生关系
+
+04. 登录之后提示文件
+    /etc/motd
+    cat /etc/motd
+    Connecting to 10.0.0.200:22...
+    Connection established.
+    To escape to local shell, press 'Ctrl+Alt+]'.
+    
+    Last login: Thu Apr  4 09:55:53 2019 from 10.0.0.1
+    oldboy-sz-01
+    [root@oldboyedu ~]# 
+	作用：可以对操作系统的用户进行注意事项说明
+
+
+05. 登录之前提示文件
+    /etc/issue
+    /etc/issue.net
+    [root@oldboyedu ~]# cat /etc/issue
+    \S
+    Kernel \r on an \m
+    
+    [root@oldboyedu ~]# cat /etc/issue.net 
+    \S
+    Kernel \r on an \m
+
+    如何清空文件内容
+	echo "" >/etc/issue   -- 清空文件
+	>/etc/issue           -- 清空文件
+    [root@oldboyedu ~]# >/etc/issue
+    [root@oldboyedu ~]# >/etc/issue.net 
+	
+	在文件中添加信息
+	[root@oldboyedu ~]# echo oldboy-sz-01 >/etc/issue
+	
+06. 和程序软件安装相关的目录
+    /usr/local	   
+    [root@oldboyedu ~]# ll -d /usr/local/
+    drwxr-xr-x. 12 root root 131 Mar 28 10:40 /usr/local/
+	
+	系统中如何安装软件（吃饭）
+	01. 订餐点外卖 （做好的饭 筷子）  yum安装软件  简单快捷  （掌握）
+	02. 买半成品   （速冻饺子 加工）  rpm安装软件  需要有软件安装包
+	03. 自己做饭   （食材     做饭）  编译安装软件 可以灵活调整
+	
+	下载安装软件利用yum方式
+	第一个里程：本地配置源文件
+	[root@oldboyedu ~]# cd /etc/yum.repos.d/
+    [root@oldboyedu yum.repos.d]# ll
+    total 32
+    -rw-r--r--. 1 root root 1664 Apr 29  2018 CentOS-Base.repo
+    [base]
+    name=CentOS-$releasever - Base
+    mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra
+
+	统一yum安装的环境：
+	https://opsx.alibaba.com/mirror
+	curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+	命令作用：
+	从阿里云下载一个yum源文件，更新默认的/etc/yum.repos.d/CentOS-Base.repo，使下载环境统一
+	
+	第二个里程：安装软件命令
+	yum install 软件名称
+	yum install -y vim tree wget net-tools nmap bash-completion（补全centos7的部分命令参数）
+
+	
+    总结：yum安装软件常见问题
+    排错流程：
+    01. 能不能访问外网
+        a 访问外网IP地址不通   网卡地址配置有问题
+        b 访问外网名称不通		DNS配置有问题
+	
+	02. 检查是否已经有下载的进程
+	    ps -ef == windows 任务管理器-进程 PID成为进程编号
+		kill -9 PID
+
+	03. yum源文件被修改调整
+	
+07. 日志文件保存目录
+    ll /var/log/ 
+	两个重要的系统日志文件
+	messages        	-- 记录系统或服务程序运行的状态信息 和 错误信息
+	secure（安全）  	-- 用户登录信息
+	                       作用：可以进行监控文件的信息，检查是否有过多失败记录
+	
+	[root@oldboyedu ~]# cat /var/log/secure
+    Apr  4 11:35:29 oldboyedu sshd[3568]: Accepted password for root from 10.0.0.1 port 54913 ssh2
+    Apr  4 11:35:29 oldboyedu sshd[3568]: pam_unix(sshd:session): session opened for user root by (uid=0)
+	    01             02        03               04  
+
+	01. 用户是什么时间登录的
+	02. 登录的主机名称
+	03. 使用什么方式进行远程登录
+	04. 登录情况说明
+	    a 正确登录情况说明
+		b 错误登录情况说明
+		
+	如何查看日志信息
+	head -5 /etc/profile    --- 查看前面几行信息 (默认查看前面10行内容)
+    tail -6 /etc/profile    --- 查看倒数几行信息（默认查看倒数10行内容）
+	tail -f /var/log/secure --- 查看日志文件方法 一直追踪查看文件内容的变化
+   
+	
+08. 系统硬件信息查看方法
+    CPU:
+	a 利用文件进行查看:
+	   cat /proc/cpuinfo 
+	   model name: Intel(R) Core(TM) i5-8400 CPU @ 2.80GHz  -- CPU品牌型号
+	   physical id	: 0                                     -- 表示CPU颗数  1颗
+       processor	: 0                                     -- 表示CPU核数  1核
+	   cpu cores	: 1
+	   
+	   physical id	: 0   第一段  physical id	: 0         -- 有两颗CPU
+	   physical id	: 0   第二段
+	   physical id	: 1   第三段  physical id	: 1
+	   physical id	: 1   第四段
+
+       physical id	: 0   processor	: 0                     -- 一颗CPU有两个核心
+	   physical id	: 0   processor	: 1                   
+	   cpu cores	: 2
+	   
+	   physical id	: 1   processor	: 0                     -- 一颗CPU有两个核心
+	   physical id	: 1   processor	: 1                   
+	   cpu cores	: 2
+	   
+	   总共服务器有多少颗CPU 有多少核心
+	   有两颗CPU --> 2路的服务器
+	   有4核心   
+	   
+	b 利用命令进程查看:
+	  lscpu --> 调取cpuinfo文件中的内容
+	  Socket(s):(插槽)             2    --- 显示服务器CPU颗数
+	  Core(s) per socket:          2    --- 每颗CPU有几核
+	  CPU(s):                      4    --- 整个服务器有几核
+	  
+	负载:(CPU处理任务过多)  
+	a 利用文件进行查看:(监控)
+	  cat /proc/loadavg
+      0.00        0.01              0.05             负载值CPU核数有关
+	  1分钟平均   5分钟平均负载    15分钟平均负载
+	  eg: 服务器4核的服务器   -- 负载值3左右,就要关注
+	      服务器128核的服务器 -- 负载值100(数据库服务器)
+	  
+	b 利用命令进行查看:
+	  [root@oldboyedu ~]# w
+       12:41:06 up 38 min,  2 users,  load average: 0.00, 0.01, 0.05
+
+    内存:内存使用情况
+	a 利用文件进行查看:
+	[root@oldboyedu ~]# cat /proc/meminfo 
+    MemTotal:        2030172 kB      --- 内存总的容量
+    MemFree:         1738164 kB      --- 内存的空闲容量
+    MemAvailable:    1714096 kB      --- 内存的可用容量
+    Buffers:            2076 kB      --- baffer空间
+    Cached:            90616 kB      --- cacahe空间
+    SwapCached:            0 kB      --- 交换分区使用情况
+
+	b 利用命令进程查看:
+	[root@oldboyedu ~]# free -h      --- 以人类可读方式显示内存容量信息
+                  total        used        free      shared  buff/cache   available(*)
+    Mem:           1.9G        137M        1.7G        9.5M        148M        1.6G
+    Swap:          1.0G        0B(*)       1.0G
+
+    磁盘信息/挂载信息:
+	a 利用文件进行查看:
+	  cat /proc/mounts
+	  /dev/sda1 /boot xfs rw,seclabel,relatime,attr2,inode64,noquota 0 0
+	b 利用命令进程查看:
+      [root@oldboyedu ~]# df -h
+      Filesystem      Size  Used Avail Use% Mounted on
+      /dev/sda3        49G  1.6G   48G   4% /
+      devtmpfs        981M     0  981M   0% /dev
+      tmpfs           992M     0  992M   0% /dev/shm
+      tmpfs           992M  9.6M  982M   1% /run
+      tmpfs           992M     0  992M   0% /sys/fs/cgroup
+      /dev/sda1       197M  102M   95M  52% /boot
+      tmpfs           199M     0  199M   0% /run/user/0
+
+
+09. 课程知识总结 
+    01. 环境变量和别名配置文件
+	    /etc/profile /etc/bashrc    国法 
+		~/.bash_profile ~/.bashrc   家规(优先)
+		
+	02. 如何在系统中安装软件
+	    yum 安装软件
+		01. 更新yum源文件
+		02. 直接下载安装软件
+		    yum install -y  软件名称
+
+    03. 硬件信息查看方法
+	    cpu		:lscpu 
+		内存	:free -h 
+		磁盘	:df -h
+		负载	:w
+		
+		
+基础作业:
+01. 将之前的课程进行回顾总结
+02. 总结命令/参数
+03. 预习系统优化方法
+04. vim使用技巧
+05. 每天发了测验题 周一下午测验
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

@@ -1,0 +1,213 @@
+=================================================================================================
+#   老男孩教育：                                                                          		#
+#   www.oldboyedu.com                                               							#
+#   邮件：miaokm@oldboyedu.com 	                                    							#
+#   地址：北京市昌平区顺沙路8号院汇德商厦4F													#
+#   电话：400-609-2893，180-1041-8396，173-1620-6489                                         	#
+#   资源老师：			QQ号码               	资源老师：              	QQ号码    	   		#
+#   范范		 	1223740011		     		依依		       		3532759635   			#
+#   安娜		 	2010068211		        	格格					1986787350				#
+#   瑶瑶		 	2023803491					金金					2918640936				#
+#   乔治			3380665979					龙龙					2090304642				#
+=================================================================================================
+
+老男孩教育01期脱产班-day41-综合架构网站架构(LNMP)
+================================================================================================
+00. 课程说明:
+    1) LNMP架构的组成(作用)
+	2) LNMP架构的部署
+	3) LNMP架构通讯原理
+	4) LNMP服务之间如何建立管理
+	   nginx + php  运维负责
+	   php + mysql  开发负责
+	5) 运维人员代码上线 (www bbs blog)
+   *6) NFS服务和web服务
+       mysql服务和web服务 (企业案例:数据库迁移方法)
+	   补充: 企业经验总结(简历项目)
+	   01. 全网备份项目 (项目背景 项目实施 项目时间??)
+	   02. 实时同步项目
+       03. 网站服务自动化 (网站服务自动化部署 网站应用自动化部署) ansible
+       04. 网站LNMP环境搭建
+	   05. 数据库迁移项目
+	  
+01. 课程回顾:
+    1) nginx服务的企业应用(nginx模块)
+	   a 实现网站页面目录索引功能 (yum仓库搭建)
+	   b 实现网站访问别名功能     server_name
+	   c 实现网站页面用户访问监控 keepalived_timeout 65s
+	   HTTP请求报文: 请求头---connection: keepalived.../closed 短连接
+	   HTTP响应报文: 响应头---connection: closed 短连接
+	   VPN---无法访问外网/xshell无法远程连接
+	   d 实现网站服务日志功能配置 
+	     错误日志: 错误日志级别 
+		 访问日志: 日志的格式信息 自动化分析日志(ELK 三个软件)
+	   e 根据用户访问uri进行匹配处理
+         location = xxx    精确匹配			优先级01
+	     location ^~ xxx   优先匹配   		优先级02
+		 location ~        区分大小写匹配 	优先级03
+		 location ~*  	   不区分大小写		优先级03
+		 location uri 	   根据uri进行匹配	优先级03
+		 location / 	   默认匹配        	优先级最低
+		 企业应用: 京东网站location应用 --- 11.11 12.12 6.18 --- 页面信息和平常不一样
+		 有两个站点目录:
+		 平常网站的站点目录   /html/jd-normal
+         节日网站的站点目录   /html/jd-teshu
+         location / { root /html/jd-normal }
+         location /特殊	 { root /html/jd-teshu }
+       f 网站页面跳转功能
+         rewrite  匹配地址(url uri)   跳转成什么地址(url uri)
+         return   301  http://xxxx		 
+   		 
+02. 网站的LNMP架构是什么:
+    L   --- linux系统
+    注意:  
+	a selinux必须关闭  防火墙关闭
+	b /tmp 1777 mysql服务无法启动
+	
+	N 	--- nginx服务部署
+	作用:
+	处理用户的静态请求 html jpg txt mp4/avi
+
+    P  	--- php服务部署
+	作用:
+	1. 处理动态的页面请求
+	2. 负责和数据库建立关系
+	
+	M   --- mysql服务部署 (yum会很慢 编译安装会报错) mariadb
+	作用:
+	存储用户的字符串数据信息
+	
+03. 网站的LNMP架构部署
+    nginx服务    --- ansible一键化部署	 修改yum源
+	mysql服务部署:
+	第一个历程: 安装数据库软件
+	yum install mariadb-server mariadb -y
+	
+	补充: 数据库初始化过程 mysql_install_db
+	--basedir=path       The path to the MariaDB installation directory.
+	                     指定mysql程序目录
+	--datadir=path       The path to the MariaDB data directory.
+	                     指定数据信息保存的目录
+	--user=mysql         让mysql管理数据目录  700	
+	
+	信息输出内容:
+	创建数据库的密码信息:
+	PLEASE REMEMBER TO SET A PASSWORD FOR THE MySQL root USER !
+    To do so, start the server, then issue the following commands:
+    /application/mysql/bin/mysqladmin -u root          password 'new-password'   --- 给本地数据库设置密码
+    /application/mysql/bin/mysqladmin -u root -h web01 password 'new-password'   --- 给远程数据库设置密码
+	
+	第二个历程: 启动数据库服务
+	systemctl start mariadb.service 
+	systemctl enable mariadb.service
+
+    第三个历程: 给mysql数据库服务设置密码
+    mysqladmin -u root  password 'oldboy123'    --- 设置密码  	
+	mysql -u root -poldboy123
+	
+	PHP服务部署流程:
+	第一个历程: 更新yum源/卸载系统自带的PHP软件
+	yum remove php-mysql php php-fpm php-common
+	rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+	
+	第二个历程: 安装php软件
+	yum install -y php71w php71w-cli php71w-common php71w-devel php71w-embedded  php71w-gd php71w-mcrypt php71w-mbstring php71w-pdo php71w-xml php71w-fpm php71w-mysqlnd php71w-opcache  php71w-pecl-memcached php71w-pecl-redis php71w-pecl-mongodb
+	
+	第三个历程: 编写配置文件
+	vim /etc/php-fpm.d/www.conf
+	user = www   nginx---www
+    group = www
+	PS: 保证nginx进程的管理用户和php服务进程的管理用户保持一致
+	
+	第四个历程: 启动php服务
+	systemctl start php-fpm 
+	
+04. LNMP架构的原理
+    用户访问网站--->nginx(fastcgi_pass) --FastCGI-->(php-fpm -- wrapper) php (php解析器) --->  mysql(读取或写入)
+
+05. 实现LNMP之间建立关系
+    1. 实现nginx + php 建立关系
+	   第一个历程: 编写nginx文件
+	   编写nginx配置文件
+	   location ~ \.php$ {
+                root /www;
+                fastcgi_index index.php;          url               uri
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_pass  127.0.0.1:9000;
+                include fastcgi_params;   变量配置文件
+       }
+	   重启nginx服务
+	   
+	   第二个历程: 编写动态资源文件
+	   [root@web01 conf.d]# cat /html/blog/test_php.php 
+       <?php
+       phpinfo();
+       ?>
+
+       第三个历程: 进行访问测试
+	   blog.oldboy.com/test_php.php
+	2. 实现php + mysql 建立关系 
+       编写php代码文件
+       [root@web01 blog]# vim test_mysql.php
+       <?php
+        $servername = "localhost";
+        $username = "root";
+        $password = "oldboy123";
+        //$link_id=mysql_connect('主机名','用户','密码');
+        //mysql -u用户 -p密码 -h 主机
+        $conn = mysqli_connect($servername, $username, $password);
+        if ($conn) {
+              echo "mysql successful by root !\n";
+           }else{
+              die("Connection failed: " . mysqli_connect_error());
+           }
+       ?>
+       	   
+06. 部署搭建网站页面(代码上线)
+    第一个历程: 获取代码信息(git)---使用开源的网站代码
+	www网站页面: http://www.dedecms.com/
+	bbs网站页面: http://www.discuz.net/forum.php
+	blog网站页面: https://cn.wordpress.org/
+	wecenter网站页面: http://www.wecenter.com/?copyright
+	
+	第二个历程: 将代码解压,将解压后信息放入到站点目录中
+	tar xf wordpress-5.2.1.tar.gz
+	mv ...
+	
+	第三个历程: 修改站点目录权限
+	chown -R www.www blog
+	   
+	第四个历程: 进行网站页面初始化操作
+    	
+	第五个历程: 对数据库服务进行配置
+    创建数据库: create databases wordpress;  
+	检查: show databases;
+    创建数据库管理用户: grant all on wordpress.* to 'wordpress'@'localhost' identified by 'oldboy123';
+	检查: select user,host from mysql.user 
+	
+	第六个历程: 利用blog网站发布博文
+
+07. 课程内容总结
+    1. LNMP架构的组成部分
+    2. LNMP架构的部署安装
+    3. LNMP架构的工作原理
+    4. LNMP架构的服务如何建立关系
+       nginx --- php 
+       php   --- mysql  
+    5. 利用LNMP架构搭建了一个网站	   
+
+作业:
+01. 上传主题提示主题比较大
+    413 Request Entity Too Large  --- nginx需要添加一个指令???
+02. 图片保存在服务器什么位置了,如何将图片保存在存储服务器中
+03. 数据库服务安装在web服务器本地有没有问题???
+04. 如何将数据库数据迁移到指定服务器中
+05. 预习nginx反向代理负载均衡
+06. 预习keepalived高可用服务
+07. 预习zabbix监控服务  客户端配置文件 服务端配置文件
+
+
+		
+
+     

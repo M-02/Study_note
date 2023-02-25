@@ -1,0 +1,276 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day29-综合架构开场说明/备份服务
+==============================
+
+00. 课程回顾说明
+    1) 综合架构组成
+	   基本组成: 
+	   01. 防护墙服务器
+	   02. 负载均衡服务器(2台)
+	   03. 网站web服务器(3台)
+	   04. 数据库服务器
+	   05. 存储服务器
+	   06. 备份服务器
+	   07. 缓存服务器---数据库讲解
+	   08. 管理服务器
+	   扩展组成:
+	   01. 认证服务器(VPN)
+	   02. 审计服务器(jumpserver)
+	       作用: 对运维人员进行监管
+	   03. 监控服务器(zabbix nagios) --- 综合架构
+	   
+    2) 综合架构规划(主机名称 IP地址规划)
+	
+01. 综合架构课程规划
+    1) 完成备份服务器搭建 --- rsync
+    2) 完成存储服务器搭建 --- nfs
+       扩展: 全网数据备份方案	
+    3) 让存储服务器和备份服务器建立关系 --- 实现实时备份 sersync
+	   自动备份方式:
+	   a 使用定时任务 
+       b 实时备份数据
+	4) 完成批量管理服务器部署 ***** --- ansible (一周)
+	5) 完成HTTP协议原理讲解         --- 概念
+	6) 完成网站web服务器搭建  ***** --- nginx   (一周)
+	7) 完成网站架构搭建             --- LNMP(php)
+	8) 完成负载均衡服务器搭建       --- nginx
+	9) 完成高可用软件部署           --- keepalived
+   10) 完成HTTPS网站搭建            --- nginx
+   11) 完成监控服务器搭建           --- zabbix
+       综合架构完整搭建 -- 9天(扩展数据库 云计算)
+   12) 完成防火墙服务器搭建         --- firewalld
+   13) 完成跳板机服务器搭建         --- jumpserver   
+	
+       A用户 --- 上传数据00:00 --- 负载均衡 --- web服务器 --- nfs存储服务器 --- 备份服务器
+	                                                                           
+02. 准备综合架构虚拟主机环境
+    a 网络环境
+	  1) 虚拟软件中进行网络设置 --- 添加虚拟网卡配置为LAN区段
+	  2) 虚拟主机中进行网络设置 
+	     配置两个网卡
+		 eth0 10.0.0.202    10.0.0.254 223.5.5.5
+		 eth1 172.16.1.202
+		 
+    b 系统基本优化
+	  1) 安全优化
+	     关闭防火墙
+		 关闭selinux
+
+      2) 配置hosts文件
+	     172.16.1.5      lb01
+         172.16.1.6      lb02
+         172.16.1.7      web01
+         172.16.1.8      web02
+		 172.16.1.9      web03
+         172.16.1.51     db01 db01.etiantian.org
+         172.16.1.31     nfs01
+         172.16.1.41     backup
+         172.16.1.61     m01
+		 
+      3) 安装好一些软件大礼包
+	     更新好yum源:
+		 curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+		 yum install -y wget
+	     wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
+		 yum clean all  --- 清除yum源缓存信息
+	     yum install lrzsz nmap tree dos2unix nc telnet net-tools bash-completion bash-completion-extra
+
+03. 完成模板机克隆操作
+    1) 克隆前准备工作
+	   centos6: 一清空两删除
+	   两删除: UUID HWADDR(MAC)
+	   sed -i '/UUID/d' /etc/sysconfig/network-scripts/ifcfg-eth[01]
+       grep -E "UUID|HWADDR" /etc/sysconfig/network-scripts/ifcfg-eth[01]
+	   一清空:
+	   > /etc/udev/rules.d/70-persistent-net.rules 
+	   
+	   centos7: 一删除
+	   一删除
+       sed -i '/UUID/d' /etc/sysconfig/network-scripts/ifcfg-eth[01]
+       grep "UUID" /etc/sysconfig/network-scripts/ifcfg-eth[01]
+
+       systemctl restart network
+       systemctl stop NetworkManager.service 
+       systemctl disable NetworkManager.service
+    
+	2) 需要关闭虚拟主机进行克隆
+	
+	3) 克隆完毕修改主机地址和主机名称信息
+	   sed -i 's#202#41#g'  /etc/sysconfig/network-scripts/ifcfg-eth[01]
+       hostnamectl set-hostname backup
+       systemctl restart network
+
+02. 备份存储服务器
+    rsync程序介绍:
+	Rsync是一款开源的、快速的、多功能的、可实现全量及增量的本地或远程数据同步备份的优秀工具
+   
+    如何实现的增量传输数据
+	1) 利用rsync程序算法(判断数据属性信息是否一致), 判断不同主机上的数据是否一致
+    2) 利用rsync程序算法(判断文件md5数值是否一致),  判断不同主机上的数据是否一致
+
+    rsync程序功能: 1 vs 4
+    rsync == cp
+	[root@backup ~]# cp -a /etc/hosts /tmp/cp_hosts
+    [root@backup ~]# ll /tmp/cp_hosts 
+    -rw-r--r-- 1 root root 375 Feb 21 17:17 /tmp/cp_hosts
+    [root@backup ~]# rsync -a /etc/hosts /tmp/rsync_hosts
+    [root@backup ~]# ll /tmp/rsync_hosts
+    -rw-r--r-- 1 root root 375 Feb 21 17:17 /tmp/rsync_hosts
+   
+    rsync == scp(远程备份)
+	scp -rp /etc/sysconfig/  172.16.1.31:/tmp/
+	rsync -rp /oldboy_dir/  172.16.1.31:/tmp/
+
+	利用rsync传输目录时:
+	传输的目录后面如果存在   / == /oldboy_dir/  表示将目录下面的数据内容进行全部传输
+	传输的目录后面如果不存在 / == /oldboy_dir   表示将目录本身和目录下面的数据内容进行全部传输
+	
+	rsync == rm
+	[root@backup ~]# mkdir /null
+    [root@backup ~]# ll /null/
+    total 0
+    [root@backup ~]# rsync -rp --delete /null/ 172.16.1.31:/tmp/
+    root@172.16.1.31's password: 
+	--delete : 无差异同步--我有什么,你也有什么;我没有什么,你也不能有
+	           实现不同主机之间数据高度一致
+	
+	rsync == ls
+	[root@nfs01 tmp]# ls /tmp/
+    oldboy.txt
+    [root@nfs01 tmp]# rsync /tmp/
+    drwxr-xr-x             24 2019/02/21 17:42:52 .
+    -rw-r--r--              0 2019/02/21 17:41:46 oldboy.txt
+
+03. rsync命令的工作模式	
+    本地备份数据 cp
+	Local:  rsync [OPTION...] SRC... [DEST]
+	src:  要备份的数据信息
+    DEST: 将数据存储在什么位置	
+
+	远程备份数据 scp
+    Access via remote shell:
+    Pull: rsync [OPTION...] [USER@]HOST:SRC... [DEST]  -- 下载
+	[USER@]  -- 指定以什么用户身份传输数据
+	HOST     -- 指定远程主机IP地址或者主机名称
+	SRC      -- 远程主机上要进行下载的数据信息
+	DEST     -- 将远程主机信息保存到本地主机的什么路径中
+	
+    Push: rsync [OPTION...] SRC... [USER@]HOST:DEST    -- 上传
+	SRC      -- 本地主机上要进行上传的数据信息
+	DEST     -- 将本地主机信息保存到远程主机的什么路径中
+	
+	守护进程方式远程备份数据:(推荐)
+    Access via rsync daemon:
+    Pull: rsync [OPTION...] [USER@]HOST::SRC... [DEST] -- 下载
+	      [USER@]  -- 指定一个认证用户信息
+		  HOST     -- 指定远程主机IP地址或者主机名称
+		  SRC      -- 远程主机上要进行下载的模块信息???
+		  DEST     -- 将远程主机信息保存到本地主机的什么路径中
+		  
+          rsync [OPTION...] rsync://[USER@]HOST[:PORT]/SRC... [DEST]
+		  	  
+    Push: rsync [OPTION...] SRC... [USER@]HOST::DEST   -- 上传
+	      SRC      -- 本地主机上要进行上传的数据信息
+		  [USER@]  -- 指定一个认证用户信息
+	      HOST     -- 指定远程主机IP地址或者主机名称
+	      DEST     -- 将本地主机信息保存到远程主机的什么模块信息???
+		  
+          rsync [OPTION...] SRC... rsync://[USER@]HOST[:PORT]/DEST
+		     
+	01. 可以控制传输的连接数量(同一时刻)   
+	02. 可以实现免交互方式进行传输数据   
+	03. 具有单独的传输认证进制  
+	   
+	   
+04. rsync服务守护进程方式部署流程
+    rsync服务端(rsync服务进程)
+	第一个历程: 安装部署软件
+	[root@backup ~]# rpm -qa rsync
+    rsync-3.1.2-4.el7.x86_64
+	
+	第二个历程: 编写配置文件
+	PS: 只要是一个守护进程服务, 都会存在配置文件
+	vim /etc/rsyncd.conf
+    #rsync_config
+    #created by HQ at 2017
+    ##rsyncd.conf start##    -- 注释信息
+    
+    uid = rsync              -- 管理备份目录(属主信息是rsync)
+    gid = rsync              -- 管理备份目录(属组信息是rsync)
+    port = 873               -- 守护进程服务端口信息
+    #fake super = yes        -- ???
+    use chroot = no          -- 安全的配置
+    max connections = 200    -- 同时可以有多少客户端连接rsync服务器
+    timeout = 300            -- 超时时间,显示空闲连接存活时间
+    pid file = /var/run/rsyncd.pid   --- 保存进程pid号码信息
+    lock file = /var/run/rsync.lock  --- 真正的限制同时的连接数
+    log file = /var/log/rsyncd.log   --- rsync程序日志文件
+    ignore errors            -- 在备份传输数据时,一些不严重问题先进行忽略
+    read only = false        -- 备份目录设置为可读可写
+    list = false             -- ???
+    hosts allow = 172.16.1.0/24   --- 设置允许哪些主机或网段可以向备份服务器存储数据(白名单)
+    hosts deny = 0.0.0.0/32       --- 设置禁止哪些主机或网段可以向备份服务器存储数据(黑名单)
+    auth users = rsync_backup     --- 认证用户
+    secrets file = /etc/rsync.password  --- 认证用户密码文件(信息:rsync_backup:oldboy123)
+    [backup]                            --- 模块信息
+    comment = "backup dir by oldboy"    --- 模块注释说明信息
+    path = /backup                      --- 定义一个备份目录
+	
+	
+	第三个历程: 创建一个rsync虚拟用户
+	useradd -s /sbin/nologin -M rsync 
+	
+	第四个历程: 创建备份目录
+	mkdir /backup
+	
+	第五个历程: 创建认证密码文件
+	echo "rsync_backup:oldboy123" >/etc/rsync.password
+	chmod 600 /etc/rsync.password
+	
+	第六个历程: 启动rsync服务
+	systemctl start rsyncd
+	systemctl enable rsyncd
+	
+	rsync客户端
+	进行传输测试
+	[root@nfs01 tmp]# rsync -avz /etc/hosts  rsync_backup@172.16.1.41::backup
+    Password: 
+    sending incremental file list
+    hosts
+    rsync: mkstemp ".hosts.XuzZ6k" (in backup) failed: Permission denied (13)
+    
+    sent 227 bytes  received 121 bytes  21.09 bytes/sec
+    total size is 371  speedup is 1.07
+    rsync error: some files/attrs were not transferred (see previous errors) (code 23) at main.c(1178) [sender=3.1.2]
+
+预习:
+01. rsync备份数据原理
+02. rsync配置文件扩展参数
+03. rsync命令参数
+04. rsync企业应用方法
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

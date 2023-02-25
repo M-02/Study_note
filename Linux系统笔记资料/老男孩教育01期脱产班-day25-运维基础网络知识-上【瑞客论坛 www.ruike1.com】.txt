@@ -1,0 +1,387 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day25-运维基础网络知识
+==================================	
+
+00. 课程介绍部分
+    1) 学习网络的课程体系            OK
+	2) 两台主机通讯原理              OK
+	3) 一个局域网中多台主机如何通讯 --- 交换   OK
+	4) 不同局域网中多台主机如何通讯 --- 路由   OK
+	5) 网络的配置操作(命令行配置)    OK
+	   静态路由配置 
+	   动态路由配置 RIP OSPF
+    6) 网络的架构 	                  OK
+	7) OSI7层模型/ TCP/IP模型         
+	8) TCP三次握手过程/TCP四次挥手过程
+	9) TCP是十一种状态集转换
+   10) 网络重要协议 
+       DNS (域名访问网站-nginx)
+	   ARP (访问IP地址--MAC地址)
+   11) 办公环境上网原理(家庭网络环境)
+       虚拟主机访问外网原理
+   12) IP地址概念
+       IP地址种类划分 192.168.10.500
+	   IP地址子网划分
+	   交换网络vlan概念
+   13) 系统中路由配置
+       系统中网卡别名设置 *
+   14) 网络中抓包软件使用
+       wireshark
+	   tcpdump
+   15) 企业中网络排错思路
+       系统主机无法访问网站
+       系统主机访问网站慢    
+    
+01. 课程知识回顾
+    1) 磁盘分区方法
+	   fdisk  --- 对小于2T的磁盘进行划分
+	              补充: fdisk最大分的区要小于2T
+	   parted --- 对大于2T的磁盘进行划分
+	              补充: parted可以划分一个大于2T的分区
+	2) 如何进行格式化
+	   mkfs --- 指定文件系统 xfs ext3 ext4
+	3) 磁盘的挂载操作
+	   mount / umount / df -h 
+	   如何实现自动挂载
+	   /etc/rc.local  --- 文件必须是执行权限
+	   /etc/fstab     --- 每一列代表什么意思
+    4) swap空间如何调整大小 --- 服务器中有java程序
+    5) 企业磁盘异常案例
+       磁盘满的原因
+       a 真正数据太大存储过多  block满了
+       b 存储了大量小问题      inode满了	   
+
+       
+02. 运维网络课程介绍
+    学习网络的课程体系
+	网络通讯基本原理
+	1) 主机之间需要有传输介质
+	2) 主机上必须有网卡设备
+	   可以将二进制信息转换为高低电压 信号的调制过程
+	   可以将高低电压转换为二进制信息 信号的解调过程
+	3) 多台主机需要协商网络速率
+       100Mbps 	~  100Mbit per second ~ 每秒钟传输100M bit的信息  0 1
+       1M ~ 1000k   1000000b
+	   1k ~ 1000b
+	   常见的问题: 购买一个100M网络线路, 但是用迅雷下载软件的时候远远到达不了100M
+	   100Mb 网络的数据单位 bit    1bit=1/8byte   100/8=12.5  10M  12M
+       100MB 磁盘的数据单位 Byte   1byte=8bit	   100*8=800M  
+    
+03. 网络基础硬件介绍
+    交换机: 在一个网络中实现多台主机之间通讯
+	        一台交换机所连接的所有主机构成网络,成为局域网
+	实现通讯:
+	1) 主机上要有相应的mac地址(物理地址) 有12位16进制数组成  0-9 A B C D E F
+	2) 利用交换机进行通讯,有时需要借助广播方进行通讯
+	   广播的产生有时会影响主机性能
+	补充: 通讯的过程一定是有去有回的
+	
+	路由器: 实现不同局域网主机之间的通讯
+	实现通讯:
+	1) 主机上要有相应的IP地址(逻辑地址)  用十进制表示  192.168.10.1
+	   IP地址的组成: 网络信息(局域网标识)+主机地址信息
+	2) 需要借助路由器中的路由表实现通讯
+	   网络信息(局域网标识信息)   接口信息   R1
+	            01                 eth0
+				02				   eth1
+				04                 eth2       手动配置
+	   网络信息(局域网标识信息)   接口信息   R2
+                02                 eth0 
+                03                 eth1
+                04                 eth3		  手动配置	
+                01                 eth2	      手动配置	
+	   网络信息(局域网标识信息)   接口信息   R3
+                04                 eth0 
+                03                 eth1	
+                01                 eth2       手动配置      				
+       路由表的信息是如何生成的?
+	   1) 利用直连网络环境自动生成
+	   2) 利用手工配置方式 		 (静态路由配置)
+	   3) 利用路由协议动态生成  (动态路由配置)
+	   
+	   网关: 一个主机想访问其他网络主机的必经之路
+	   路由器的接口: 网关接口
+	   路由器的地址: 网关地址
+	   
+	静态路由配置方法:
+    网络环境规划
+    a 两台主机 
+      主机01  192.168.1.1  == 01.01	
+	          192.168.1.254
+	  主机02  192.168.4.1  == 04.01
+	          192.168.4.254
+	b 两台交换机
+	c 三台路由器
+	
+	第一个里程: 路由器配置(接口地址配置)
+	R1 
+	Router> en  	命令提示符 					用户模式提示符
+	Router# conf t             					特权模式提示符  可以进行系统配置查看
+	Router(config)# interface interface g0/0    配置模式提示符  
+	Router(config-if)#                          接口模式提示符
+	g0/0接口配置
+	ip address 192.168.1.254 255.255.255.0
+	no shutdown
+	g0/1接口配置
+	ip address 192.168.2.1 255.255.255.0
+	no shutdown
+	检查确认:
+	ctrl+z 快速返回到特权模式
+	show ip interface brief    --- 只显示ip地址信息
+	Router#show ip int br
+    Interface              IP-Address      OK? Method Status                Protocol 
+    GigabitEthernet0/0     192.168.1.254   YES manual up                    up 
+    GigabitEthernet0/1     192.168.2.1     YES manual up                    down 
+
+	R2
+    R2#show ip int br
+    Interface              IP-Address      OK? Method Status                Protocol 
+    GigabitEthernet0/0     192.168.2.2     YES manual up                    up 
+    GigabitEthernet0/1     192.168.3.1     YES manual up                    down 
+	
+	R3
+	Router#show ip int br
+    Interface              IP-Address      OK? Method Status                Protocol 
+    GigabitEthernet0/0     192.168.3.2     YES manual up                    up 
+    GigabitEthernet0/1     192.168.4.254   YES manual up                    up 
+  
+	R1路由表信息
+    R1#show ip route
+         192.168.1.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.1.0/24   is directly connected, GigabitEthernet0/0
+    L       192.168.1.254/32 is directly connected, GigabitEthernet0/0
+         
+	  	192.168.2.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.2.0/24   is directly connected, GigabitEthernet0/1
+    L       192.168.2.1/32   is directly connected, GigabitEthernet0/1	
+	   
+	路由配置 
+    ip route 去往网络地址信息 网络掩码  去往目标的下一条接口地址
+    ip route 192.168.4.0 255.255.255.0 192.168.2.2	
+    R1#show ip route
+         192.168.1.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.1.0/24 is directly connected, GigabitEthernet0/0
+    L       192.168.1.254/32 is directly connected, GigabitEthernet0/0
+         192.168.2.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.2.0/24 is directly connected, GigabitEthernet0/1
+    L       192.168.2.1/32 is directly connected, GigabitEthernet0/1
+	
+    S    192.168.4.0/24 [1/0] via 192.168.2.2
+	
+	R2路由表信息
+         192.168.2.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.2.0/24 is directly connected, GigabitEthernet0/0
+    L       192.168.2.2/32 is directly connected, GigabitEthernet0/0
+	
+         192.168.3.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.3.0/24 is directly connected, GigabitEthernet0/1
+    L       192.168.3.1/32 is directly connected, GigabitEthernet0/1
+	路由配置 
+    ip route 去往网络地址信息 网络掩码  去往目标的下一条接口地址
+    ip route 192.168.4.0 255.255.255.0 192.168.3.2
+	ip route 192.168.1.0 255.255.255.0 192.168.2.1
+	
+	     192.168.2.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.2.0/24 is directly connected, GigabitEthernet0/0
+    L       192.168.2.2/32 is directly connected, GigabitEthernet0/0
+         192.168.3.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.3.0/24 is directly connected, GigabitEthernet0/1
+    L       192.168.3.1/32 is directly connected, GigabitEthernet0/1
+	
+    S    192.168.4.0/24 [1/0] via 192.168.3.2
+	S    192.168.1.0/24 [1/0] via 192.168.2.1
+	
+	R3路由表信息
+    	 192.168.3.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.3.0/24 is directly connected, GigabitEthernet0/0
+    L       192.168.3.2/32 is directly connected, GigabitEthernet0/0
+	
+         192.168.4.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.4.0/24   is directly connected, GigabitEthernet0/1
+    L       192.168.4.254/32 is directly connected, GigabitEthernet0/1
+	
+	路由配置 
+    ip route 去往网络地址信息 网络掩码  去往目标的下一条接口地址
+    ip route 192.168.1.0 255.255.255.0 192.168.3.1	
+	
+	S    192.168.1.0/24 [1/0] via 192.168.3.1
+	
+         192.168.3.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.3.0/24 is directly connected, GigabitEthernet0/0
+    L       192.168.3.2/32 is directly connected, GigabitEthernet0/0
+         192.168.4.0/24 is variably subnetted, 2 subnets, 2 masks
+    C       192.168.4.0/24 is directly connected, GigabitEthernet0/1
+    L       192.168.4.254/32 is directly connected, GigabitEthernet0/1
+	
+	删除静态路由方法:
+	R1取消静态路由
+	no ip route 192.168.4.0 255.255.255.0 192.168.2.2
+	R2取消静态路由
+    no ip route 192.168.4.0 255.255.255.0 192.168.3.2
+	no ip route 192.168.1.0 255.255.255.0 192.168.2.1	
+	R3取消静态路由
+	no ip route 192.168.1.0 255.255.255.0 192.168.3.1
+
+  	动态路由配置方法:
+	默认R1-R3路由表情况:
+	R1路由表:  张三  游戏 厨艺 销售
+	192.168.1.0    g0/0 
+	192.168.2.0    g0/1    R1G0/1 -- R2G0/0
+	
+	192.168.3.0    g0/1 
+	192.168.4.0    g0/1
+	R2路由表:  李四  厨艺 销售 游戏
+	192.168.2.0    g0/0    R1G0/1 -- R2G0/0
+	192.168.3.0    g0/1    R3G0/0 -- R2G0/1
+	
+	192.168.1.0    g0/0
+	192.168.4.0    g0/1
+	R3路由表:  王五  销售 游戏 厨艺
+	192.168.3.0    g0/0    R3G0/0 -- R2G0/1
+	192.168.4.0    g0/1
+	
+	192.168.2.0    g0/0 
+	192.168.1.0    g0/0
+
+    实现多个路由器路由表信息一致的过程: 路由收敛过程
+    动态路由协议如何配置:
+	RIP 思科私有(EIGRP) OSPF IS-IS BGP
+    R1动态路由配置:
+	router rip   --- 指定配置使用什么路由协议
+	network 192.168.1.0   --- 宣告过程
+	network 192.168.2.0 
+	
+	学习的信息
+	R    192.168.3.0/24 [120/1] via 192.168.2.2, 00:00:09, GigabitEthernet0/1
+    R    192.168.4.0/24 [120/2] via 192.168.2.2, 00:00:20, GigabitEthernet0/1
+    R2动态路由配置
+	router rip
+    network 192.168.2.0
+	network 192.168.3.0
+	
+	学习的信息 
+	R    192.168.1.0/24 [120/1] via 192.168.2.1, 00:00:07, GigabitEthernet0/0
+	R    192.168.4.0/24 [120/1] via 192.168.3.2, 00:00:13, GigabitEthernet0/1
+
+    R3动态路由配置
+	router rip
+    network 192.168.3.0
+	network 192.168.4.0
+	
+	学习的信息 
+	R    192.168.1.0/24 [120/2] via 192.168.3.1, 00:00:23, GigabitEthernet0/0
+    R    192.168.2.0/24 [120/1] via 192.168.3.1, 00:00:23, GigabitEthernet0/0
+
+04. 网络架构设计方法(网络拓扑)
+    三个层次规划网络拓扑
+	核心层: 路由器(网关接口)   实现和外网通讯 冗余能力(主备)
+    汇聚层: 交换机(三层交换机) 冗余能力       策略控制能力
+    接入层: 交换机(二层交换机) 终端设备接入网络
+
+05. 网络层次模型
+    OSI7层模型(公司的组织架构)
+	
+	管理部   公司决策                        	管理部
+	行政部   传到领导要求 阻止活动          	行政部
+	财务部   发工资 公司账目
+	市场部   推广宣传
+	销售部   销售产品
+	物流部   运输产品
+	仓储部   保存看管物品
+	
+	层次模型结构: 由上至下
+	思科                             华为设备
+	
+	应用层   标准规范
+	* 应用层程序接口规范  
+	表示层
+	* 数据转换加密 压缩
+	会话层
+	* 控制网络连接建立或者终止
+	传输层
+	* 保证数据传输的可靠性
+	网络层   路由协议EIGRP(语言)     网络层   路由的能力 三层设备
+	* 可以实现通过路由找到目标网络
+	数据链路层                       交换能力 二层设备
+	* 可以实现通过交换找到真正目标主机
+	物理层
+	* 指定一些网络物理设备标准  网卡 网线 光纤
+	
+	是由ISO(国际标准化组织): 定义了标准通讯模型
+	
+	利用OSI7层模型如何建立主机与主机之间的通讯
+	数据的封装过程
+	数据的解封装过程
+	
+	TCP/IP模型(4层模型)
+    在OSI7层模型的基础上做了简化
+    应用层      
+    表示层          应用层  
+    会话层 
+    传输层          主机到主机层
+    网络层          互联网层
+    数据链路层      接入层
+    物理层	
+
+    TCP协议: 传输控制协议  --- 面向连接的网络协议
+	在线发送文件==面向连接
+	发送文件 --> 对端点击接收
+	优点: 数据传输可靠性高 
+	缺点: 数据传输效率低
+	
+	UDP协议: 用户报文协议  --- 无连接的网络协议
+    离线发送文件==无连接
+    发送文件 --> 直接发送了
+	优点: 数据传输效率高
+    缺点: 数据传输可靠性低
+	
+	QQ离线传输文件/在线传输文件: TCP协议
+	在线传输 
+	PC 传输文件 - 	交换机 - 检查目标QQ主机是否在局域网中
+					路由器 - 目标主机
+	
+	离线传输
+	PC 传输文件 - 互联网 - QQ公司服务器(临时存储服务器) --- 对端QQ是否登录在线
+	
+	
+	TCP协议: 两个重要原理
+	预备知识: TCP协议报文结构
+	源端口:  1~65535 
+	目标端口:
+	占用16个bit --> 占用1个bit 0  ---> 0  1 --- 1  10 --- 2
+	二进制 0   十进制 0
+	二进制 1   十进制 1
+	二进制 10  十进制 2
+	二进制 11  十进制 3
+	二进制 100 十进制 4
+	1个bit 0 1          2个端口  0 1   0~1         2的1次方       2的n次方  n占用多少bit
+	2个bit 00 01 10 11  4个端口  0 1 2 3  0~3      2的2次方=4 0~3
+	3个bit 000 001 010 011 100 101 110 111  8个端口 0 1 2 3 4 5 6 7  0~7   2的3次方=8 0~7
+   16个bit 2的16次方 1~65535
+    控制字段:
+	syn(1): 请求建立连接控制字段
+	fin(1): 请求断开连接控制字段
+	ack(1): 数据信息确认控制字段
+	
+	TCP三次握手过程: 
+	01. 主机A向主机B发送TCP报文
+	    报文中控制字段syn置为1, 请求建立连接 
+	02. 主机B向主机A发送TCP响应报文
+	    报文中控制字段syn置为1,ack置为1
+	03. 主机A向主机B发送TCP报文 
+	    报文中控制字段ack置为1, 确认主机B发送信息已经接收到了
+	
+	TCP四次挥手过程:
+	
+	
+	

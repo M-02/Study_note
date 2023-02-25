@@ -1,0 +1,386 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day22-操作系统定时任务
+==================================	
+
+00. 课程介绍部分
+    1) 用户权限说明
+	2) 系统定时任务
+    
+    
+01. 课程知识回顾
+    1) 用户相关的文件
+	   /etc/passwd  --- 系统用户记录文件
+	   /etc/shadow  --- 记录用户密码信息
+	   /etc/group   --- 用户组文件
+	   /etc/gshadow --- 用户组密码文件
+	2) 用户相关的命令
+	   useradd  -u -g -G -M -s -c 
+	   usermod  -u -g -G -s -c 
+	   userdel  -r
+	   groupadd 
+	   groupmod
+	   groupdel
+	   chown    -R
+	   id
+	   w
+    3) 如何让普通用户获得root用户的能力
+	   1) 直接切换用户为root    su - 
+          su - /su 有什么区别
+		  su    部分环境变量切换用户有变化
+		  su -  全部环境变量切换用户有变化
+
+          演示说明:
+		  [oldboy@oldboyedu ~]$ env|grep oldboy
+          HOSTNAME=oldboyedu.com
+          USER=oldboy
+          MAIL=/var/spool/mail/oldboy
+          PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/oldboy/.local/bin:/home/oldboy/bin
+          PWD=/home/oldboy
+          HOME=/home/oldboy
+          LOGNAME=oldboy
+		  说明: 默认当前登录系统用户为oldboy时,环境变量中会体现出oldboy用户信息
+		  
+          [oldboy@oldboyedu ~]$ su root
+          Password: 
+          [root@oldboyedu oldboy]# env|grep root
+          HOME=/root
+          [root@oldboyedu oldboy]# env|grep oldboy
+          HOSTNAME=oldboyedu.com
+          USER=oldboy
+          PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/home/oldboy/.local/bin:/home/oldboy/bin
+          MAIL=/var/spool/mail/oldboy
+          PWD=/home/oldboy
+          LOGNAME=oldboy
+          说明: 当用户su命令切换用户,系统中环境变量信息部分会变为root,但更多信息为原有oldboy用户信息
+		  
+          [oldboy@oldboyedu ~]$ su - root
+          Password: 
+          Last login: Thu Apr 25 08:51:40 CST 2019 on pts/0
+          [root@oldboyedu ~]# env|grep root
+          USER=root
+          MAIL=/var/spool/mail/root
+          PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+          PWD=/root
+          HOME=/root
+          LOGNAME=root
+		  说明: 当用户su -命令切换用户,系统中环境变量信息会全部切换为root
+		  
+	   2) 直接修改文件的权限
+	      rwx  属主信息
+	   
+	   3) 让root用户将自己的部分能力赋予给普通 sudo
+	   
+02. sudo功能配置说明
+    a 如何配置sudo权限信息:
+	  visudo(推荐使用:语法检查功能) == vi /etc/sudoers
+	  [root@oldboyedu ~]# visudo -c   --- 配置好的文件语法检查
+      /etc/sudoers: parsed OK
+	  
+	  扩展配置方法:
+	  1) 授权单个命令或多个命令
+	     /usr/sbin/useradd, /usr/bin/rm, ,
+      2) 授权单个命令目录或多个命令目录 (需要排除部分特权命令)
+	     /usr/sbin/*, !/usr/sbin/visudo , /usr/bin/*
+      3) 不需要输入用户密码,可以直接sudo方式执行命令
+	     NOPASSWD: /usr/sbin/*, !/usr/sbin/visudo , /usr/bin/*
+
+    b 如何查看确认配置
+	  切换到授权的用户下(oldboy)
+	  sudo -l 
+	  需要输入授权的用户密码(oldboy)
+	  
+	c 如何使用sudo功能
+	  sudo 授权的命令
+	  
+03. 设置特殊权限位:
+    rwx -w- --x  系统文件数据的9个权限位  系统中实际应该有12个权限位
+	setuid: 4
+	权限设置方法:
+	chmod u+s  文件信息
+	chmod 4755 文件信息 
+	[root@oldboyedu ~]# ll /bin/cat
+    -rwsr-xr-x. 1 root root 54080 Apr 11  2018 /bin/cat
+	在属主权限位多出s信息
+	总结: setuid权限位设置,将文件属主拥有的能力,分配给所有人
+	
+	setgid: 2
+	[root@oldboyedu ~]# chmod g+s /bin/cat
+    [root@oldboyedu ~]# ll /bin/cat
+    -rwsr-sr-x. 1 root root 54080 Apr 11  2018 /bin/cat
+    [root@oldboyedu ~]# chmod 2755 /bin/cat
+    [root@oldboyedu ~]# ll /bin/cat
+    -rwxr-sr-x. 1 root root 54080 Apr 11  2018 /bin/cat
+    [root@oldboyedu ~]# chmod 6755 /bin/cat
+    [root@oldboyedu ~]# ll /bin/cat
+    -rwsr-sr-x. 1 root root 54080 Apr 11  2018 /bin/cat
+	总结: setgid权限位设置,将文件属组拥有的能力,分配给所有用户组
+	
+	sticky bit:粘滞位: (创建一个共享目录) 1
+	作用: 
+	可以将不同用户信息放置到共享目录中,实现不同用户数据可以互相查看,但是不可以互相随意修改
+	设置方法: 
+	chmod o+t  目录信息
+	chmod 1777 目录信息
+	系统中已经准备好了一个共享目录,权限位1777
+	[root@oldboyedu ~]# ll -d /tmp/
+    drwxrwxrwt. 10 root root 4096 Apr 25 09:35 /tmp/
+	
+	总结: 普通用户拥有root用户能力
+	01. 直接切换用户 su - (*)
+	    优势: 简单快捷
+	    劣势: 风险太高(root权限泛滥)
+		
+	02. 修改数据文件权限  9位权限位 属主信息
+	    优势: 只针对某个数据文件进行修改 只针对某个用户进行授权
+	    劣势: 需要了解权限位功能 
+
+    03. 采用sudo提权方式
+	    优势: 可以利用文件编辑指定用户有哪些指定权限  sa运维部门 dev开发人员
+		劣势: 配置规划复杂
+	
+	04. 修改数据文件权限  3位权限位
+	    优势: 设置权限简单方便
+		劣势: 设置好的权限所有用户都拥有
+
+04. 如何防范系统中的重要文件不被修改(root用户也不能修改)
+    给文件加上锁头: 
+    目的: 使root用户也不能直接修改相应文件
+	设置方法: 
+    chattr +i /etc/passwd
+    ll /etc/passwd
+    -rw-r--r--. 1 root root 4820 Apr 25 11:01 /etc/passwd
+	解锁方法:
+	chattr -i /etc/passwd
+    [root@oldboyedu ~]# ll /etc/passwd
+    -rw-r--r--. 1 root root 4820 Apr 25 11:01 /etc/passwd
+    [root@oldboyedu ~]# lsattr /etc/passwd
+    ---------------- /etc/passwd
+    检查方法
+    [root@oldboyedu ~]# lsattr /etc/passwd
+    ---------------- /etc/passwd
+
+05. 定时任务概念(第一个服务)
+    作用: 
+	1) 类似生活中闹钟
+	   Alarmy  叫醒方式
+	   01 关闭方式: 做算数题 2位数 乘法运算  
+	   02 关闭方式: 运动关闭 摇手机 5次
+	   03 关闭方式: 拍照关闭 找个地方拍照 
+    2) 可以自动完成操作命令
+	   夜里备份数据(访问量不大)  白天(访问量也少-游戏)
+	   cp /data  /backup
+	   自动清理磁盘
+	   自动的进行时间同步更新 ntpdate xxx
+
+    软件种类:
+	cronie   实现定时任务功能*****
+	atd      实现定时任务功能 只能一次设置定时功能 
+	anacron  实现定时任务功能 应用在家用电脑  7*24服务器
+    
+	检查软件是否安装 cronie
+	[root@oldboyedu ~]# rpm -qa cronie
+    cronie-1.4.11-19.el7.x86_64
+    
+    [root@oldboyedu ~]# rpm -ql cronie
+    /etc/cron.deny
+	/bin/crontab
+	
+	rpm -ivh 软件包.rpm   --- 手动安装软件
+	-i install 安装
+	-v         显示过程信息
+	-h human   以人类可读方式显示信息
+	说明: 无法解决软件依赖关系
+	
+	补充说明: 如何让linux和windows主机之间传输数据
+	yum install -y lrzsz
+	在linux上进行操作
+	rz -y           	从windows上下载重要数据信息
+	sz -y 数据信息  	从linux上上传重要数据到windows
+	
+	定时任务实现方法:
+	日志文件需要定期进行切割处理
+	周一         secure   100M
+	周二(00:00)  mv secure secure-`date +%F`  100M 切割后的文件
+	             touch secure
+	系统特殊目录:
+	系统定时任务周期：每小时   控制定时任务目录：/etc/cron.hourly
+    系统定时任务周期：每一天   控制定时任务目录：/etc/cron.daily   00:00-23:59
+    系统定时任务周期：每一周   控制定时任务目录：/etc/cron.weekly  7天
+    系统定时任务周期：每个月   控制定时任务目录：/etc/cron.monthly 30 28 31
+	
+	
+	用户定时任务
+	每天的02:30进行数据备份???
+	a 用户定时任务查看   crontab -l（list）
+	说明: 列表查看定时任务信息（cron table）
+
+    b 用户定时任务编辑   crontab -e（edit）
+    说明: 编辑配置定时任务信息
+
+    crontab -e  编写定时任务     vi /var/spool/cron/        定时任务配置文件保存目录
+	                                 /var/spool/cron/root    root用户设置的定时任务配置文件
+									 /var/spool/cron/oldboy  oldboy用户设置的定时任务配置文件
+	visudo      对普通用户提权   vi /etc/sudoers 
+
+06. 定时任务实际编写方法
+    a 定时任务服务环境准备  
+      定时任务服务是否启动/是否开机自动启动	
+	  [root@oldboyedu ~]# systemctl status crond
+      ● crond.service - Command Scheduler
+         Loaded: loaded (/usr/lib/systemd/system/crond.service; enabled; vendor preset: enabled)
+         Active: active (running) since Tue 2019-04-23 09:15:43 CST; 2 days ago
+       Main PID: 905 (crond)
+         CGroup: /system.slice/crond.service
+                 └─905 /usr/sbin/crond -n
+      
+      Apr 23 09:15:43 oldboyedu.com systemd[1]: Started Command Scheduler.
+      Apr 23 09:15:43 oldboyedu.com systemd[1]: Starting Command Scheduler...
+      Apr 23 09:15:43 oldboyedu.com crond[905]: (CRON) INFO (RANDOM_DELAY will be scaled with factor 30% if used.)
+      Apr 23 09:15:43 oldboyedu.com crond[905]: (CRON) INFO (running with inotify support)
+
+    b 实际编写定时任务
+	  配置方法: crontab -e
+	  编写语法规范:
+	  # Example of job definition:
+      # .---------------- minute (0 - 59)
+      # |  .------------- hour (0 - 23)
+      # |  |  .---------- day of month (1 - 31)
+      # |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+      # |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+      # |  |  |  |  |
+      # *  *  *  *  * user-name  command to be executed
+	  
+	  *   *   *    *   * 具体做什么事情
+	  分  时  日  月  周
+	  
+	  写法:
+	  01. 用数值表示时间信息
+	      00 02 *  *  *   备份文件
+	  02. 利用特殊符号表示时间信息
+	      *      *      *     *     *   备份文件 
+		每分钟  每小时 每天  每月  每周
+		  PS: 定时任务最短执行的周期为每分钟
+		  */5     */5    */5    
+        每隔5分钟  每隔5小时	
+          01-05   02    *    *    *		
+         01到05   02    *    *    *
+        指定时间的范围
+	      00      14,20  *   *    *
+		指定不连续的时间信息
+	    
+	   测验01: 每天下午02:30分钟 起来学习
+	           30 14 * * *
+       测验02: 每隔3天 夜里2点   执行数据备份
+	           00 02 */3  *  * 
+       测验03: */10  01,03  *  *   *   ??? 
+               01点 每隔10分钟 
+			   03点 每隔10分钟  
+	           每天   凌晨1点和凌晨3点  每隔10分钟0点整 -->  01:00 03:00	   
+       测验04: */10   01-03  *  *   *
+       测验05: *      01,03  *  *   *   ???   
+       测验06: *      01-03	 *  *   *   
+       测验07: 00     02     28 */2 6 	???   
+	           02:00  28 每隔两个月  星期6
+	   结论: 
+	   01. 在写时间信息的时候, 如果想表示每隔多久执行什么任务
+	       /上面尽量用*号表示, 不要写具体数值
+	   02. 时间信息由左到右依次书写, 尽量不要跳步
+	   03. 当编写定时任务时,日期信息不要和星期信息同时出现
+	
+	   补充说明:
+	   20/10  01,03 * * *  
+	   01:20 01:30 01:40       01:59
+	   03:00        03:59
+	
+    c 实际编写定时任务
+      1) 每天凌晨两点备份 /data目录到 /backup
+      第一个历程: 写上时间信息
+      00 02 * * *
+      第二个历程: 写上完成任务的具体命令
+      cp -a /data /backup
+      第三个历程: 编写定时任务
+      crontab -e 
+      00 02 * * *  cp -a /data /backup	  
+	
+	  定时任务排查方法:
+	  01. 检查是否有定时任务配置文件
+	  cat /var/spool/cron/root 
+      00 02 * * *  cp -a /data /backup
+	  02. 检查定时任务日志文件
+	  ll /var/log/cron
+      -rw-------. 1 root root 14050 Apr 25 15:49 /var/log/cron
+      日志信息说明
+	  Apr 25 15:53:22 oldboyedu crontab[3893]: (root) BEGIN EDIT (root)
+      Apr 25 15:54:06 oldboyedu crontab[3934]: (oldboy) BEGIN EDIT (oldboy)
+      Apr 25 15:54:48 oldboyedu crontab[3893]: (root) REPLACE (root)
+      Apr 25 15:54:48 oldboyedu crontab[3893]: (root) END EDIT (root)
+      Apr 25 15:55:01 oldboyedu crond[905]: (root) RELOAD (/var/spool/cron/root)
+      Apr 25 15:55:01 oldboyedu CROND[3939]: (root) CMD (cp -a /data /backup)
+      Apr 25 15:55:01 oldboyedu CROND[3937]: (root) MAIL (mailed 55 bytes of output but got status 0x004b#012)
+        执行时间      主机名   编辑定时任务    以什么用户编辑或执行定时任务/干了什么事情
+		                        执行定时任务
+	  
+	
+07. 定时任务编写注意事项:(规范)
+    1) 编写定时任务要有注释说明
+	2) 编写定时任务路径信息尽量使用绝对路径
+	3) 编写定时任务命令需要采用绝对路径执行 /usr/sbin/useradd
+	   命令执行成功条件:
+	   useradd  ---> $PATH ---> /sbin/useradd ---> 命令执行成功
+	   定时任务执行时,识别的PATH信息只有: /usr/bin:/bin
+	   useradd命令--->usr/sbin/useradd
+    4) 编写定时任务时,可以将输出到屏幕上的信息保存到黑洞中,避免占用磁盘空间
+	   * * * * *  sh test.sh &>/dev/null
+	   
+	   说明: 定时任务中执行命令,如果产生输出到屏幕的信息,都会以邮件方式告知用户
+       /var/spool/mail/root          不断变大占用磁盘空间        占用的block空间
+       解决方法: 将邮件服务关闭
+	   systemctl stop postfix
+	   
+	   /var/spool/postfix/maildrop/  不断产生小文件占用磁盘空间  占用的inode空间
+	   解决方法: 删除小文件
+	   rm -f /var/spool/postfix/maildrop/*
+	   systemctl start postfix
+	5) 编写定时任务, 尽量不要产生屏幕输出信息
+       cp -a /data /backup	
+	   tar zcvf /backup/data.tar.gz  /data    有信息输出
+	   cd / 
+       tar zcf /backup/data.tar.gz  ./data    没有信息输出
+	6) 当需要多个命令完成一个定时任务需求时,可以利用脚本编写定时
+	   vim backup.sh 
+	   cp -a /data /backup	
+	   tar zcvf /backup/data.tar.gz  /data
+	   
+	   crontab -e 
+	   # xxxxx
+	   * * * * *  /bin/sh /server/scripts/backup.sh &>/dev/null
+
+    项目经验: 在校的项目
+	01 企业项目: 全网备份项目(定时任务)
+	
+
+	
+    
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+       

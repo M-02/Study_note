@@ -1,0 +1,190 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day30-综合架构备份服务
+==============================
+
+00. 课程回顾说明
+    1) 综合架构课程进行了规划
+	   
+	2) 虚拟主机克隆操作
+	   a 网路配置
+	   b 系统基本优化
+	   c 进行克隆(链接克隆)
+	   d 克隆后调整主机IP地址和主机名称
+    
+    3) 综合架构中备份服务器(恢复 对比配置信息)
+	
+	4) 利用rsync服务实现
+	   软件特点: 实现全量和增量备份
+	   软件功能: 1 v 4 
+	   软件工作模式: 3种模式 本地备份 远程备份 守护进程方式备份数据(推荐)
+
+    5) rsync守护进程服务部署流程:
+	   1) 安装部署软件
+	   2) 编写服务配置文件
+	   3) 创建备份目录管理用户(虚拟用户)
+	   4) 创建备份目录
+	   5) 创建认证用户密码文件(权限设置为600)
+	   6) 启动备份服务
+	   
+    6) rsync服务的配置文件参数说明
+	
+01. rsync守护进程模式传输数据原理(centos7 rsync - 3.1.2)
+    a 在客户端执行守护进程备份数据命令
+	b 完成数据传输认证过程(用户名 密码信息)
+	c 完成用户映射过程  将客户端用户  --- 服务端的rsync用户
+	d 完成传输文件属主 属组信息的修改 --- 修改为rsync
+
+02. 如何实现免交互传输数据
+    完成rsync客户端配置过程
+	第一个历程: 创建密码文件 修改密码文件权限为600
+	echo oldboy123 >/etc/rsync.password
+	chmod 600 /etc/rsync.password
+	
+	第二个历程: 进行传输测试
+	rsync -avz /tmp/oldboy.txt rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+
+03. rsync命令参数说明
+    -v, --verbose      --- 显示传输数据过程信息
+	-z, --compress     --- 将传输数据进行压缩
+	-a, --archive	   --- 归档参数 -rtopgDl
+	-r, --recursive    --- 递归传输数据
+    -t, --times        --- 保持文件修改时间不变
+	-o, --owner        --- 保持文件属主信息不变(在配置文件中uid设置为root用户)
+	-g, --group        --- 保持文件属组信息不变(在配置文件中gid设置为root用户)
+    -p, --perms        --- 保持文件权限不变
+	-D                 --- 保持设置文件信息不变
+	-l, --links        --- 只传输链接文件,不会传输源文件中的内容 (bug)
+    -L,                --- 只传输链接文件,会传输源文件中的内容	
+    -P, --progress     --- 显示数据传输的进度信息
+	
+04. rsync服务实现备份数据排除功能(过滤)
+    --exclude=PATTERN    注意: 排除数据信息要写上相对路径
+    --exclude-from=file        利用exclude-from参数排除数据信息时, 建议后面接绝对路径信息
+
+    准备环境:
+	[root@nfs01 tmp]# mkdir /oldboy/{01..03} -p
+    [root@nfs01 tmp]# touch /oldboy/{01..03}/{a..c}.txt
+    [root@nfs01 tmp]# tree /oldboy/
+    /oldboy/
+    ├── 01
+    │?? ├── a.txt
+    │?? ├── b.txt
+    │?? └── c.txt
+    ├── 02
+    │?? ├── a.txt
+    │?? ├── b.txt
+    │?? └── c.txt
+    └── 03
+        ├── a.txt
+        ├── b.txt
+        └── c.txt
+		
+    进行排除操作: 排除01目录都不传输 排除02目录c.txt文件不要传输
+	[root@nfs01 tmp]# rsync -avz /oldboy/ --exclude=01/ --exclude=02/c.txt rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+    sending incremental file list
+    ./
+    02/
+    02/a.txt
+    02/b.txt
+    03/
+    03/a.txt
+    03/b.txt
+    03/c.txt
+    
+    sent 375 bytes  received 134 bytes  1,018.00 bytes/sec
+    total size is 0  speedup is 0.00
+
+	[root@nfs01 oldboy]# rsync -avz /oldboy/ --exclude-from=/oldboy/exlude_file rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+    sending incremental file list
+    ./
+    02/
+    02/a.txt
+    02/b.txt
+    03/
+    03/a.txt
+    03/b.txt
+    03/c.txt
+    
+    sent 375 bytes  received 134 bytes  1,018.00 bytes/sec
+    total size is 0  speedup is 0.00
+	
+	[root@nfs01 oldboy]# cat exlude_file 
+    01/
+    02/c.txt
+    exlude_file
+    PS: 利用exclude-from参数排除数据信息时, 建议后面接绝对路径信息
+
+	
+05. rsync服务实现无差异同步
+    --delete :  使客户端数据信息和备份服务端数据信息保持高度一致
+	[root@nfs01 oldboy]# rsync -avz /oldboy/ --delete rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+    sending incremental file list
+    deleting 01/c.txt
+    deleting 01/b.txt
+    deleting 01/a.txt
+    deleting 01/
+    ./
+    
+    sent 235 bytes  received 72 bytes  614.00 bytes/sec
+    total size is 25  speedup is 0.08
+
+06. rsync备份服务实现存储数据访问控制
+    hosts allow = 172.16.1.0/24   白名单
+    hosts deny = 0.0.0.0/32       黑名单
+	理解rsync服务访问控制原理
+	第一种情况: 只有白名单 没有黑名单
+	[root@nfs01 oldboy]# rsync -avz /oldboy/ --delete rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+    sending incremental file list
+    
+    sent 228 bytes  received 22 bytes  500.00 bytes/sec
+    total size is 25  speedup is 0.10
+    [root@nfs01 oldboy]# rsync -avz /oldboy/ --delete rsync_backup@10.0.0.41::backup --password-file=/etc/rsync.password
+    @ERROR: Unknown module 'backup'
+    rsync error: error starting client-server protocol (code 5) at main.c(1648) [sender=3.1.2]
+
+07. rsync服务模块列表功能
+    list = false    在客户端上可以显示服务端的所有模块信息
+    PS: 建议将此功能关闭	
+	
+08. rsync服务备份目录层级创建功能
+    PS: 无法创建多级目录
+    [root@nfs01 oldboy]# rsync -avz /etc/hosts  rsync_backup@172.16.1.41::backup/01/ --password-file=/etc/rsync.password
+    sending incremental file list
+    created directory 01
+    hosts
+    
+    sent 227 bytes  received 68 bytes  590.00 bytes/sec
+    total size is 371  speedup is 1.26
+    [root@nfs01 oldboy]# rsync -avz /etc/hosts  rsync_backup@172.16.1.41::backup/01/02/03/04/ --password-file=/etc/rsync.password
+    sending incremental file list
+    rsync: mkdir "01/02/03/04" (in backup) failed: No such file or directory (2)
+    rsync error: error in file IO (code 11) at main.c(657) [Receiver=3.1.2]
+    [root@nfs01 oldboy]# 
+    [root@nfs01 oldboy]# rsync -avz /etc/hosts  rsync_backup@172.16.1.41::backup/01/02/ --password-file=/etc/rsync.password
+    sending incremental file list
+    created directory 01/02
+    hosts
+    
+    sent 227 bytes  received 71 bytes  596.00 bytes/sec
+    total size is 371  speedup is 1.24
+	
+作业:
+01. 总结rsync配置文件参数
+02. 总结rsync命令参数信息
+03. 总结rsync守护进程部署流程	
+	
+	
+	
+
+
+    

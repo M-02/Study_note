@@ -1,0 +1,218 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day21-系统定时任务说明
+==============================
+
+00. 课程回顾说明
+    用户管理权限说明
+	1) 如何让普通用户拥有root用户的权限
+	   a 利用切换用户命令, 彻底获得root用户的所有权限
+	     su - /su - root
+	   b 利用修改文件或数据权限
+	     chmod r w x -  精确设置/批量设置方法
+	   c 利用权限授权方式, 让部分root用户的能力和给予相应用户(*)
+	     sudo 命令  --- 让普通用户可以像root用户一样执行命令
+		 visudo     --- 需要先对相应用户进行命令授权
+	   d 利用配置特殊权限, 让普通用户可以获得root用户的能力
+	     只是对命令文件进行操作处理
+	     setuid: 让普通用户在执行某些命令的时候, 可以像root用户一样执行命令
+		 setgid: 让普通用户组在执行某些命令的时候, 可以像root用户组一样执行命令
+		 只是对目录进行权限设置(共享目录/tmp)
+         粘滞位: 使目录中的数据,只有属主用户可以删除和移动自己管理文件数据,其它用户只能读取
+	2) sudo授权配置方法 visudo==vim /etc/sudoers
+       a 授权一个命令或多个命令给相应普通用户     oldboy  ALL=(ALL)   /bin/cat /oldboy/*, /bin/mv 
+       b 授权权限范围过大时,需要排除部分危险命令  oldboy  ALL=(ALL)   /bin/*, !/bin/rm, !/bin/vi 
+       c 使普通用户在执行sudo命令时不需要密码信息 oldboy  ALL=(ALL)   NOPASSWD: /bin/*, !/bin/rm, !/bin/vi	   
+	   sudo -l   以普通用户身份可以列出自己拥有root用户权限
+	   sudo -k   删除密码缓存信息
+  
+    3) 文件或目录的默认权限:
+	   root:
+	   文件 666-umask=666-022=644
+	   目录 777-umask=777-022=755
+	   普通用户: 
+	   文件: 664  002
+	   目录: 775  002 
+	   在进行权限运算时: 主要对于文件运算权限数值需要考虑umask值是奇数还是偶数
+	   
+	   01. 普通用户umask变化, 会影响默认数据权限
+	   02. 如果普通用户属主名称和属组名称不一致, 影响默认数据权限
+	   记录umask数值文件 : /etc/profile
+	   
+       需求: 批量创建100个文件, 让100个文件默认权限为600
+	   touch {01..100}.txt
+	   chmod 修改下
+       (umask 066;touch /oldboy/oldboy{11..20}.txt)
+
+	4) 如何进行用户审计
+	   利用跳板机和堡垒机???
+	   
+	   
+定时任务说明
+
+01. 什么是定时任务?
+    网站每天会产生大量的数据, 用户访问产生的
+	网站一定要保存好, 每天进行备份(本地 远程备份) 
+	
+	什么时候做备份合适?
+	服务器访问用户量比较少的时候  凌晨
+    怎么做备份?
+	cp  本地备份  避免数据被误删除  避免误修改
+	scp 远程备份  批量服务器宕机数据丢失
+	
+	希望服务器自动完成(人工智能)
+	
+02. 实现定时任务软件
+    1) cronie 系统中主要使用的定时任务软件
+	[root@oldboy-xiaodao.com.cn ~]# rpm -qa cronie
+    cronie-1.4.11-19.el7.x86_64
+
+03. 定时任务配置方式
+    1) 系统已经存在的定时任务
+	   a 按照每小时间隔执行定时任务: /etc/cron.hourly/
+	     [root@oldboy-xiaodao.com.cn ~]# ll /etc/cron.hourly/test.sh
+         -rwxr-xr-x 1 root root 53 Jan 26 15:48 /etc/cron.hourly/test.sh
+         [root@oldboy-xiaodao.com.cn ~]# cat /etc/cron.hourly/test.sh 
+         #!/bin/bash
+         
+         echo oldboy.info >>/tmp/oldboy_hour.txt
+       说明: 系统默认定时任务没有1小时以下间隔时间
+	   
+	   默认存储的文件信息
+	   /etc/cron.daily:
+       total 12
+       -rwx------. 1 root root 219 Apr 11  2018 logrotate
+       -rwxr-xr-x. 1 root root 618 Mar 18  2014 man-db.cron
+       -rwx------  1 root root 208 Apr 11  2018 mlocate
+       
+       /etc/cron.hourly:
+       total 8
+       -rwxr-xr-x. 1 root root 392 Apr 11  2018 0anacron
+       -rwxr-xr-x  1 root root  53 Jan 26 15:48 test.sh
+       
+       /etc/cron.monthly:
+       total 0
+       
+       /etc/cron.weekly:
+       total 0
+   
+    2) 需要用户自定义设置的定时任务	
+	   需要利用一个命令进行查看
+	   [root@oldboy-xiaodao.com.cn ~]# crontab -l
+       no crontab for root
+       可以利用一个文件进行查看
+	   ???
+	   
+	   如何配置定时任务: 
+	   crontab -e  == vim /var/spool/cron/root  root用户定义的定时任务
+	   如何查看定时任务: 
+	   crontab -l  == cat /var/spool/cron/root  查看root用户编辑的定时任务信息
+	   crontab -u oldgirl -l                   伪装成oldgirl身份查看oldgirl用户的定时任务信息
+	   
+	   测验: 编辑定时任务  实现/etc/hosts文件进行备份 /tmp/hosts_bak
+	   
+	   如何设置定时任务的时间
+       默认情况:
+       1) *(每分钟) *(每小时) *(每天) *(每月) *(每周) 	           *  每            --- 每分钟都执行定时任务 
+	   2) */10(每隔10分钟) */10(每隔10小时)  */10 */10 */10        */n  每隔多久
+	   3) 0 0 * * *                                                设置具体时间
+	      30 14 * * *
+		  30 14 */5 * *
+	   4) 0 9-11 * * *                                             - 从什么时间到什么时间(连续的范围)
+          0 22-23 00      错误书写方式 
+	   5) 0 00,22-23                                               , 从什么时间到什么时间(不连续范围)
+	   常见编写错误:
+       PS: 在编写定时任务的时候, 一定不能把日期和周信息进行同时编辑
+       * * 15 * 5          男朋友 和 女朋友 睡觉	   
+		  
+04. 定时任务编写的注意事项
+    1). 在定时任务执行的时候, 无法识别定时任务命令中的特殊字符
+	2). 在定时任务中, 操作文件要写好绝对路径信息
+	3). 在定时任务中, 识别的$PATH环境变量信息只有 /usr/bin:/bin 
+	    a 有些系统的特殊命令需要以绝对路径进行执行
+		b (慎用) 可以在定时任务配置文件开始定义新的PATH环境变量信息
+    4). 在执行定时任务时, 最后在所有任务命令后面加上  &>/dev/null  >/dev/null 2>&1
+
+
+    需求01. 每分钟执行定时任务  进行备份文件 /etc/hosts 
+	备份时候备份文件名称有日期信息显示
+	cp -a /etc/hosts /tmp/hosts_2019-1-26_16:00
+    cp -a /etc/hosts /tmp/hosts_2019-1-26_16:01	
+	
+	方式一: 错误的过程
+    * * * * *               cp /etc/hosts /tmp/hosts_bak_$(date +%F_%H:%M)
+	如何查看确认定时任务已经执行过了
+	tail -f /var/log/cron
+	Jan 26 17:07:01 oldboy-xiaodao CROND[2184]: (oldgirl)    CMD    (echo oldgirl_info >>/tmp/oldgirl_cron.txt )
+    Jan 26 17:08:01 oldboy-xiaodao CROND[2196]: (oldgirl)    CMD    (echo oldgirl_info >>/tmp/oldgirl_cron.txt )
+    Jan 26 17:09:01 oldboy-xiaodao crond[735]:  (root)       RELOAD (/var/spool/cron/root)
+    Jan 26 17:09:01 oldboy-xiaodao CROND[2203]: (oldgirl)    CMD    (echo oldgirl_info >>/tmp/oldgirl_cron.txt )
+    Jan 26 17:09:01 oldboy-xiaodao CROND[2204]: (root)       CMD    (cp /etc/hosts /tmp/hosts_bak_$(date +)
+    Jan 26 17:10:01 oldboy-xiaodao CROND[2224]: (root)       CMD    (cp /etc/hosts /tmp/hosts_bak_$(date +)
+    Jan 26 17:10:01 oldboy-xiaodao CROND[2225]: (oldgirl)    CMD    (echo oldgirl_info >>/tmp/oldgirl_cron.txt )
+        01               02                         03            04 
+
+    01: 定时任务执行的时间
+    02: 执行定时任务的主机名称
+    03: 执行哪个用户定义定时任务	
+	04: 执行定时任务的命令信息
+    结论: 在定时任务执行的时候, 无法识别定时任务命令中的特殊字符 %无法识别
+	      识别方法一: 特殊符号前面加上 \ 进行转译
+		  识别方法二: 将有特殊符号的命令放入到脚本中进行运行
+		  
+	结论: 在定时任务中, 操作文件要写好绝对路径信息
+
+	需求02. 每隔10分钟, 将/etc/hosts /etc/hostname /etc/selinux目录进行打包
+	        将数据打包到/tmp/oldboy.tar.gz目录 (利用命令完成) 
+	        */10 * * * *   tar zcf /tmp/oldboy.tar.gz /etc/hosts /etc/hostname /etc/selinux/
+			
+			说明: 想让定时任务快速执行的方法
+			方法一: 先将定时任务执行的周期改为1分钟
+			方法二: 直接修改时间, 最好和最终期望执行时间相差1分钟以上
+			        假设定时任务会在 10:00 执行 调整时间修改设置为09:58
+	
+	需求03: 每分钟创建一个用户 自动创建oldgirl100
+	        * * * * *   useradd oldgirl100
+	新的环境变量:
+    PS1 LANG OLDPWD UID 
+	PATH环境变量: 记录命令文件可以查找的路径信息
+	[root@oldboy-xiaodao.com.cn ~]# source /etc/profile
+    [root@oldboy-xiaodao.com.cn ~]# echo $PATH
+    /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/tmp
+    [root@oldboy-xiaodao.com.cn ~]# cat /etc/hosts
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+    
+    10.0.0.203  www.jd.com
+    123oldboy
+    [root@oldboy-xiaodao.com.cn ~]# which cat
+    /tmp/cat
+
+
+	需求04: 我不想看到以下提示信息
+			异常提示:
+	        You have new mail in /var/spool/mail/root: 记录定时任务执行过程中的错误信息
+    
+	/var/spool/mail/root内容不断增加, 大小不断变大90+    100G
+	问题一: 磁盘容量容易不够用  block不够用  (不要产生 systemctl stop postfix.service)
+    问题二: 当邮件服务停止后, 会在/var/spool/postfix/maildrop/产生大量小文件
+	        磁盘容量容易不够用  inode不够用  产生了大量小文件
+			 (不要产生 systemctl start postfix.service)
+	
+    根本解决方式, 不让错误信息产生 
+ >/etc/oldboy.txt
+	
+		
+周一: 磁盘管理
+周二: 磁盘管理 
+
+网络基础		

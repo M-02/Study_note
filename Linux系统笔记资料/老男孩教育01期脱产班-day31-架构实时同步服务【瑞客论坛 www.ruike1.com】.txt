@@ -1,0 +1,238 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day31-综合架构实时同步服务
+==================================	
+
+00. 课程介绍部分
+    1）实现实时同步数据的原理
+	2）实时实时同步数据的方法
+	   a 部署好rsync守护进程服务
+	   b 部署好inotify监控服务
+	   c 部署好sersync实时同步服务
+	3）实现实时同步数据的验证
+
+01. 课程知识回顾
+    1）NFS存储服务概念介绍
+	   a 实现数据的共享存储
+	   b 降低公司磁盘购买成本
+	2）NFS存储服务工作原理
+	   a 部署好一台存储服务器，设置好存储目录
+	   b 客户端利用网络挂载的方式进行挂载存储目录
+	   c 将数据存储在客户端本地挂载点目录==存储到存储服务器中
+    3）NFS服务部署流程
+	   RPC：类似于租房的中介  NFS服务启动会有多个进程多个端口（随机端口），客户端不方便连接服务端
+       服务端部署
+	   第一步：安装存储服务软件  nfs-utils rpcbind
+	   第二步：编写配置文件
+	   第三步：创建存储目录，并修改属主权限
+	   第四步：启动服务/开机自动
+	           rpcbind
+			   nfs
+	   客户端部署：
+	   第一步：安装nfs服务软件
+	   第二步：实现网络存储服务挂载
+	            mount -t nfs 172.16.1.31:/data  挂载点目录
+	   
+	   NFS服务挂载不上排查方法：
+	   服务端进行排查：
+	   1. 检查nfs进程信息是否注册
+	      rpcinfo -p localhost/172.16.1.31
+		  问题原因：
+		  服务启动顺序不对，没有启动nfs服务
+	   2. 检查有没有可用存储目录
+	      showmount -e 172.16.1.31
+          问题原因： 
+		  配置文件编写有问题，重启nfs服务
+	   3. 在服务端进行挂载测试
+	      是否能够在存储目录中创建或删除数据
+	   客户端测试：
+	   1. 检查nfs进程信息是否注册
+	      rpcinfo -p localhost/172.16.1.31
+		  问题原因：
+		  服务启动顺序不对，没有启动nfs服务
+	   2. 检查有没有可用存储目录
+	      showmount -e 172.16.1.31
+          问题原因： 
+		  配置文件编写有问题，重启nfs服务
+	      网络问题
+		  ping 172.16.1.31 
+		  telnet 172.16.1.31 111
+	   
+    4）NFS服务端配置参数
+	   xxx_squash
+	   
+	5) NFS客户端配置说明
+       mount -t 
+       实现开机自动挂载
+       /etc/rc.local   文件要有执行权限
+       /etc/fstab      实现fstab文件挂载自动加载nfs存储目录 必须让remote-fs.target服务开机自启  
+                       centos7  必须启动   remote-fs.target 
+                       centos6  必须启动   netfs					   
+	   
+	   需求问题：如何找到一台服务器开机运行了哪些服务
+	   ll /etc/systemd/system/multi-user.target.wants/
+	   
+	   客户端挂载的命令参数
+	   
+	   
+03. 实时同步服务原理/概念	  
+    1）需要部署好rsync守护进程服务，实现数据传输
+    2）需要部署好inotify服务，实现目录中数据变化监控
+    3）将rsync服务和inotify服务建立联系，将变化的数据进行实时备份传输	
+	   
+	   
+04. 实时同步服务部署
+    1）部署rsync守护进程
+       服务端配置操作
+       客户端配置操作	   
+	2）部署inotify监控服务 
+	   第一个步骤：安装软件
+	   yum install -y inotify-tools
+	   
+	   第二个步骤：熟悉命令的使用
+	   /usr/bin/inotifywait    --- 监控目录数据信息变化
+       /usr/bin/inotifywatch   --- 对监控的变化信息进行统计
+	   
+	   /data/  oldboy01.txt   
+	           oldboy02.txt   --- rsync --exclude
+			   oldboy03.txt   
+	   
+	   inotifywait命令使用方法：
+	   inotifywait [参数]  监控的目录
+	   -m|--monitor   --- 实现一直监控目录的数据变化
+	   -r|--recursive --- 进行递归监控
+	   -q|--quiet     --- 尽量减少信息的输出
+	   --format <fmt> --- 指定输出信息的格式 
+	   --timefmt      --- 指定输出的时间信息格式 
+	   -e|--event     --- 指定监控的事件信息
+	   
+	   创建文件监控信息输出
+	   /data/ CREATE user13     --- 一个文件被创建
+       /data/ OPEN user13       --- 打开创建的文件
+       /data/ ATTRIB user13     --- 修改文件的属性信息
+       /data/ CLOSE_WRITE,CLOSE user13  --- 保存关闭一个文件
+
+	   删除文件监控信息输出
+	   /data/ DELETE user13
+	   
+	   修改文件监控信息输出
+	   /data/ CREATE user10
+       /data/ OPEN user10
+       /data/ MODIFY user10
+       /data/ CLOSE_WRITE,CLOSE user10
+	   
+	   sed命令修改文件原理
+	   /data/ OPEN user10          --- 打开文件
+       /data/ CREATE sedpSAFR7     --- 创建出一个临时文件（内存）
+       /data/ OPEN sedpSAFR7       --- 临时文件进行打开
+       /data/ ACCESS user10        --- 读取源文件内容
+       /data/ MODIFY sedpSAFR7     --- 修改临时文件
+       /data/ ATTRIB sedpSAFR7     --- 临时文件属性变化
+       /data/ CLOSE_NOWRITE,CLOSE user10   --- 不编辑直接关闭源文件
+       /data/ CLOSE_WRITE,CLOSE sedpSAFR7  --- 写入关闭临时文件
+       /data/ MOVED_FROM sedpSAFR7 --- 将临时文件移除
+       /data/ MOVED_TO user10      --- 移入一个新的user10源文件
+	
+	   inotify监控命令格式：
+	   inotifywait -mrq --timefmt "%F" --format "%T %w %f 事件信息:%e" /data -e CREATE
+	   create创建、delete删除、moved_to移入、close_write修改
+	   
+	   企业应用：防止系统重要文件被破坏
+	   需要用到inotify进行实时一直监控 /etc passwd  /var/spool/cron/root
+	   
+	
+    3）部署sersync同步服务
+       第一个里程：需要下载，保留上传到linux服务器中
+	   https://github.com/wsgzao/sersync
+	   上传linux服务器  
+	   rz -y  --- 选择需要上传的数据信息
+	   PS：软件尽量都统一保存在/server/tools目录中
+
+       第二个里程：解压软件压缩包，将解压的数据进行保存
+	   unzip sersync_installdir_64bit.zip
+	   [root@nfs01 tools]# tree sersync_installdir_64bit
+       sersync_installdir_64bit
+       └── sersync
+           ├── bin               --- sersync软件命令目录
+           │?? └── sersync
+           ├── conf              --- sersync软件配置目录
+           │?? └── confxml.xml
+           └── logs              --- sersync软件日志目录
+       [root@nfs01 tools]# mv sersync_installdir_64bit/sersync/  /usr/local/
+	   
+	   第三个里程：编写配置文件：
+	   vim conf/confxml.xml
+       6     <filter start="false">
+       7         <exclude expression="(.*)\.svn"></exclude>
+       8         <exclude expression="(.*)\.gz"></exclude>
+       9         <exclude expression="^info/*"></exclude>
+      10         <exclude expression="^static/*"></exclude>
+      11     </filter>
+	  说明：排除指定数据信息不要进行实时传输同步
+
+      12     <inotify>
+      13         <delete start="true"/>
+      14         <createFolder start="true"/>
+      15         <createFile start="false"/>
+      16         <closeWrite start="true"/>
+      17         <moveFrom start="true"/>
+      18         <moveTo start="true"/>
+      19         <attrib start="false"/>
+      20         <modify start="false"/>
+      21     </inotify>
+	  说明：定义inotify程序需要监控的事件
+	  
+	   24         <localpath watch="/opt/tongbu">
+       25             <remote ip="127.0.0.1" name="tongbu1"/>
+       26             <!--<remote ip="192.168.8.39" name="tongbu"/>-->
+       27             <!--<remote ip="192.168.8.40" name="tongbu"/>-->
+       28         </localpath>
+       29         <rsync>
+       30             <commonParams params="-artuz"/>
+       31             <auth start="false" users="root" passwordfile="/etc/rsync.pas"/>
+       32             <userDefinedPort start="false" port="874"/><!-- port=874 -->
+  
+	   第四个里程：启动sersync服务程序
+       [root@nfs01 bin]# export PATH="$PATH:/usr/local/sersync/bin"
+       [root@nfs01 bin]# echo $PATH
+       /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/usr/local/sersync/bin
+	   
+	   参数-d:  启用守护进程模式
+	   参数-r:  在监控前，将监控目录与远程主机用rsync命令推送一遍
+	            进行同步测试
+       参数-o:  指定配置文件，默认使用confxml.xml文件
+                -o /usr/local/sersync/conf/confxml.xml
+                -o /usr/local/sersync/conf/confxml02.xml
+
+       sersync -dro  /usr/local/sersync/conf/confxml.xml   启动实时同步服务
+	   yum install -y psmisc
+	   killall sersync                                     停止实时同步服务
+	   /etc/rc.local <-- sersync -dro  /usr/local/sersync/conf/confxml.xml   开机自动启动  
+
+
+05. 实时同步服务概念总结
+    1) 实现实时同步的原理
+	   监控目录数据变化  --- inotify 
+	   将数据进行传输    --- rsync
+	   将监控和传输进行整合  --- sersync
+	2) 实现实时同步部署方法
+	   1. 部署rsync守护进程 
+	   2. 部署inotify软件
+	   3. 部署sersync软件
+	   
+作业:
+01. 扩展实时同步软件 
+    数据库需要实时同步
+	windows --- windows
+02. 批量管理服务ansible 安装过程  简单配置  应用(模块 剧本)
+
+

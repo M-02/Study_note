@@ -1,0 +1,229 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day04-虚拟软件使用方法/远程连接排错/linux系统命令
+==================================
+00. 课程介绍部分
+    1）虚拟软件使用方法  OK
+	2）虚拟软件网络配置（虚拟软件网络模式） OK
+	3）远程连接排错思路  OK
+	4）系统管理的基础知识
+	5）系统的基础常见命令5~10
+ 
+01. 课程知识回顾
+    1）系统安装部署
+	   系统网络配置
+	   1. 网卡的名称eth0-net.ifnames=0 biosdevname=0
+	   2. 网卡地址IP地址 网关配置 DNS:223.5.5.5/114.114.114.114
+	   3. 系统的主机名称进行修改
+	   系统分区配置
+	   1. 通用分区方式
+	      /boot  引导分区   200M
+		  swap   交换分区   内存>=8 8G  内存<8G 1.5内存大小
+		  /      根分区     剩余空间
+	   系统预装软件
+	   最小化安装---1 2 3 6 
+	2）检查网络功能
+       检查网卡配置 ip a
+       检查网络通讯 ping
+    3）远程连接配置（xshell5 xshell6）
+       	
+02. 虚拟软件使用方法
+    1. 软件启动注意事项
+	   系统当中有些软件是可以多次启动，多实例
+	   vmware不具有多实例功能
+	2. 软件关闭注意事项
+	   尽量选择挂起虚拟主机关闭软件
+	3. 虚拟主机拍摄快照功能（后悔药 月光宝盒）
+    4. 虚拟主机删除方法
+	   右键点击虚拟主机---管理--从磁盘中删除虚拟主机（建议主机关闭状态进行删除）
+	   
+03. 虚拟软件网络配置
+    虚拟软件网络模式
+	1. NAT网络模式
+	   特点：虚拟主机和宿主机网络信息可以不一致 10.0.3 10.0.0
+	   优点：不容易出现局域网中IP地址冲突
+	   缺点：其他宿主机不能直接访问虚拟主机
+	   
+	2. 桥接网络模式
+	   特点：虚拟主机和宿主机网络信息是一致的   10.0.3.x 10.0.3.x
+	   缺点：容易出现局域网中IP地址冲突
+	   优点：其他宿主机可以直接访问虚拟主机
+	
+	3. 仅主机模式
+	   特点：虚拟主机网络只能和宿主机或其他虚拟主机建立通讯
+	   缺点：不能连接外网
+	   优点：更加安全
+	   
+04. 远程连接排错方法（）
+    东莞（大保健）
+	01. 去的道路是通畅--链路是通常的
+	    检查链路通畅的方法：ping 10.0.0.200
+	    不通畅原因：
+		a 物理线路有问题/物理主机被人关闭
+		b 网络安全设备阻止了ping的功能
+		c 虚拟主机网卡地址是否设置正确
+		d 虚拟网卡（vmnet8）有没有开启并且配置正确
+	    e 虚拟主机网络服务是否关闭
+	02. 你老婆不让你去--有网络安全策略进行阻止访问
+	    a 防火墙没有关闭
+		b SSH服务配置中也可以阻止用户远程连接
+	03. 大保健今天没营业--远程服务没有开启
+	    检查远程服务是否开启：telnet 10.0.0.200 22
+	    网络中会将每个网络服务设置一个数字编号，成为网络服务端口
+		SSH服务端口号码 -- 22
+		连接失败的原因：
+		a 远程服务关闭了 
+		  systemctl start sshd
+		b 虚拟网络编辑器中网卡设置错误 进行默认还原即可
+		c 虚拟软件程序运行不正常
+		  检查虚拟软件服务是否开启--window标+r--services.msc
+		  将所有服务进行开启或重启
+	
+05. 系统管理的基础知识(预备知识)	
+    a 系统命令提示组成
+	  [root@oldboyedu ~]#  --- 命令提示符
+	  作用：只有在命令提示符后面输入命令才有效果
+	  组成：
+	  1） 登录用户的信息
+	  2） @ 分隔符
+	  3） 主机名信息
+	  4） 当前所在系统的目录路径信息
+	b 系统命令是有语法规范
+	  命令      参数           文件/路径
+	  干的事情  做事情的条件   做事情结果
+	  systemctl start/stop      network
+	  PS：命令参数文件之间要有空格分隔
+	c 系统目录结构简介
+	  linux目录结构一切从根开始
+	  绝对路径：从根开始进行查找数据 
+                缺点：寻找数据更慢
+	            优点：准确性高			
+	  相对路径：从当前路径位置查找数据
+	            优点：寻找数据更快
+				缺点：准确性低
+     	
+06. 系统的操作命令	
+    分类记忆
+	1）系统相关运行命令
+	   补充说明：linux是多用户的系统 windows是多用户的系统（收费 5用户=5000 10用户=10000）
+	   系统关机：
+	   shutdown
+	   
+	   [root@oldboyedu oldboy04]# shutdown 
+       Shutdown scheduled for Fri 2019-03-29 11:36:45 CST, use 'shutdown -c' to cancel.
+	   定义一个关机方案=定义什么时间进行关机，使用shutdown -c 取消关机计划
+       [root@oldboyedu oldboy04]# 
+       Broadcast message from root@oldboyedu.com (Fri 2019-03-29 11:35:45 CST):
+	   会将关机信息广播给所有关机主机的用户
+       
+       The system is going down for power-off at Fri 2019-03-29 11:36:45 CST!
+	   准备什么时间真正进行关机
+	   
+	   shutdown -h 5  --- 指定5分钟后关机
+       	   
+	   系统重启：
+       [root@oldboyedu ~]# shutdown -r 5
+       Shutdown scheduled for Fri 2019-03-29 12:02:41 CST, use 'shutdown -c' to cancel.
+       [root@oldboyedu ~]# 
+       Broadcast message from root@oldboyedu.com (Fri 2019-03-29 11:57:41 CST):
+       
+       The system is going down for reboot at Fri 2019-03-29 12:02:41 CST!
+	   reboot
+
+	2）目录路径相关命令	
+	   1）检查文件或目录是否存在命令
+	   ls == list（列表）
+	   
+	   检查文件是否存在
+	   [root@oldboyedu ~]# ls /etc/hosts
+       /etc/hosts
+       [root@oldboyedu ~]# ls /etc/hosts01
+       ls: cannot access /etc/hosts01: No such file or directory
+
+       检查目录是否存在
+	   [root@oldboyedu ~]# ls /etc/
+       abrt                     environment         krb5.conf.d               pki             shadow
+       adjtime                  ethertypes          latrace.d                 plymouth        shadow-
+       aliases                  exports             ld.so.cache               pm              shells
+       aliases.db               favicon.png         ld.so.conf                polkit-1        skel
+       alternatives             filesystems         ld.so.conf.d              popt.d          sos.conf
+
+       [root@oldboyedu ~]# ls -d /oldboy  有针对查看目录信息
+       /oldboy
+
+	   2）创建新的目录
+	   make directory（制造目录）==mkdir
+	   [root@oldboyedu ~]# mkdir /oldboy
+       [root@oldboyedu ~]# mkdir -p /oldboy/oldboy01/oldboy02/oldboy03/oldboy04  -- 创建多级目录
+       [root@oldboyedu ~]# ls -d /oldboy/oldboy01/oldboy02/oldboy03/oldboy04
+       /oldboy/oldboy01/oldboy02/oldboy03/oldboy04
+	   
+	   3）如何进行目录的切换
+	   change directory（改变目录）==cd
+	   绝对路径：
+	   [root@oldboyedu oldboy]# cd /oldboy/oldboy01/oldboy02/oldboy03/oldboy04/
+	   相对路径：
+	   [root@oldboyedu oldboy03]# cd oldboy04/   当对于当前路径找他下面的路径信息
+       [root@oldboyedu oldboy04]# cd ..          返回到上一级目录
+       [root@oldboyedu oldboy04]# cd ../../      返回到上两级目录
+	   [root@oldboyedu oldboy04]# cd ../oldboy05
+       两个目录之间快速切换
+	   [root@oldboyedu oldboy05]# cd /tmp/
+       [root@oldboyedu tmp]# cd -
+       /oldboy/oldboy01/oldboy02/oldboy03/oldboy05
+       [root@oldboyedu oldboy05]# cd -
+       /tmp
+       快速返回到家目录
+	   [root@oldboyedu oldboy05]# cd ~
+       [root@oldboyedu ~]# cd -
+       /oldboy/oldboy01/oldboy02/oldboy03/oldboy05
+       [root@oldboyedu oldboy05]# cd
+       [root@oldboyedu ~]# 
+
+       4）查看当前所在路径
+	   print work directory（显示当前路径）==pwd 
+       [root@oldboyedu oldboy05]# pwd
+       /oldboy/oldboy01/oldboy02/oldboy03/oldboy05
+       [root@oldboyedu oldboy05]# cd /oldboy/oldboy01/
+       [root@oldboyedu oldboy01]# pwd
+       /oldboy/oldboy01
+       [root@oldboyedu oldboy01]# cd /tmp/
+       [root@oldboyedu tmp]# pwd
+       /tmp
+
+
+07. 系统命令帮助方法
+    manual --> man mkdir  
+    man 查看的命令
+    NAME     命令作用说明
+       mkdir - make directories
+	SYNOPSIS 命令使用方法
+       mkdir [OPTION]... DIRECTORY...
+	DESCRIPTION 命令的参数解释
+       -p, --parents
+              no error if existing, make parent directories as needed	
+
+
+08. 课程知识总结
+    1）虚拟软件使用方法 （快照功能 挂起功能）
+	2）虚拟软件网络模式 （nat 桥接 仅主机）
+	3）远程连接排错方法 （大保健之路）
+	4）管理系统必知必会 （命令提示符 目录结构（绝对/相对）命令语法格式）
+	5）系统重要命令操作
+	   a 系统运行命令   shutdow halt poweroff reboot
+	   b 目录相关命令   ls mkdir cd pwd
+	   
+
+	
+	   
+扩展作业：
+01. 虚拟软件的虚拟主机克隆功能

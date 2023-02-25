@@ -1,0 +1,310 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day19-操作系统三剑客命令-awk
+==================================	
+
+00. 课程介绍部分
+    1) awk 擅长对列进行操作/进行数据信息的统计(数组???)
+	2) awk 基本使用(高级使用-shell)
+    
+    	
+01. 课程知识回顾
+    1) sed流编辑命令
+	2) 语法结构  sed 参数 [条件-处理方式:指令] 文件信息
+	3) sed命令实际应用过程
+	   文件中查询信息  	参数-n	指令p
+	   文件中增加信息        	指令i a
+	   文件中删除信息	参数-i	指令d
+	   文件中替换信息	参数-i.bak  指令 s g c  后项引用前项 &
+    
+	
+02. awk概念介绍说明
+    作用特点:
+	1. 排除信息
+    2. 查询信息
+    3. 统计信息
+    4. 替换信息
+    语法格式:
+    sed [参数] '条件-处理方式' 文件 
+    awk [参数] '模式-动作'     文件	
+	
+03. awk实际操作过程:
+    准备测试环境
+    [root@oldboyedu ~]# cat awk_test.txt 
+    Zhang	Dandan		41117397	:250:100:175
+    Zhang	Xiaoyu		390320151	:155:90:201
+    Meng	Feixue		80042789	:250:60:50
+    Wu	Waiwai		70271111	:250:80:75
+    Liu	Bingbing	41117483	:250:100:175
+    Wang	Xiaoai		3515064655	:50:95:135
+    Zi	Gege		1986787350	:250:168:200
+    Li	Youjiu		918391635	:175:75:300
+    Lao	Nanhai		918391635	:250:100:175
+
+    命令查询信息方法:
+    按照行号查询信息:
+	awk 'NR=2' awk_test.txt
+	[root@oldboyedu ~]# awk 'NR=2' awk_test.txt
+    Zhang	Dandan		41117397	:250:100:175
+    Zhang	Xiaoyu		390320151	:155:90:201
+    Meng	Feixue		80042789	:250:60:50
+    Wu	Waiwai		70271111	:250:80:75
+    Liu	Bingbing	41117483	:250:100:175
+    Wang	Xiaoai		3515064655	:50:95:135
+    Zi	Gege		1986787350	:250:168:200
+    Li	Youjiu		918391635	:175:75:300
+    Lao	Nanhai		918391635	:250:100:175
+    [root@oldboyedu ~]# awk 'NR==2' awk_test.txt
+    Zhang	Xiaoyu		390320151	:155:90:201
+    [root@oldboyedu ~]# awk 'NR==2,NR==4' awk_test.txt
+    Zhang	Xiaoyu		390320151	:155:90:201
+    Meng	Feixue		80042789	:250:60:50
+    Wu	Waiwai		70271111	:250:80:75
+    [root@oldboyedu ~]# awk 'NR==2;NR==4' awk_test.txt
+    Zhang	Xiaoyu		390320151	:155:90:201
+    Wu	Waiwai		70271111	:250:80:75
+	
+	ps: 在linux系统中
+	oldboy=10  	赋值变量信息
+	oldboy==2  	真正oldboy等于数值2
+	
+    按照字符查询信息:
+    [root@oldboyedu ~]# awk '/Xiaoyu/' awk_test.txt
+    Zhang	Xiaoyu		390320151	:155:90:201
+    [root@oldboyedu ~]# awk '/Xiaoyu/,/Waiwai/' awk_test.txt
+    Zhang	Xiaoyu		390320151	:155:90:201
+    Meng	Feixue		80042789	:250:60:50
+    Wu	Waiwai		70271111	:250:80:75
+    [root@oldboyedu ~]# awk '/Xiaoyu/;/Waiwai/' awk_test.txt
+    Zhang	Xiaoyu		390320151	:155:90:201
+    Wu	Waiwai		70271111	:250:80:75
+	
+	测验:
+	01. 显示xiaoyu的姓氏和ID号码(???)
+	[root@oldboyedu ~]# awk '/Xiaoyu/{print $1","$3}' awk_test.txt 
+    Zhang,390320151
+    [root@oldboyedu ~]# awk '/Xiaoyu/{print $1,$3}' awk_test.txt 
+    Zhang 390320151
+	
+	02. 姓氏是zhang的人,显示他的第二次捐款金额及他的名字
+	[root@oldboyedu ~]# awk '/Zhang/{print $4}' awk_test.txt 
+    :250:100:175
+    :155:90:201
+    [root@oldboyedu ~]# awk '/Zhang/{print $NF}' awk_test.txt 
+    :250:100:175
+    :155:90:201
+    [root@oldboyedu ~]# awk '/Zhang/{print $NF}' awk_test.txt|awk -F ":" '{print $3}'
+    100
+    90
+	
+	awk '/Zhang/{print $NF}' 
+	awk -F ":" '{print $3}'
+    [root@oldboyedu ~]# awk -F ":" '/^Zhang/{print $3}' awk_test.txt 
+    100
+    90
+
+    [root@oldboyedu ~]# awk -F "[ :]+" '/^Zhang/{print $1,$2,$5}' awk_test.txt 
+    Zhang Dandan 100
+    Zhang Xiaoyu 90
+    [root@oldboyedu ~]# awk -F "[ :]+" '/^Zhang/{print $1,$2,$(NF-1)}' awk_test.txt 
+    Zhang Dandan 100
+    Zhang Xiaoyu 90
+
+    03. 显示所有以41开头的ID号码的人的全名和ID号码
+	[root@oldboyedu ~]# awk '$3~/^41/{print $1,$2,$3}' awk_test.txt 
+    Zhang Dandan 41117397
+    Liu Bingbing 41117483
+	
+	04. 显示所有ID号码最后一位数字是1或5的人的全名
+    方法一:
+	awk '$3~/1$|5$/{print $1,$2}' awk_test.txt
+	[root@oldboyedu ~]# awk '$3~/1$|5$/{print $1,$2}' awk_test.txt|column -t
+    Zhang  Xiaoyu
+    Wu     Waiwai
+    Wang   Xiaoai
+    Li     Youjiu
+    Lao    Nanhai
+    Lao    Nanhai
+	
+	方法二:
+	[root@oldboyedu ~]# awk '$3~/[15]$/{print $1,$2}' awk_test.txt|column -t
+  
+    方法三:
+	[root@oldboyedu ~]# awk '$3~/(1|5)$/{print $1,$2}' awk_test.txt|column -t
+	
+	05. 显示Xiaoyu的捐款,每个捐款数值前面都有以$开头, 如$110$220$330
+	[root@oldboyedu ~]# awk '$2~/Xiaoyu/{print $NF}' awk_test.txt 
+    :155:90:201
+    [root@oldboyedu ~]# #gsub(/需要替换的信息/,"修改成什么信息",将哪列信息进行修改)
+    [root@oldboyedu ~]# awk '$2~/Xiaoyu/{gsub(/:/,"$",$NF);print $NF}' awk_test.txt 
+    $155$90$201
+
+	文件中空行进行排除/文件中注释信息进行排除
+	grep -Ev "^#|^$"  文件信息 
+	sed -n '/^#|^$/!p' 文件信息
+	awk '/^#|^$/'
+	[root@oldboyedu ~]# awk '$0~/^#|^$/'  awk_test.txt 
+    #Liu    Bingbing 41117483    :250:100:175
+    
+    [root@oldboyedu ~]# awk '$0!~/^#|^$/'  awk_test.txt 
+    Zhang  Dandan   41117397    :250:100:175
+    Zhang  Xiaoyu   390320151   :155:90:201
+    Meng   Feixue   80042789    :250:60:50
+    Wu     Waiwai   70271111    :250:80:75
+    Wang   Xiaoai   3515064655  :50:95:135
+    Zi     Gege     1986787350  :250:168:200
+    Li     Youjiu   918391635   :175:75:300
+    Lao    Nanhai   918391635   :250:100:175
+    Lao    Nanhai   918394135   :250:100:175
+
+	总结:awk命令中$符号用法
+	$1 $2 $3 : 取第几列信息
+	$NF      : 取最后一列
+	$(NF-n)  : 取倒数第几列
+	$0       : 取所有列的信息
+	
+	如何利用awk取出IP地址信息:
+	ip a s eth0|awk -F "[ /]+" 'NR==3{print $5}'
+	hostname -i 
+		
+04. awk高级功能说明
+    a 对日志信息进行统计(计数)             
+	b 对日志信息数值进行求和  客户端-下载 服务端-上传  消耗网络流量
+	c (数组)进行排序分析  
+	  排序
+	  01 192.168.2.1  600  192  深圳    10万   
+	  02 192.168.1.10 500  18   上海
+	  03 192.168.3.10 200  20   广州
+	                       30   东北    2千  
+      运维总监---运营(推广)总监
+	d 可以进行脚本编写(循环语句 判断语句) sh awk_nginx.log
+	  
+	awk模式概念说明: 匹配的条件信息
+	普通的模式: 
+	01. 正则表达式作为模式  
+	    awk '/^oldboy/{print xx}'
+	02. 利用比较匹配信息
+	    NR==2
+		NR>=2
+	    NR<=2
+	03. NR==2,NR==10
+	特殊的模式
+	BEGIN{}  在awk执行命令前做什么事情:
+	[root@oldboyedu ~]# awk 'BEGIN{print "姓","名","QQ号","捐款记录"}{print $0}' awk_test.txt |column -t
+    姓     名        QQ号        捐款记录
+    Zhang  Dandan    41117397    :250:100:175
+    Zhang  Xiaoyu    390320151   :155:90:201
+    Meng   Feixue    80042789    :250:60:50
+    Wu     Waiwai    70271111    :250:80:75
+    Liu    Bingbing  41117483    :250:100:175
+    Wang   Xiaoai    3515064655  :50:95:135
+    Zi     Gege      1986787350  :250:168:200
+    Li     Youjiu    918391635   :175:75:300
+    Lao    Nanhai    918391635   :250:100:175
+    Lao    Nanhai    918394135   :250:100:175
+	
+	修改内置分隔符变量
+	awk -F ":" '{print $2}' awk_test.txt
+	[root@oldboyedu ~]# awk  'BEGIN{FS=":"}{print $2}' awk_test.txt 
+
+	
+	END{}  在awk执行命令结束之后做的操作
+	[root@oldboyedu ~]# awk 'BEGIN{print "姓","名","QQ号","捐款记录"}{print $0}END{print "操作结束"}' awk_test.txt |column -t 
+    姓        名        QQ号        捐款记录
+    Zhang     Dandan    41117397    :250:100:175
+    Zhang     Xiaoyu    390320151   :155:90:201
+    Meng      Feixue    80042789    :250:60:50
+    Wu        Waiwai    70271111    :250:80:75
+    Liu       Bingbing  41117483    :250:100:175
+    Wang      Xiaoai    3515064655  :50:95:135
+    Zi        Gege      1986787350  :250:168:200
+    Li        Youjiu    918391635   :175:75:300
+    Lao       Nanhai    918391635   :250:100:175
+    Lao       Nanhai    918394135   :250:100:175
+    操作结束
+
+    统计累加运算测试:
+	01. 统计/etc/services文件中空行数量
+	利用awk公式进行累加运算
+	[root@oldboyedu ~]# i=0
+    [root@oldboyedu ~]# echo $((i=i+1))
+    1
+    [root@oldboyedu ~]# echo $((i=i+1))
+    2
+    [root@oldboyedu ~]# echo $((i=i+1))
+    3
+   
+    awk '/^$/' /etc/service
+    [root@oldboyedu ~]# awk '/^$/{i=i+1;print i}' /etc/services 
+    空行 i=i+1 0+1  i=1
+    空行 i=i+1 1+1  i=2
+    空行 3
+    空行 4
+    空行 5
+    空行 6
+    空行 7
+    空行 8
+    空行 9
+    空行 10
+    空行 11
+    空行 12
+    空行 13
+    空行 14
+    空行 15
+    空行 16
+    空行 i=i+1 16+1 i=17 
+	[root@oldboyedu ~]# awk '/^$/{i=i+1}END{print i}' /etc/services 
+    17
+
+    02. 统计/etc/services文件中有井号开头的行
+	awk '/^#/{i++}END{print i}' /etc/services
+	
+	03. 统计系统中有多少个虚拟用户 普通用户
+	第一个历程: 用户信息都保存在什么文件中了
+	用户信息保存文件: /etc/passwd
+	第二个历程: 从文件中匹配出虚拟用户 普通用户 
+	匹配普通用户
+	awk '$NF~/bash/' /etc/passwd 
+	awk '$NF~/\/bin\/bash/' /etc/passwd 
+	第三个历程: 进行统计
+	普通用户数量
+    [root@oldboyedu ~]# awk '$NF~/bash/{i=i+1}END{print i}' /etc/passwd
+    63
+	虚拟用户数量
+    [root@oldboyedu ~]# awk '$NF!~/bash/{i=i+1}END{print i}' /etc/passwd
+    22
+
+	求和运算:
+	sum=sum+$n(需要进行数值求和的列)
+	[root@oldboyedu ~]# seq 10|awk '{sum=sum+$1;print sum}'
+    1  sum=sum+$1  0+1 sum=1
+    2  sum=sum+$1  1+2 sum=3
+    3  sum=sum+$1  3+3 sum=6
+    4              6+4 sum=10
+    5             10+5 sum=15
+    6             15+6 sum=21
+    7      28
+    8      36
+    9      45
+    10           45+10 sum=55
+	
+作业: 站着听课
+01 求出测试文件中 所有人第一次捐款的总额和第三次捐款总额
+   显示表头 
+   第一总额  第三次总额 	
+   xxx        xxxx	 
+   
+	
+	
+	  
+  
+       

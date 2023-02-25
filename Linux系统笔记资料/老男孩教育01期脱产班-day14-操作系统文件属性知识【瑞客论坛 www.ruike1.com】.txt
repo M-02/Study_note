@@ -1,0 +1,275 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day14-操作系统文件属性知识
+==================================	
+
+00. 课程介绍部分
+	1）文件属性部分全部内容介绍完
+	2）基础命令
+	
+01. 课程知识回顾
+    1）基础课程的前半部分进行了梳理
+	2）vim的使用原理和常见错误
+	3）文件属性知识
+	   a 文件的索引节点 inode
+	   b 文件的数据类型 OK
+	   c 文件的权限位（9位->12位）
+	   d 文件的硬链接数
+	   e 文件属主
+	   f 文件属组
+	   g 文件的大小信息
+	   h 文件的修改时间
+    4) 文件的数据类型 
+	   - 普通文件 （纯文本 二进制文件 数据文件）
+	   d 目录文件
+	   l 链接文件（软链接）
+	   b/c 设备文件 b块设备文件 c字符信息设备文件
+	   s socket文件
+    5）和文件相关的命令
+	   locate（updatedb）
+	   which whereis 
+	   find 路径信息 -type 文件类型 -name "文件名*"
+
+02. find命令查找信息补充
+    查看找文件数据信息：
+    精确查找：
+    find 路径信息 -type 文件类型 -name "文件名"
+    模糊查找：
+    find 路径信息 -type 文件类型 -name "文件名*"
+    find 路径信息 -type 文件类型 -name "*文件名"	
+	find 路径信息 -type 文件类型 -name "文*件名"
+	忽略大小写查找：
+	find 路径信息 -type 文件类型 -iname "文件名*"
+	根据数据大小查找数据：
+	find /oldboy -type f -size +100   --- 找出大于100K的文件
+	find /oldboy -type f -size -100
+	find /oldboy -type f -size +1M    --- 找出大于1M的文件
+    `b'    for 512-byte blocks (this is the default if no suffix is used)
+    `c'    for bytes   （推荐）
+    `w'    for two-byte words
+    `k'    for Kilobytes (units of 1024 bytes) （推荐）
+    `M'    for Megabytes (units of 1048576 bytes) （推荐）
+    `G'    for Gigabytes (units of 1073741824 bytes)
+    根据目录指定层级进行查找数据（进行递归查找）
+	[root@oldboyedu oldboy01]# find /oldboy -type f -name "Oldboy*"
+    /oldboy/oldboy01/Oldboy.txt
+    /oldboy/Oldboy.txt
+    [root@oldboyedu oldboy01]# find /oldboy -maxdepth 1 -type f -name "Oldboy*"
+    /oldboy/Oldboy.txt
+    [root@oldboyedu oldboy01]# find /oldboy -maxdepth 2 -type f -name "Oldboy*"
+    /oldboy/oldboy01/Oldboy.txt
+    /oldboy/Oldboy.txt
+    [root@oldboyedu oldboy01]# find /oldboy  -type f -name "Oldboy*" -maxdepth 1
+    find: warning: you have specified the -maxdepth option after a non-option argument -type, but options are not positional (-maxdepth affects tests specified before it as well as those specified after it).  Please specify options before other arguments.
+    
+    /oldboy/Oldboy.txt
+	根据数据的权限进行查找数据？？？
+	根据数据的时间信息查找？？？  将30天以前的所有数据进行删除？
+	
+03. 显示目录结构信息
+    tree /oldboy 		--- 显示指定目录中的所有数据和所有结构信息
+    tree -L 2 /   		--- 查看目录结构层级信息
+    tree -d /oldboy   	--- 显示目录中所有结构信息	
+	
+04. 系统中如何对文件进行压缩处理
+    压缩的命令  tar 
+	压缩命令语法：
+	tar zcvf /oldboy/oldboy.tar.gz  指定要压缩的数据文件  
+	z  压缩的方式 为zip
+	c  创建压缩包文件
+	v  显示压缩的过程
+	f  指定压缩包文件路径信息
+    压缩数据方法：
+    [root@oldboyedu oldboy]# tar zcvf /oldboy/oldboy.tar.gz /oldboy/services 
+    tar: Removing leading `/' from member names
+    /oldboy/services
+	检查是否压缩成功：
+	如何解压数据包
+	tar xvf /oldboy/oldboy.tar.gz
+	确认解压后的文件和源文件是否一致
+	1. 看文件的大小和时间信息
+	2. 利用vimdiff或者diff比较两个文件内容是否有区别
+    在不解压情况下查看压缩包里面的数据
+	tar tf /oldboy/oldboy.tar.gz
+ 
+    压缩过程信息说明
+    [root@oldboyedu oldboy]# tar zcvf oldboy.tar.gz /oldboy/services 
+    tar: Removing leading `/' from member names     --- 默认将压缩时绝对路径的根信息移除
+    /oldboy/services  --- 需要压缩的文件数据信息
+	相对路径进行压缩
+	[root@oldboyedu oldboy]# tar zcvf oldboy.tar.gz ./services 
+    ./services
+    [root@oldboyedu oldboy]# tar tf oldboy.tar.gz 
+    ./services
+
+    在压缩过程中排除指定数据不要被压缩
+	tar命令排除参数
+		--exclude=PATTERN   exclude files, given as a PATTERN  -- 排除指定单个文件数据
+	-X, --exclude-from=FILE	exclude patterns listed in FILE    -- 批量排除多个文件
+	
+	多个文件进行排除
+	第一个历程: 编写好排除文件
+	[root@oldboyedu oldboy]# vim /tmp/exclude.txt 
+    /oldboy/oldboy.txt
+    /oldboy/oldboy.avi
+    /oldboy/oldboy.jpg
+    /oldboy/oldboy.png
+	
+	第二个历程: 执行命令进行批量排除
+	[root@oldboyedu oldboy]# tar zcvf /tmp/oldboy05.tar.gz /oldboy --exclude-from=/tmp/exclude.txt 
+    tar: Removing leading `/' from member names
+    /oldboy/
+    /oldboy/services
+    /oldboy/oldboy01/
+
+	总结:排除指定数据信息需要定义好路径信息
+	路径信息全部采用绝对路径
+	[root@oldboyedu /]# tar  zcvf /tmp/oldboy03.tar.gz /oldboy --exclude=/oldboy/oldboy.txt
+    tar: Removing leading `/' from member names
+    /oldboy/
+    /oldboy/services
+    /oldboy/oldboy01/
+	
+	路径信息全部采用相对路径
+	[root@oldboyedu /]# tar zcvf /tmp/oldboy04.txt.tar.gz ./oldboy --exclude=./oldboy/oldboy.txt
+    ./oldboy/
+    ./oldboy/services
+    ./oldboy/oldboy01/
+
+05. 文件属性信息详细说明--文件权限
+    1) 文件数据权限有什么:
+       r read  		--- 读权限   4
+       w write 		--- 写权限   2
+       x execute 	--- 执行权限 1
+	   -            --- 没有权限 0
+    2) 权限赋予到指定人
+       属主信息  文件所有者(监护人)  	权限 
+       属组信息  文件所有者(亲人)    	权限 
+       其他用户  隔壁老王            	权限	   
+ 
+    这个文件权限是644权限:
+	属主            属组     其他用户 
+	r(4)w(2)-(0)=6  r(4)--=4 r(4)--=4
+	
+	练习:
+	rwx -- 7 
+	rw--w---x  621
+	rwx-wx---  730
+	432        r---wx-w-
+
+06. 文件属性信息详细说明---用户信息(属主 属组)
+    1) 系统中用户信息有什么用
+       a 利用用户登录系统
+       b 利用用户管理数据
+       c 利用用户管理进程	   
+	2) 系统如何识别不同的用户
+	   利用用户的数值编号进行识别: uid
+	   [root@oldboyedu ~]# id root
+       uid=0(root) gid=0(root) groups=0(root)
+       [root@oldboyedu ~]# id oldboy
+       uid=1000(oldboy) gid=1000(oldboy) groups=1000(oldboy)
+	3) 用户组的概念:
+	   oldboy oldgirl olddog(一个组)  -sa(system admin)    /sa  --rwx 
+	   boy gril dog(一个组)           -dev(Development)    /dev --rwx  
+       alex old (一个组)              -dba(database admin) /dba --rwx
+	   
+	   用户和用户组的关系:
+	   用户    		-- 用户组 		1v1
+	   多个用户 	-- 用户组 		多v1
+	   用户         -- 多个用户组 	1v多
+	   系统识别用户组也是根据编号识别: gid
+	   
+	   [root@oldboyedu ~]# id root
+       uid=0(root) gid=0(root) groups=0(root)
+	      01          02           03
+	   01. 显示用户名和uid对应关系
+	   02. 显示属于的用户组,以及组名和gid对应关系
+	   03. 用户可能属于哪些组
+   
+    4) 用户进行分类
+	   a 超级管理员用户 	皇帝   root
+         uid信息进行区分: 0	  
+         从权限上区分:    至高无上		 
+	   b 虚拟用户   		傀儡   xxx     nobody
+	     uid信息进行区分: 1-999  centos7
+		 从权限上区分:    管理进程  不能登录系统/没有家目录
+	   c 普通用户       	平民   oldboy oldgirl
+	     uid信息进行区分: 1000+  centos7
+		 从权限上区分:    管理指定数据 可以管理指定进程 可以登录系统/有家目录
+	   
+	   如何保护好皇帝:
+       01. 修改远程连接端口-52113 	--- 修改/etc/ssh/sshd_config
+       02. 禁止root用户远程登录   	--- 修改/etc/ssh/sshd_config	
+       
+	   root --- 密码破解
+	   1. 系统中有什么普通用户?
+	   2. 普通用户密码?
+	   3. su - root root用户密码
+ 	   
+	   满足什么条件可以以root身份登录系统:
+	   01. 服务器地址信息  14.215.177.38
+	   02. 服务器端口信息  22      该端口 
+	   03. 登录用户信息    root 
+	   04. 登录用户的密码  rsdasd  暴力破解 
+	
+	   理工大学: 
+	   01. 这个网站还没有被攻击下来
+	   02. 网站已经被攻击了,但没被发现
+	
+07. 文件属性信息详细说明---inode 
+    inode: 索引节点
+	文件或数据在磁盘中保存位置
+	
+    block: 索引节点指向的位置
+    文件或数据的具体内容
+
+    读取数据的原理
+    01. 找到指定数据
+    02. 读取数据内容,先获取文件数据inode信息
+    03. 根据inode信息在磁盘上找到对应block
+    04. 根据block信息获取文件真正内容	
+	
+08. 文件属性信息详细说明--时间信息(改变时间)
+    文件数据时间类型:
+    01. 访问时间  Access time == atime 
+    02. 修改时间  Modify time == mtime 
+    03. 改变时间  Change time == ctime  --- 数据属性信息发生改变了
+
+09. 课程内容知识总结:
+    1) find命令使用方法
+    2) tar命令使用方法 
+    3) 文件属性权限信息 
+    4) 文件属性中用户信息 用户分类 useradd userdel usermod
+    5) 文件属性inodex ???
+    6) 文件属性时间信息(三种时间 stat)	
+
+作业:
+01. 如何将一个目录中以.txt结尾的文件,统一进行压缩处理
+    /oldboy/ 
+	oldboy01.txt 
+	oldboy02.txt 
+	oldboy03.txt 
+	oldboy04.jpg 
+	oldboy05.png
+
+    思路:
+	01. 将以.txt结尾的文件找出来
+	02. 利用tar命令再进行打包
+02. 如何找出/oldboy目录中.txt结尾的文件,将找出的文件进行统一删除
+03. 如何找出/oldboy目录中.txt结尾的文件,将找出的文件进行批量复制/移动到/tmp目录中	
+04. centos6里面如何用uid区分不同的用户类型
+05. 总结linux系统中常用的压缩和解压命令 tar zip rar
+
+
+ 
+ 
+       

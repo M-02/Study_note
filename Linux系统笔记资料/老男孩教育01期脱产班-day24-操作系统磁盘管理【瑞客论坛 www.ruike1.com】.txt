@@ -1,0 +1,337 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day24-操作系统磁盘管理
+==================================	
+
+00. 课程介绍部分
+    1) 磁盘分区方法 (备份服务器 存储服务器 数据库服务器)         OK  fdisk  parted
+	2) 实现挂载使用 (实现开机自动挂载 /etc/fstab /etc/rc.local)   ok  
+	3) swap分区如何调整大小 (案例: java程序比较耗费内存 临时增加swap空间)
+	4) 企业常见问题: 磁盘空间满了如何处理     
+    
+01. 课程知识回顾
+    1) 磁盘的层次结构
+	   1. 物理层次结构: 	磁盘外部和内部结构
+	   2. 磁盘的阵列/LVM: 	将多块硬盘整合为一块  LVM是实现分区弹性缩容和扩容
+	   3. 磁盘分区方法
+	   4. 磁盘格式化操作: 	创建文件系统
+	   5. 磁盘挂载使用: 
+    
+02. 磁盘层次结构--磁盘分区方法 
+    情况一: 磁盘分区实践--磁盘小于2T
+    第一个里程: 准备磁盘环境
+    准备了一块新的10G硬盘
+
+    第二个里程: 在系统中检查是否识别到了新的硬盘
+    检查是否有新的磁盘存储文件
+    [root@oldboyedu ~]# ll /dev/sdb
+    brw-rw----. 1 root disk 8, 16 Apr 28 08:54 /dev/sdb	
+	
+	第三个里程: 对磁盘进行分区处理(fdisk-- 进行分区处理 查看分区信息)
+	fdisk -l   --- 查看分区信息 
+	[root@oldboyedu ~]# fdisk /dev/sdb
+    Welcome to fdisk (util-linux 2.23.2).
+    
+    Changes will remain in memory only, until you decide to write them.
+    Be careful before using the write command.
+    
+    Device does not contain a recognized partition table
+    Building a new DOS disklabel with disk identifier 0x6c918c6d.
+    
+    Command (m for help):   可以对磁盘进行分区了
+	Command action
+    d   delete a partition  *****
+        删除分区	
+    g   create a new empty GPT partition table
+	    创建一个新的空的GPT分区表(可以对大于2T磁盘进行分区)
+    l   list known partition types
+	    列出可以分区的类型???
+    m   print this menu
+	    输出帮助菜单
+    n   add a new partition  *****
+	    新建增加一个分区
+    p   print the partition table  *****
+	    输出分区的结果信息
+    q   quit without saving changes 
+	    不保存退出
+    t   change a partition's system id
+	    改变分区的系统id==改变分区类型(LVM 增加swap分区大小)
+    u   change display/entry units
+	    改变分区的方式  是否按照扇区进行划分
+    w   write table to disk and exit  *****
+	    将分区的信息写入分区表并退出==保存分区信息并退出
+  
+	开始分区: 
+    a 规划分4个主分区 每个分区1G
+	分区操作过程
+	Command (m for help): n                          
+    Partition type:
+       p   primary (0 primary, 0 extended, 4 free)
+       e   extended
+    Select (default p): p
+    Partition number (1-4, default 1): 1
+    First sector (2048-20971519, default 2048): 
+    Using default value 2048
+    Last sector, +sectors or +size{K,M,G} (2048-20971519, default 20971519): +1G
+    Partition 1 of type Linux and of size 1 GiB is set
+    
+	分区操作检查:
+    Command (m for help): p
+    Disk /dev/sdb: 10.7 GB, 10737418240 bytes, 20971520 sectors
+    Units = sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk label type: dos
+    Disk identifier: 0x3069f1dd
+    
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/sdb1            2048     2099199     1048576   83  Linux
+    /dev/sdb2         2099200     4196351     1048576   83  Linux
+    /dev/sdb3         4196352     6293503     1048576   83  Linux
+    /dev/sdb4         6293504     8390655     1048576   83  Linux
+    
+    Command (m for help): n
+    If you want to create more than four partitions, you must replace a
+    primary partition with an extended partition first.
+	
+	b 规划分3个主分区 1个扩展分区 每个主分区1G  剩余都给扩展分区
+    删除分区 
+    Command (m for help): d   
+    Partition number (1-4, default 4): 1
+    Partition 1 is deleted	
+	创建逻辑分区
+    Command (m for help): p
+    
+    Disk /dev/sdb: 10.7 GB, 10737418240 bytes, 20971520 sectors
+    Units = sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk label type: dos
+    Disk identifier: 0x3069f1dd
+    
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/sdb1            2048     2099199     1048576   83  Linux
+    /dev/sdb2         2099200     4196351     1048576   83  Linux
+    /dev/sdb3         4196352     6293503     1048576   83  Linux
+    /dev/sdb4         6293504    20971519     7339008    5  Extended   有了扩展分区才能逻辑分区
+    
+    Command (m for help): n
+    All primary partitions are in use
+    Adding logical partition 5
+    First sector (6295552-20971519, default 6295552): 
+    Using default value 6295552
+    Last sector, +sectors or +size{K,M,G} (6295552-20971519, default 20971519): +1G
+    Partition 5 of type Linux and of size 1 GiB is set
+	
+	Command (m for help): p
+    Disk /dev/sdb: 10.7 GB, 10737418240 bytes, 20971520 sectors
+    Units = sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk label type: dos
+    Disk identifier: 0x3069f1dd
+    
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/sdb1            2048     2099199     1048576   83  Linux
+    /dev/sdb2         2099200     4196351     1048576   83  Linux
+    /dev/sdb3         4196352     6293503     1048576   83  Linux
+    /dev/sdb4         6293504    20971519     7339008    5  Extended
+    /dev/sdb5         6295552     8392703     1048576   83  Linux
+  
+	需求: 划分2个主分区 划分2个逻辑分区
+    sdb1  2G
+    sdb2  2G
+    sdb5  3G
+    sdb6  1G	
+	  
+	第四个里程: 保存退出,让系统可以加载识别分区信息
+    让系统可以加载识别分区文件
+    partprobe /dev/sdb 
+    
+	
+	
+	情况二: 磁盘分区实践--磁盘大于2T
+	第一个里程: 准备磁盘环境 
+	虚拟主机中添加一块3T硬盘
+	
+	第二个里程: 使用parted命令进行分区
+	
+	mklabel,mktable LABEL-TYPE               create a new disklabel (partition table)
+	                                         创建一个分区表 (默认为mbr)
+	print [devices|free|list,all|NUMBER]     display the partition table, available devices, free space, all found
+                                             partitions, or a particular partition
+											 显示分区信息
+	mkpart PART-TYPE [FS-TYPE] START END     make a partition
+	                                         创建一个分区 
+    quit                                     exit program
+	                                         退出分区状态
+	rm NUMBER                                delete partition NUMBER
+	                                         删除分区 
+
+    修改磁盘分区类型: mklabel gpt
+	分区方法: mkpart primary 0  2100G
+	
+	第三个里程: 加载磁盘分区
+	partprobe /dev/sdc
+	  
+03. 磁盘层次结构--格式化操作(创建文件系统)
+    mkfs.xfs  /dev/sdb1 
+	mkfs -t xfs /dev/sdb2
+	
+	创建文件系统: 磁盘分区存储数据的方式
+	
+	ext3/4  centos6 
+	xfs     centos7  格式效率较高  数据存储效率提升(数据库服务器)
+	
+	[root@oldboyedu /]# mkfs.xfs /dev/sdb2
+    meta-data=/dev/sdb2              isize=512    agcount=4, agsize=65536 blks
+             =                       sectsz=512   attr=2, projid32bit=1
+             =                       crc=1        finobt=0, sparse=0
+    data     =                       bsize=4096   blocks=262144, imaxpct=25
+             =                       sunit=0      swidth=0 blks
+    naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+    log      =internal log           bsize=4096   blocks=2560, version=2
+             =                       sectsz=512   sunit=0 blks, lazy-count=1
+    realtime =none                   extsz=4096   blocks=0, rtextents=0
+	
+04. 磁盘层次结构--磁盘挂载应用
+    mount /dev/sdb1 /mount01
+    mount /dev/sdb2 /mount02	
+    检查确认:
+    [root@oldboyedu /]# df -h
+    /dev/sdb1      1014M   33M  982M   4% /mount01
+    /dev/sdb2      1014M   33M  982M   4% /mount02
+	
+    如何实现开机自动挂载:
+	方法一: 将挂载命令放入/etc/rc.local
+	[root@oldboyedu /]# tail -2 /etc/rc.local 
+    mount /dev/sdb1 /mount01
+    mount /dev/sdb2 /mount02
+
+    系统开机加载rc.local流程:
+	加载/etc/rc.local --> /etc/rc.d/rc.local --> 以绝对路径方式执行
+	/etc/rc.d/rc.local 
+	chmod +x /etc/rc.d/rc.local
+	
+	方法二: 在/etc/fstab文件中进行设置
+	UUID=e2fc8646-2b36-47cc-a35a-8c13208f4d0b /          xfs                 defaults            0             0
+    UUID=34fc45ba-c38c-42bc-a120-90f9d5dd2382 /boot      xfs                 defaults            0             0
+    UUID=62100743-6f8a-4f83-a37d-e2088c4830e2 swap       swap                defaults            0             0
+	挂载磁盘文件(存储设备)                   挂载点     指定文件系统类型   挂载的参数    是否备份磁盘  是否检查磁盘 
+	mount 挂载的磁盘文件 挂载点
+    [root@oldboyedu ~]# tail -2 /etc/fstab
+    /dev/sdb1                                 /mount01                xfs     defaults        0 0
+    UUID=144738ff-0da3-4162-b574-40af379cbe9e /mount02                xfs     defaults        0 0
+
+05. 企业磁盘常见问题:
+    1) 磁盘满的情况 No space left on device
+	   a 存储的数据过多了
+	     模拟磁盘空间不足
+		 dd if=/dev/zero of=/tmp/oldboy.txt  bs=10M count=100
+         block存储空间不足了
+         解决方式:
+		 a 删除没用的数据		 
+         b 找出大的没用的数据
+		   find / -type f -size +xxx
+		   du -sh /etc/sysconfig/network-scripts/*|sort -h
+
+		 
+	   补充: 按照数值排序命令
+	   [root@oldboyedu mount01]# cat num.txt |sort -n
+       # 1
+       # 10
+       # 11
+       # 12
+       # 2
+       # 3
+       # 6
+       # 9
+       [root@oldboyedu mount01]# cat num.txt |sort -n -k2
+       # 1
+       # 2
+       # 3
+       # 6
+       # 9
+       # 10
+       # 11
+       # 12
+
+       b 存储的数据过多了
+       inode存储空间不足了: 出现了大量小文件	   
+
+06. 如何调整swap分区大小
+    第一个历程: 将磁盘分出一部分空间给swap分区使用
+	dd if=/dev/zero  of=/tmp/1G  bs=100M count=10
+	
+    第二个历程: 将指定磁盘空间作为swap空间使用
+	[root@oldboyedu tmp]# mkswap /tmp/1G 
+    Setting up swapspace version 1, size = 1023996 KiB
+    no label, UUID=6dd70684-dec2-48cf-8fd9-f311548bbb4f
+
+    第三个历程: 加载使用swap空间
+	[root@oldboyedu tmp]# swapon /tmp/1G 
+    swapon: /tmp/1G: insecure permissions 0644, 0600 suggested.
+    [root@oldboyedu tmp]# free -h
+                  total        used        free      shared  buff/cache   available
+    Mem:           1.9G        225M        575M        9.6M        1.2G        1.5G
+    Swap:          2.0G          0B        2.0G
+    [root@oldboyedu tmp]# swapoff /tmp/1G 
+    [root@oldboyedu tmp]# free -h
+                  total        used        free      shared  buff/cache   available
+    Mem:           1.9G        224M        576M        9.6M        1.2G        1.5G
+    Swap:          1.0G          0B        1.0G
+    [root@oldboyedu tmp]# rm /tmp/1G -f
+
+07. 磁盘知识总结
+    1) 掌握磁盘体系结果
+	2) 磁盘的内部和外部结构(磁头 磁道 扇区 柱面) 运维---存储服务
+	3) 磁盘分区的方法
+	   fdisk  划分小于2T的磁盘
+	   parted 划分大于2T的磁盘
+	4) 如何实现格式化和自动挂载   存储服务nfs 
+	   /etc/rc.local 
+	   /etc/fstab 
+    5) 磁盘分区满的原因  No space left on device
+	   a block占用过多了
+	     df -h 
+		 解决方式: 删除大的没用的数据
+		 如何找到大的文件
+		 find / -type f -size +500M|xargs rm
+		 du -sh /etc/sysconfig
+
+       b inode占用过多了
+	     df -i
+		 解决方式: 删除大量的没用的小文件
+	6) 如何调整swap空间大小  --- tomcat(java)	512M 
+       dd 
+	   mkswap 
+	   swapon/off
+
+假期作业:
+01. 总结所有命令
+02. 总结重要章节
+    文件属性章节
+	正则表达式章节
+	sed命令/awk命令
+	用户管理权限概念
+	定时任务
+	
+30号测试
+
+6月初  降级  就业辅导 改简历 面试技巧 推荐
+
+
+
+
+
+
+       

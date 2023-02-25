@@ -1,0 +1,282 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day34-综合架构批量管理服务
+==================================	
+
+00. 课程介绍部分
+    1) ansible批量管理服务模块说明
+	2) ansible批量管理服务主机清单
+	3) ansible批量管理服务剧本编写
+	4) ansible批量管理服务实战应用(rsync nfs)
+
+    
+01. 课程知识回顾
+    1) ansible服务概念介绍
+	   a 批量管理多台主机
+	   b 提高运维工作效率
+	   c 降低运维工作难度
+    2) ansible服务特点说明
+	   01. 管理端不需要启动服务程序（no server）
+       02. 管理端不需要编写配置文件（/etc/ansible/ansible.cfg）
+       03. 受控端不需要安装软件程序（libselinux-python）
+	       被管理端selinux服务没有关闭 --- 影响ansible软件的管理
+		   libselinux-python让selinux开启的状态也可以使用ansible程序
+       04. 受控端不需要启动服务程序（no agent）
+       05. 服务程序管理操作模块众多（module）
+       06. 利用剧本编写来实现自动化（playbook）
+    3) ansible服务部署安装
+	   a 安装服务软件
+	   b 编写主机清单
+	   c 进行管理测试
+	
+	   补充: 远程主机无法管理问题分析
+	   1. 管理端没有分发好主机的公钥
+	   2. 被管理端远程服务出现问题
+	   3. 被管理端进程出现僵死情况
+	      /usr/sbin/sshd -D  --- 负责建立远程连接
+          sshd: root@pts/0   --- 用于维护远程连接(windows--linux)
+          sshd: root@notty   --- 用于维护远程连接(ansible--被管理端)
+	
+	4) ansible服务模块应用
+	   command (默认模块) 
+	   shell   (万能模块)
+	   script  (脚本模块)
+	   copy    (批量分发文件) 管理端 ---> 多个被管理
+	   fetch   (批量拉取数据) 管理端 <--- 多个被管理
+	           dest
+			   src
+			   ansible 172.16.1.31 -m fetch -a "src=/tmp/oldboy.txt dest=/tmp"
+	   file
+	     
+	   补充: ansible学习帮助手册如何查看
+	   ansible-doc -l         --- 列出模块使用简介
+	   ansible-doc -s fetch   --- 指定一个模块详细说明
+	   ansible-doc fetch      --- 查询模块在剧本中应用方法
+
+03. ansible模块说明:
+    yum模块
+	name  --- 指定安装软件名称
+	state --- 指定是否安装软件
+	          installed   --- 安装软件
+			  present
+			  latest
+			  absent      --- 卸载软件
+              removed
+    ansible 172.16.1.31 -m yum -a "name=iotop state=installed"	
+	
+	service模块: 管理服务器的运行状态  停止 开启 重启
+	name:   --- 指定管理的服务名称
+	state:  --- 指定服务状态
+	            started   启动
+				restarted 重启
+				stopped   停止
+	enabled --- 指定服务是否开机自启动
+	ansible 172.16.1.31 -m service -a "name=nfs state=started enabled=yes"
+	
+	cron模块: 批量设置多个主机的定时任务信息
+	crontab -e 
+	*   *  *  *  *  定时任务动作
+	分 时 日 月 周
+	
+	minute:                # Minute when the job should run ( 0-59, *, */2, etc )
+	                       设置分钟信息
+	hour:                  # Hour when the job should run ( 0-23, *, */2, etc )
+	                       设置小时信息
+	day:                   # Day of the month the job should run ( 1-31, *, */2, etc )
+                           设置日期信息
+    month:                 # Month of the year the job should run ( 1-12, *, */2, etc )
+	                       设置月份信息
+	weekday:               # Day of the week that the job should run ( 0-6 for Sunday-Saturday, *, etc )
+	                       设置周信息
+	
+	job                    用于定义定时任务需要干的事情
+	
+	基本用法:
+	ansible 172.16.1.31 -m cron -a "minute=0 hour=2 job='/usr/sbin/ntpdate ntp1.aliyun.com >/dev/null 2>&1'" 
+
+	扩展用法:
+	01. 给定时任务设置注释信息
+	ansible 172.16.1.31 -m cron -a "name='time sync' minute=0 hour=2 job='/usr/sbin/ntpdate ntp1.aliyun.com >/dev/null 2>&1'"
+	
+    02. 如何删除指定定时任务
+	ansible 172.16.1.31 -m cron -a "name='time sync01' state=absent"
+	PS: ansible可以删除的定时任务,只能是ansible设置好的定时任务
+	
+	03. 如何批量注释定时任务
+	ansible 172.16.1.31 -m cron -a "name='time sync' job='/usr/sbin/ntpdate ntp1.aliyun.com >/dev/null 2>&1' disabled=yes"
+	
+	mount: 批量进行挂载操作
+	       src:  需要挂载的存储设备或文件信息
+	       path: 指定目标挂载点目录
+	       fstype: 指定挂载时的文件系统类型
+	       state
+		   present/mounted     --- 进行挂载
+		   present: 不会实现立即挂载,修改fstab文件,实现开机自动挂载
+		   mounted: 会实现立即挂载, 并且会修改fstab文件,实现开机自动挂载 *****
+		   
+		   absent/unmounted    --- 进行卸载
+		   absent:     会实现立即卸载, 并且会删除fstab文件信息,禁止开机自动挂载
+	       unmounted:  会实现立即卸载, 但是不会会删除fstab文件信息  *****
+	
+	user模块: 实现批量创建用户
+	基本用法:
+	ansible 172.16.1.31 -m user -a "name=oldboy01"
+	
+	扩展用法:
+	1) 指定用户uid信息
+	ansible 172.16.1.31 -m user -a "name=oldboy02 uid=6666"
+	
+	2) 指定用户组信息
+	ansible 172.16.1.31 -m user -a "name=oldboy03 group=oldboy02"
+	ansible 172.16.1.31 -m user -a "name=oldboy04 groups=oldboy02"
+	
+	3) 批量创建虚拟用户
+	ansible 172.16.1.31 -m user -a "name=rsync create_home=no  shell=/sbin/nologin"
+	
+	4) 给指定用户创建密码
+	PS: 利用ansible程序user模块设置用户密码信息,需要将密码明文信息转换为密文信息进行设置
+	生成密文密码信息方法:
+	方法一:
+	ansible all -i localhost, -m debug -a "msg={{ '密码信息123456' | password_hash('sha512', 'oldboy') }}"
+	[root@m01 tmp]# ansible all -i localhost, -m debug -a "msg={{ '123456' | password_hash('sha512', 'oldboy') }}"
+    localhost | SUCCESS => {
+      "msg": "$6$oldboy$MVd3DevkLcimrBLdMICrBY8HF82Wtau5cI8D2w4Zs6P1cCfMTcnnyAmmJc7mQaE9zuHxk8JFTRgYMGv9uKW7j1"
+    }
+	
+	方法二:(忽略)
+	mkpasswd --method=sha-512
+	
+	方法三:
+    yum install -y python-pip
+    pip install passlib
+    python -c "from passlib.hash import sha512_crypt; import getpass; print(sha512_crypt.using(rounds=5000).hash(getpass.getpass()))"
+    Password: 
+    $6$rJJeiIerQ8p2eR82$uE2701X7vY44voF4j4tIQuUawmTNHEZhs26nKOL0z39LWyvIvZrHPM52Ivu9FgExlTFgz1VTOCSG7KhxJ9Tqk.
+	
+	ansible 172.16.1.31 -m user -a 'name=oldboy08 password=$6$oldboy$MVd3DevkLcimrBLdMICrBY8HF82Wtau5cI8D2w4Zs6P1cCfMTcnnyAmmJc7mQaE9zuHxk8JFTRgYMGv9uKW7j1'
+
+05. 剧本的编写方法
+    剧本的作用: 可以一键化完成多个任务
+	自动化部署rsync服务:
+	服务端的操作
+	第一个历程安装软件:
+	ansible 172.16.1.41 -m yum -a "name=rsync state=installed"
+	
+	第二个历程编写文件:
+	ansible 172.16.1.41 -m copy -a "src=/xxx/rsyncd.conf dest=/etc/"
+	
+	第三个历程创建用户
+	ansible 172.16.1.41 -m user -a "name=rsync create_home=no shell=/sbin/nologin"
+	
+	第四个历程创建目录
+	ansible 172.16.1.41 -m file -a "dest=/backup state=directory owner=rsync group=rsync"
+	
+	第五个历程创建密码文件
+	ansible 172.16.1.41 -m copy -a "content='rsync_backup:oldboy123' dest=/etc/rsync.password mode=600"
+	
+	第六个历程启动服务
+	ansible 172.16.1.41 -m service -a "name=rsyncd state=started enabled=yes"
+	
+	客户端的操作:
+	第一个历程: 创建密码文件
+	ansible 客户端地址 -m copy -a "content='rsync_backup:oldboy123' dest=/etc/rsync.password mode=600"
+	
+	剧本的做成部分:
+	演员信息: 男一号   hosts
+	干的事情: 吻戏     tasks
+	
+	演员信息: 男二号
+	干的事情: 看着
+    
+    剧本编写规范: pyyaml -- 三点要求
+	1. 合理的信息缩进  两个空格表示一个缩进关系
+	   标题一
+	     标题二
+	       标题三
+	PS: 在ansible中一定不能用tab进行缩进
+ 
+    2. 冒号的使用方法
+	   hosts: 172.16.1.41
+	   tasks:
+	   yum: name=xx
+	PS: 使用冒号时后面要有空格信息
+	    以冒号结尾,冒号信息出现在注释说明中,后面不需要加上空格
+		
+    3. 短横线应用 -(列表功能)
+	   - 张三
+	     男
+	       - 打游戏
+		   - 运动
+		      
+	   - 李四
+	     女
+	       学习
+	          湖南
+	   - 王五
+	     男
+	       运动
+	          深圳
+	PS: 使用短横线构成列表信息,短横线后面需要有空格  
+	   
+	开始编写剧本
+    mkdir /etc/ansible/ansible-playbook
+    vim rsync_server.ymal
+    说明: 剧本文件扩展名尽量写为yaml
+    1. 方便识别文件是一个剧本文件
+    2. 文件编写时会有颜色提示	
+- hosts: 172.16.1.41
+  tasks:
+    yum: name=rsync state=installed
+    copy: src=/tmp/rsyncd.conf dest=/etc/
+	
+	如何执行剧本:
+	第一个步骤: 检查剧本的语法格式
+	ansible-playbook --syntax-check  rsync_server.yaml
+    第二个步骤: 模拟执行剧本
+	ansible-playbook -C rsync_server.yaml
+	第三个步骤: 直接执行剧本   
+	ansible-playbook rsync_server.yaml   
+	   
+- hosts: 172.16.1.41
+  tasks:
+    - name: 01-install rsync
+      yum: name=rsync state=installed
+    - name: 02-push conf file
+      copy: src=/tmp/rsyncd.conf dest=/etc/
+
+06. 课程总结
+    1) 将常用模块进行了补充说明
+	   fetch yum service user mount cron 
+	2) 剧本的编写规范
+	   a 空格规范
+	   b 冒号规范
+	   c 短横线规范(列表)
+	   剧本的组成
+	   - hosts: xxx
+	     tasks:
+		   - name: xxxx:xxx
+             yum: xxx 
+           - name
+       剧本的执行方式
+       a 检查语法
+       b 模拟执行
+       c 真正执行	   
+	   
+作业:
+01. 如何利用剧本部署rsync服务
+02. 如何利用剧本部署nfs服务	   
+	
+	
+	
+	
+	
+	

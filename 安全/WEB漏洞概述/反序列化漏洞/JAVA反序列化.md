@@ -1,6 +1,6 @@
-![image-20210825164252060](D:\BaiduNetdiskDownload\安全\WEB漏洞概述\反序列化漏洞\JAVA反序列化.assets\image-20210825164252060.png)
+![image-20210825164252060](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\反序列化漏洞\JAVA反序列化.assets\image-20210825164252060.png)
 
-![image-20210825164505982](D:\BaiduNetdiskDownload\安全\WEB漏洞概述\反序列化漏洞\JAVA反序列化.assets\image-20210825164505982.png)
+![image-20210825164505982](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\反序列化漏洞\JAVA反序列化.assets\image-20210825164505982.png)
 
 ## 序列化和反序列化
 
@@ -36,5 +36,4 @@ echo "bWFpYmkK" | base64 -d		//base64解密
 
 提交base加密后的字符串
 
-![image-20210827112713884](D:\BaiduNetdiskDownload\安全\WEB漏洞概述\反序列化漏洞\JAVA反序列化.assets\image-20210827112713884.png)
-
+![image-20210827112713884](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\反序列化漏洞\JAVA反序列化.assets\image-20210827112713884.png)

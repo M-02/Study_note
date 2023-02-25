@@ -1,0 +1,218 @@
+=================================================================================================
+#   老男孩教育：                                                                          		#
+#   www.oldboyedu.com                                               							#
+#   邮件：miaokm@oldboyedu.com 	                                    							#
+#   地址：北京市昌平区顺沙路8号院汇德商厦4F													#
+#   电话：400-609-2893，180-1041-8396，173-1620-6489                                         	#
+#   资源老师：			QQ号码               	资源老师：              	QQ号码    	   		#
+#   范范		 	1223740011		     		依依		       		3532759635   			#
+#   安娜		 	2010068211		        	格格					1986787350				#
+#   瑶瑶		 	2023803491					金金					2918640936				#
+#   乔治			3380665979					龙龙					2090304642				#
+=================================================================================================
+
+老男孩教育01期脱产班-day44-综合架构监控服务(基础部分2半天 + 扩展部分4~5全天)
+================================================================================================
+00. 课程说明:
+    1) 综合架构监控服务概念说明
+	2) 综合架构服务器如何监控  
+	   a 手动执行命令进行监控  df w top ps ...
+	   b 自动执行命令进行监控  shell脚本
+    3) 综合架构监控体系结构(面试)
+	   你的原公司是如何对架构服务器进行监控?
+	   利用zabbix软件进行监控 错误回答
+	4) 综合架构监控服务软件---zbbix
+	   a zabbix软件结构组成
+	   b zabbix软件安装步骤(LAMP) == wordpress网站页面部署(LNMP)
+	   c zabbix软件初始监控
+	5) 综合架构监控服务详细配置
+	   a zabbix软件功能组成
+	   b zabbix软件功能实践
+	      
+01. 课程回顾:
+    1) 综合架构高可用服务概念
+	2) 综合架构高可用服务部署(配置)--keepalived heartbeat
+	3) 综合架构高可用服务原理 vrrp
+	4) 综合架构高可用服务应用
+	   a 解决脑裂问题
+	   b 解决释放资源
+	   c 解决双主问题
+	   d 解决安全访问
+	   
+	weight参数: 权重值参数,主要用于和优先级进行运算
+	重要知识点01:
+    求和运算:  weight数值必须是正数  weight + priority   自动提升优先级, 使主机可以成为主服务器
+    求差运算:  weight数值必须是负数  weight - priority   自动降低优先级, 使主机可以成为备服务器 	
+    重要知识点02:
+	运行一个脚本, 执行脚本结束之后, 脚本的执行结果可以为真 看脚本执行返回值 $?==0
+	运行一个脚本, 执行脚本结束之后, 脚本的执行结果可以为假 看脚本执行返回值 $$<>0
+    重要知识点03:
+	如何将知识01 + 知识02
+	权重值为正数:
+	1. 脚本运行后为真  weight + priority 
+	2. 脚本运维后为假  priority
+	权重值为负数:
+	1. 脚本运行后为真  priority
+	2. 脚本运维后为假  weight - priority
+	
+03. 综合架构监控服务概念说明
+    01. 对系统不间断实时监控
+	    实现报警通知  邮件/微信/短信/电话 --手环(学员)
+    02. 实时反馈系统当前状态
+    03. 保证服务可靠性安全性
+    04. 保证业务持续稳定运行
+
+    a 掌握架构服务的运行情况
+	b 用于分析公司网站运行情况
+
+04. 综合架构监控服务器常用命令
+    CPU: top htop glances
+    监控什么:
+	us: user state 		用户态信息 40%
+	sy: system state	内核态信息 40%  MySQL进程
+	id: idle            空闲状态   20%
+    内存: top htop free
+	监控什么:
+	内存可用率:
+	swap空间使用情况:
+	磁盘: df iotop(检查磁盘io消耗) glances
+	监控什么:
+	磁盘使用情况
+	磁盘的IO消耗 
+	网络: iftop glances
+	监控什么:
+	网络带宽使用情况
+	进程: top htop ps glances
+	监控什么: 
+	占用内存情况 tomcat(java)---内存占满(内存溢出)--服务出现僵死(重启服务)
+	占用CPU情况: MySQL
+	负载: w top uptime glances
+	监控什么:
+	10分钟负载  <CPU内核数
+	15分钟负载
+	
+05. 综合架构监控服务器编写脚本(shell python)
+    练习题:
+	01. 如何监控内存使用情况:
+	正常使用情况: 内存使用率高于80%
+	异常使用情况: 内存使用率低于20% 发送报警
+	02. 如何监控服务运行状态:
+	ps -ef|grep -c [n]ginx
+	netstat -lntup|grep xxx
+	PS: tomcat服务---僵死
+	
+06. 综合架构监控服务体系结构:
+    1) 硬件监控		服务器 路由器 交换机 防火墙(SNMP)
+    2) 系统监控     CPU 内存 磁盘 网络 进程 TCP(十一种状态)
+    3) 服务监控     nginx php tomcat redis memcache mysql
+    4) 网站监控     请求时间 响应时间 加载时间 页面监控
+    5) 日志监控     ELK（收集 存储 分析 展示） 日志易
+	   access  --- 用户源IP地址  北京1000 上海100 深圳500	
+    6) 安全监控     Firewalld(4层和4层以上)  WAF（Nginx+lua）(应用层面) 安全宝  牛盾云 安全狗
+    7) 网络监控     smokeping 监控宝 站长工具  奇云测  多机房
+    8) 业务监控     (数据库信息)活动产生多少流量  产生多少注册量  带来多少价值	
+ 
+
+07. zabbix监控服务说明
+    a zabbix软件结构组成
+	zabbix-server:	监控服务端
+	zabbix-agent:	监控客户端
+	zabbix-web:		监控网站服务
+	php:			处理动态请求
+	mysql:			数据库存储监控数据
+	zabbix-proxy:	负责收集agent信息汇总告知zabbix-server
+
+    b zabbix软件安装部署过程
+	软件选择: 4.0 LTS(long time support 长期支持版)
+	
+	zabbix服务端部署软件流程:
+	第一个里程: 下载安装zabbix yum 源文件
+    LTS long time support
+    1) aliyun zabbix yum 源 
+    2) 清华源
+    rpm -ivh https://mirrors.tuna.tsinghua.edu.cn/zabbix/zabbix/4.0/rhel/7/x86_64/zabbix-release-4.0-1.el7.noarch.rpm
+    rpm -ivh https://mirrors.tuna.tsinghua.edu.cn/zabbix/zabbix/3.4/rhel/7/x86_64/zabbix-release-4.0-1.el7.noarch.rpm  -- 老版本
+    
+    第二个里程: 下载安装zabbix服务端相关软件
+    zabbix服务程序软件: zabbix-server-mysql
+    zabbix服务web软件: zabbix-web-mysql httpd php
+    数据库服务软件: mariadb-server
+    yum install -y zabbix-server-mysql zabbix-web-mysql httpd php mariadb-server
+    
+    第三个里程: 软件配置
+    vim /etc/zabbix/zabbix_server.conf
+    126 DBPassword=zabbix
+    vim /etc/httpd/conf.d/zabbix.conf
+    21         php_value date.timezone Asia/Shanghai
+    
+    第四个里程: 编写配置数据库服务
+    systemctl start mariadb.service 
+    systemctl status mariadb.service
+    创建zabbix数据库--zabbix
+    create database zabbix character set utf8 collate utf8_bin;
+    创建数据库管理用户
+    grant all privileges on zabbix.* to zabbix@localhost identified by 'zabbix';
+    在zabbix数据库中导入相应的表信息
+    zcat /usr/share/doc/zabbix-server-mysql-4.0.0/create.sql.gz|mysql -uzabbix -pzabbix zabbix
+	zgrep 
+    
+    第五个里程: 启动zabbix程序相关服务
+    数据库服务 zabbix服务 httpd服务
+    systemctl start zabbix-server.service httpd mariadb.service
+    systemctl enable zabbix-server.service httpd mariadb.service
+    说明: 至此zabbix-server命令行操作结束
+	LNMP: nginx php mysql 
+	LAMP: apache(php模块) mysql
+    
+    第六个里程: 登录zabbix服务端web界面, 进行初始化配置
+    http://10.0.0.71/zabbix/setup.php
+    
+    10051  zabbix-server 服务端端口号
+    10050  zabbix-agent  客户端端口号
+    /etc/zabbix/web/zabbix.conf.php   -- 记录web页面初始化信息
+    
+    第七个里程: 登录zabbix服务web页面
+    用户名Admin 密码zabbix
+    
+    
+    监控客户端部署流程
+    第一个里程: 下载安装zabbix yum 源文件
+    LTS long time support
+    1) aliyun zabbix yum 源 
+    2) 清华源
+    rpm -ivh https://mirrors.tuna.tsinghua.edu.cn/zabbix/zabbix/4.0/rhel/7/x86_64/zabbix-release-4.0-1.el7.noarch.rpm
+    
+    第二个里程: 下载安装zabbix客户端软件
+    yum install -y zabbix-agent
+    或者
+    rpm -ivh https://mirrors.tuna.tsinghua.edu.cn/zabbix/zabbix/4.0/rhel/7/x86_64/zabbix-agent-4.0.0-2.el7.x86_64.rpm
+    rpm -ivh https://mirrors.aliyun.com/zabbix/zabbix/5.1/rhel/7/x86_64/zabbix-agent-5.2.0-0.1alpha1.el7.x86_64.rpm
+    
+    第三个里程: 编写zabbix客户端配置文件
+    vim /etc/zabbix/zabbix_agentd.conf
+    98 Server=172.16.1.71
+    
+    第四个里程: 启动zabbix-agent服务
+    [root@web01 ~]# systemctl start zabbix-agent
+    [root@web01 ~]# netstat -lntup|grep 10050
+    tcp      0     0 0.0.0.0:10050           0.0.0.0:*            LISTEN      4509/zabbix_agentd  
+    tcp      0     0 :::10050                :::*                 LISTEN      4509/zabbix_agentd
+
+08. 课程知识总结:
+    1) 架构监控服务概念说明
+	2) 架构监控服务命令说明
+	3) 架构监控服务脚本编写
+	4) 架构监控服务体系结构(面试)
+	5) 架构监控服务组成部分
+	6) 架构监控服务部署安装 zabbix-server端部署
+
+
+
+
+
+
+
+
+
+
+  

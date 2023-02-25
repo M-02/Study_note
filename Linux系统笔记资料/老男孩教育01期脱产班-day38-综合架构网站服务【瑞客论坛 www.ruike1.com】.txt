@@ -1,0 +1,242 @@
+=================================================================================================
+#   老男孩教育：                                                                          		#
+#   www.oldboyedu.com                                               							#
+#   邮件：miaokm@oldboyedu.com 	                                    							#
+#   地址：北京市昌平区顺沙路8号院汇德商厦4F													#
+#   电话：400-609-2893，180-1041-8396，173-1620-6489                                         	#
+#   资源老师：			QQ号码               	资源老师：              	QQ号码    	   		#
+#   范范		 	1223740011		     		依依		       		3532759635   			#
+#   安娜		 	2010068211		        	格格					1986787350				#
+#   瑶瑶		 	2023803491					金金					2918640936				#
+#   乔治			3380665979					龙龙					2090304642				#
+=================================================================================================
+
+老男孩教育01期脱产班-day38-综合架构网站服务
+================================================================================================
+00. 课程说明:
+    1. 常见的网站服务
+	2. nginx网站服务特点
+    3. nginx服务部署安装 yum
+	4. nginx目录结构介绍 (站点目录)
+	5. nginx配置文件默认参数说明
+	6. nginx实现简单网站搭建 (html代码)
+	7. nginx服务一些常见应用 (模块功能)
+   
+01. 课程回顾:
+    1) 用户访问网站流程
+	2) HTTP协议的报文结构
+	   HTTP请求报文
+	   HTTP响应报文
+	3) 报文结构中重点内容
+	   请求方法  get post
+	   协议版本  1.0 1.1 2.0
+	   状态码    200 301 302 404 403 500+
+	4) 网站资源信息
+       URL URI	
+       静态资源
+	   动态资源 LNMP架构
+       伪静态    
+    5) 网站评测指标
+	   IP: 根据用户访问的源IP信息进行统计
+	   如何统计,一个页面(www)一天访问网站最多的前10个地址 (awk 数组/sort uniq)
+	   access.log
+	   访问用户源地址信息: 北京: 192.168.10.1
+	                              192.168.11.2
+	                        深圳: 192.169.11.1
+							上海: 192.170.12.1
+							北京: 192.168.11.2
+	   PV: 根据用户页面访问量进行统计	
+       统计用户访问哪个页面的次数比较多,取出前10名	   
+       UV: 根据用户访问的cookie信息,统计访问的用户数量
+	   网站并发: 单位时间内同时处理的请求数  ab
+
+02. 常用的网站服务软件
+    处理静态资源的服务:
+	apache软件: http://apache.org/
+	nginx软件: http://nginx.org
+	
+	处理动态资源的服务:
+    PHP: php.net    终端浏览器进行访问  ***
+	Tomcat(java):   利用移动端查看网页  安卓-java
+	PYTHON:         开发难度比较低      
+
+03. nginx服务的软件特点:
+    1) 支持高并发,消耗内存资源少
+	2) 具有多种功能
+	   网站web服务功能  	--- apache 
+	   网站负载均衡功能 	--- LVS
+	   网站缓存服务			--- Squid
+	3) 在多种系统平台都可以进行部署
+    4) nginx实现网络通讯时使用的时异步网络IO模型: epoll模型(apache -- select模型)
+       epoll模型:
+	   宿舍管理员: 找人,查看人员登记信息 
+	   幼儿园阿姨: 小朋友上厕所, 都站在教室的某个位置
+	   
+	   select模型:
+	   宿舍管理员: 找人,一个一个屋子去问, --线性轮询
+       幼儿园阿姨: 小朋友上厕所, 一个一个小朋友去询问
+	   
+04. nginx软件的安装部署过程:
+    两种安装方式:
+	01. yum安装软件
+	    a 使用官方yum源进行安装    安装的是最新版本  软件目录结构比较标准 (推荐)
+		b 使用非官方yum源进行安装  安装的不是最新版  目录结构会发生变化
+	02. 编译安装软件 
+	    第一个步骤:
+	    wget http://nginx.org/download/nginx-1.16.0.tar.gz
+	    PS: 解决软件的依赖 openssl-devel pcre-devel
+		第二个步骤: 
+		解压下载好的软件, 并进入到软件目录中
+		第三个步骤:
+        编译安装三步曲
+        a 进行配置操作
+        ./configure --prefix=  --user=USER 
+        --prefix=PATH     set installation prefix    
+		                  指定程序安装路径
+		--user=USER       set non-privileged user for worker processes
+		                  设置一个虚拟用户管理worker进程(安全)
+        --group=GROUP     set non-privileged group for worker processes
+                          设置一个虚拟用户组管理worker进程(安全)
+        b 进行软件的编译过程:
+        make 编译(翻译)	
+        C(英国人)       代码(任务文件)  系统识别  翻译  系统(中国人)处理代码
+		翻译效率比较低  翻译官(gcc)
+		python(日本人)  代码(任务文件)  系统识别  翻译  系统(中国人)处理代码
+        翻译效率比较高  百度翻译(python解释器)  
+		
+		c 编译安装过程
+		make install
+    
+	yum官方源安装方法:
+	第一个历程: 更新nginx官方yum源
+	vim /etc/yum.repos.d/nginx.repo
+	[nginx-stable]
+    name=nginx stable repo
+    baseurl=http://nginx.org/packages/centos/$releasever/$basearch/
+    gpgcheck=1
+    enabled=1
+    gpgkey=https://nginx.org/keys/nginx_signing.key
+	
+	第二个历程: yum安装nginx软件
+	yum install -y nginx
+
+    第三个历程: 启动nginx服务,检查服务是否安装正确
+	systemctl start nginx
+    systemctl enable nginx
+	测试访问nginx服务
+	
+	
+05. 查看软件的目录结构
+    1) /etc/logrotate.d
+	   实现nginx日志文件定时切割处理
+	   日志切割方法一: 利用脚本实现切割
+	   #!/bin/bash
+	   
+	   mv /var/log/nginx/access.log  /var/log/nginx/access_$(date +%F).log
+	   systemctl restart nginx
+	   日志切割方法二: 利用专用文件切割程序--logrotate
+	   vim /etc/logrotate.conf
+       # rotate log files weekly
+       weekly                     --- 定义默认日志切割的周期
+       
+       # keep 4 weeks worth of backlogs
+       rotate 4                   --- 定义只保留几个切割后的文件
+       
+       # create new (empty) log files after rotating old ones
+       create                     --- 创建出一个相同的源文件
+       
+       # use date as a suffix of the rotated file
+       dateext                    --- 定义角标(扩展名称信息)
+       
+       # uncomment this if you want your log files compressed
+       #compress                  --- 是否对切割后的文件进行压缩处理
+       
+       # RPM packages drop log rotation information into this directory
+       include /etc/logrotate.d   --- 加载包含/etc/logrotate.d/目录中文件配置
+       
+       # no packages own wtmp and btmp -- we'll rotate them here
+       /var/log/wtmp {            --- 单独对某个文件进行切割配置
+           monthly
+           create 0664 root utmp
+       	   minsize 1M             --- 最小大小为1M,小于1M不进行切割              
+           rotate 1
+       }
+       
+       /var/log/btmp {
+           missingok
+           monthly
+           create 0600 root utmp
+           rotate 1
+       }
+	   
+	   前端开发:
+	   html     页面代码
+       css      定义页面样式
+       js       定义页面特效功能	   
+	
+       总结:
+	   01. /etc/nginx       配置文件
+       02. /var/log/nginx 	日志文件
+       03. /usr/bin/nginx   命令文件
+       04. /usr/share/nginx/html   站点目录???
+           图片  附件信息  音频  视频
+
+06. nginx服务配置文件
+    /etc/nginx/nginx.conf      	 --- 主配置文件
+	第一个部分: 配置文件主区域配置
+	user  www;               	 --- 定义worker进程管理的用户
+	补充: nginx的进程
+	master process:  主进程		---管理服务是否能够正常运行   boss
+	worker process:  工作进程	---处理用户的访问请求         员工  
+    worker_processes  2;        ---定义有几个worker进程  == CPU核数 / 核数的2倍
+    error_log  /var/log/nginx/error.log warn;   --- 定义错误日志路径信息
+    pid        /var/run/nginx.pid;              --- 定义pid文件路径信息
+	
+	第二个部分: 配置文件事件区域
+    events {                    
+        worker_connections  1024;   --- 一个worker进程可以同时接收1024访问请求
+    }
+	
+	第三个部分: 配置http区域
+    http {
+        include       /etc/nginx/mime.types;      --- 加载一个配置文件
+        default_type  application/octet-stream;   --- 指定默认识别文件类型
+        log_format  oldboy  '$remote_addr - $remote_user [$time_local] "$request" '
+                            '$status $body_bytes_sent "$http_referer" '
+                            '"$http_user_agent" "$http_x_forwarded_for"';
+		                  --- 定义日志的格式		
+        access_log  /var/log/nginx/access.log  oldboy;
+		                  --- 指定日志路径          
+        sendfile        on;   ???
+        #tcp_nopush     on;   ???
+        keepalive_timeout  65;   --- 超时时间
+        #gzip  on;
+        include /etc/nginx/conf.d/*.conf;        --- 加载一个配置文件
+    }
+
+
+	/etc/nginx/nginx.d/default  --- 扩展配置(虚拟主机配置文件)
+	第四个部分: server区域信息(配置一个网站 www/bbs/blog -- 一个虚拟主机)
+	server {
+        listen       8080;                --- 指定监听的端口
+        server_name  www.oldboy.com;      --- 指定网站域名                     
+        root   /usr/share/nginx/html;     --- 定义站点目录的位置
+        index  index.html index.htm;      --- 定义首页文件
+        error_page   500 502 503 504  /50x.html;   --- 优雅显示页面信息
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
+    }
+	   
+07. 课程总结:
+    1) 常用的网站web服务 (静态请求 动态请求)
+	2) nginx服务的特点   apache
+    3) nginx软件安装部署 yum官方源如何安装部署	
+	4) nginx程序重要目录结构 
+	5) nginx服务配置文件默认参数
+
+
+作业:
+01. 熟悉排序和去重命令,对文件中数值信息进行统计分析 2组 
+    统计用户访问哪个页面的次数比较多,取出前10名
+02. 如何对网站进行压力测试   3组 周五前

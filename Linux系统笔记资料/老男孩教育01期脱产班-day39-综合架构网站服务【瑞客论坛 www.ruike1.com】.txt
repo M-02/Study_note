@@ -1,0 +1,296 @@
+=================================================================================================
+#   老男孩教育：                                                                          		#
+#   www.oldboyedu.com                                               							#
+#   邮件：miaokm@oldboyedu.com 	                                    							#
+#   地址：北京市昌平区顺沙路8号院汇德商厦4F													#
+#   电话：400-609-2893，180-1041-8396，173-1620-6489                                         	#
+#   资源老师：			QQ号码               	资源老师：              	QQ号码    	   		#
+#   范范		 	1223740011		     		依依		       		3532759635   			#
+#   安娜		 	2010068211		        	格格					1986787350				#
+#   瑶瑶		 	2023803491					金金					2918640936				#
+#   乔治			3380665979					龙龙					2090304642				#
+=================================================================================================
+
+老男孩教育01期脱产班-day39-综合架构网站服务
+================================================================================================
+00. 课程说明:
+	1. nginx服务一些常见应用 (模块功能)
+   
+01. 课程回顾:
+    1. nginx服务一些特点介绍
+	   a 支持高并发能力比较强 消耗资源少
+	   b 软件功能比较多样 
+	   c 支持系统平台比较广泛
+	     可以制作yum仓库
+		 1. 收集仓库中的软件          --- yum.conf
+		 2. 客户端访问到制作yum仓库   --- nginx (linux windows)
+    2. nginx软件部署安装
+	   a yum安装方式
+	   b 编译安装软件
+	3. nginx目录结构
+	4. nginx配置文件参数说明
+    
+02. nginx服务的企业应用
+    1. 利用nginx服务搭建一个网站(www)
+	第一个历程: 编写虚拟主机配置文件
+	cd /etc/nginx/conf.d/
+	vim www.conf
+	server {
+       listen        80;
+       server_name   www.oldboy.com;
+       location  /oldboy {
+         root  /usr/share/nginx/html;
+         index oldboy.html;
+       }
+    }
+
+    第二个历程: 需要获取开发人员编写的网站代码
+    <html>
+      <meta charset="utf-8">
+      <head>
+        <title>老男孩深圳01最牛x</title>
+      </head>
+      <body>
+        老男孩教育深圳01-脱产班
+        <table border=1>
+          <tr> <td>01</td> <td>oldboy</td> </tr>
+          <tr> <td>02</td> <td>oldgirl</td> </tr>
+          <tr> <td>03</td> <td>olddog</td> </tr>
+        </table>
+        <a href="http://blog.oldboyedu.com">
+          <img src="oldboy.jpg" />
+        </a>
+       </body>
+    </html>
+	
+	第三个历程: 重启nginx服务(平滑重启)
+	两种方法:
+	systemctl reload nginx 
+	nginx -s reload
+	
+	nginx命令参数
+	-t            : test configuration and exit
+	                检查测试配置文件语法
+	-s            : send signal to a master process: stop, quit, reopen, reload
+	                控制服务停止或者重新启动
+	
+    第四个历程: 编写DNS配置信息
+    真实域名: 在阿里云上进行DNS解析记录配置
+	模拟域名: 在windows主机的hosts文件中进行配置即可
+	          C:\Windows\System32\drivers\etc\hosts
+			  
+	第五个历程: 进行测试访问
+	浏览器中: http://www.oldboy.com
+
+    部署搭建网站常见错误:
+	01. 网站服务配置文件编写不正确
+	    404 错误
+		解决方法一: 修改nginx配置文件---location
+		解决方法二: 在站点目录中创建相应目录或文件数据信息
+		403 错误
+		解决方法一: 不要禁止访问
+		解决方法二: 因为没有首页文件
+    
+	02. DNS信息配置不正确
+	
+	03. nginx配置文件修改一定要重启服务;
+	    站点目录中代码文件信息调整,不需要重启服务
+
+    2. 利用nginx服务搭建一个多网站(www bbs blog)
+    第一个历程: 创建多个虚拟主机配置文件
+	bbs.conf
+    server {
+       listen        80;
+       server_name   bbs.oldboy.com;
+       location  / {
+         root  /html/bbs;
+         index index.html;
+       }
+    }
+	blog.conf
+    server {
+       listen        80;
+       server_name   blog.oldboy.com;
+       location  / {
+         root  /html/blog;
+         index index.html;
+       }
+    }
+    www.conf
+    server {
+       listen        80;
+       server_name   www.oldboy.com;
+       location  / {
+         root  /html/www;
+         index index.html;
+       }
+    }
+	systemctl reload nginx
+
+    第二个历程: 创建站点目录和目录中首页文件
+	[root@web01 conf.d]# mkdir /html/{www,bbs,blog} -p
+    [root@web01 conf.d]# for name in {www,bbs,blog};do echo "10.0.0.7 $name.oldboy.com" >/html/$name/index.html  ;done
+    [root@web01 conf.d]# for name in {www,bbs,blog};do cat /html/$name/index.html  ;done
+    10.0.0.7 www.oldboy.com
+    10.0.0.7 bbs.oldboy.com
+    10.0.0.7 blog.oldboy.com
+	
+	第三个历程: 编写hosts解析文件
+	10.0.0.7            www.oldboy.com  bbs.oldboy.com blog.oldboy.com
+	
+	第四个历程: 进行访问测试
+	1. 利用windows进行浏览器访问测试
+	2. 利用linux进行命令访问测试
+	   [root@web01 conf.d]# curl www.oldboy.com
+       10.0.0.7 www.oldboy.com
+       [root@web01 conf.d]# curl bbs.oldboy.com
+       10.0.0.7 bbs.oldboy.com
+       [root@web01 conf.d]# curl blog.oldboy.com
+       10.0.0.7 blog.oldboy.com
+	
+
+    3. 企业中虚拟主机访问方式
+	a 基于域名的方式进行访问:
+	b 基于地址的方式进行访问: (只能用指定地址访问)   --- 负载均衡+高可用服务
+	  server {
+         listen        10.0.0.7:80;
+         server_name   www.oldboy.com;
+         location  / {
+           root  /html/www;
+           index index.html;
+         }
+      }
+	  PS: 服务配置文件中涉及到地址修改,必须重启nginx服务,不能平滑重启
+	
+	c 基于端口的方式进行访问:        zabbix服务(apache:80)  + web服务(nginx:80) --> 主机
+	server {
+       listen        8080;
+       server_name   www.oldboy.com;
+       location  / {
+         root  /html/www;
+         index index.html;
+       }
+    }
+    
+	网站页面的访问原理:
+	01. 将域名进行解析   www.oldboy.com  --- 10.0.0.7
+	02. 建立TCP的连接(四层协议)
+	    10.0.0.7   目标端口   8080
+    03. 根据应用层HTTP协议发出请求
+	    请求报文: hosts: bbs.oldboy.com
+	04. 没有相同域名的server主机,会找满足端口要求的第一个主机
+        显示主机的网站页面	
+	    
+	4. 企业中网站的安全访问配置
+	a 根据用户访问的地址进行控制
+	  10.0.0.0/24   www.oldboy.com/AV/  不能访问
+	  172.16.1.0/24 www.oldboy.com/AV/  可以访问
+	  
+	  nginx访问模块: ngx_http_access_module
+	  举例配置:
+	  location / {
+          deny  192.168.1.1;
+          allow 192.168.1.0/24;
+          allow 10.1.1.0/16;
+          allow 2001:0db8::/32;
+          deny  all;
+      }
+	  指令用法
+	  Syntax:	deny address | CIDR | unix: | all;
+      Default:	—
+      Context:	http, server, location, limit_except
+	  
+	  第一个历程: 编写配置文件
+	  [root@web01 conf.d]# vim www.conf 
+      server {
+         listen        80;
+         server_name   www.oldboy.com;
+         location / {
+           root  /html/www;
+           index index.html;
+         }
+         location /AV {
+           deny  10.0.0.0/24;
+           allow 172.16.1.0/24;
+           root  /html/www;
+           index index.html;
+         }
+      }
+      补充: 
+	  location外面的信息, 全局配置信息
+	  location里面的信息, 局部配置信息
+	
+	b 根据用户访问进行认证
+	  nginx认证模块: ngx_http_auth_basic_module
+	  举例配置: 
+	  location / {
+         auth_basic           "closed site";    --- 开启认证功能
+         auth_basic_user_file conf/htpasswd;    --- 加载用户密码文件
+      }
+	 
+	  第一个历程: 编写虚拟主机配置文件 
+      server {
+         listen        80;
+         server_name   www.oldboy.com;
+         location / {
+           root  /html/www;
+           index index.html;
+           auth_basic      "oldboy-sz-01";
+           auth_basic_user_file password/htpasswd;
+         }	
+
+      第二个历程: 创建密码文件(文件中密码信息必须是密文的)
+      htpasswd  创建一个有密文信息的密码文件
+	  [root@web01 conf.d]# rpm -qf `which htpasswd` 
+      httpd-tools-2.4.6-89.el7.centos.x86_64
+
+      htpasswd命令参数说明:
+	  -c  Create a new file.  *****
+	      创建一个密码文件
+      -n  Don't update file; display results on stdout.
+	      不会更新文件; 显示文件内容信息
+      -b  Use the password from the command line rather than prompting for it. *****
+	      免交互方式输入用户密码信息
+      -i  Read password from stdin without verification (for script usage).
+	      读取密码采用标准输入方式,并不做检查 ???
+      -m  Force MD5 encryption of the password (default).
+	      md5的加密算法
+      -B  Force bcrypt encryption of the password (very secure).
+	      使用bcrypt对密码进行加密  
+      -C  Set the computing time used for the bcrypt algorithm
+          (higher is more secure but slower, default: 5, valid: 4 to 31).
+		  使用bcrypt algorithm对密码进行加密
+      -d  Force CRYPT encryption of the password (8 chars max, insecure).
+	      密码加密方式
+      -s  Force SHA encryption of the password (insecure).
+	      加密方式
+      -p  Do not encrypt the password (plaintext, insecure).
+	      不进行加密
+      -D  Delete the specified user.
+	      删除指定用户
+      -v  Verify password for the specified user.
+
+      修改密码文件权限: ???
+	  chmod 600 ./htpasswd 
+	  
+	  500 Internal Server Error
+	  01. 内部程序代码编写有问题
+	  02. 程序服务中文件权限不正确
+	  
+	  curl命令参数:
+	  -u, --user USER[:PASSWORD]  Server user and password
+	  [root@web01 password]# curl www.oldboy.com -u oldboy
+      Enter host password for user 'oldboy':
+      10.0.0.7 www.oldboy.com
+      [root@web01 password]# curl www.oldboy.com -u oldboy:123456
+      10.0.0.7 www.oldboy.com
+	  
+03. 课程知识总结:
+    1) 如何搭建一个网站(服务器 域名  网页代码 数据库支持)
+	2) 如何搭建多个网站
+	3) 如何访问网站(3种 域名 地址 端口)
+	4) 网站服务安全配置
+	   根据用户访问域名地址进行控制
+	   根据用户访问信息进行认证控制
+	   
+	   

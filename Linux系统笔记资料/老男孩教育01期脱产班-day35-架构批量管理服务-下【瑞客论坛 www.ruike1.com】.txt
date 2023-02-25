@@ -1,0 +1,175 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day35-综合架构批量管理服务
+==================================	
+
+00. 课程介绍部分
+    1) 利用剧本功能简单完成服务一键化部署
+	2) 主机清单配置
+	3) 剧本的扩展配置功能
+	4) 多个剧本如何进行整合
+    5) 剧本的角色目录???
+    
+01. 课程知识回顾
+    1) 将所有模块进行了讲解说明
+	   command	模块: 	在远程主机上执行命令操作   默认模块
+	   shell	模块:  	在远程主机上执行命令操作   万能模块
+	   PS: 有时剧本不能反复执行!!!
+	   script	模块: 	批量执行本地脚本
+	   copy		模块:	用于批量分发传输数据信息
+	   fetch	模块:	用于将远程主机数据进行拉取到本地管理主机
+	   file		模块: 	修改数据属性信息/创建数据信息
+	   yum		模块:	用于安装和卸载软件包
+	   service	模块:	用于管理服务的运行状态 
+       user		模块:	用于批量创建用户并设置密码信息
+	   mount	模块:	用于批量挂载操作
+	   cron		模块: 	批量部署定时任务信息
+	   ping		模块:	远程管理测试模块
+	   
+    2) ansible服务剧本功能
+       剧本的组成部分:
+       剧本的语法规范:
+       1) 空格规范: 实现缩进功能
+       2) 冒号规范: 实现键值定义 
+       3) 横线规范: 实现列表显示	   
+	   
+02. 利用剧本完成服务一键化部署:
+    rsync	服务部署
+	nfs		服务部署
+	sersync 服务部署 
+	全网备份项目
+	
+	rsync服务剧本编写:
+	准备工作:
+	01. 熟悉软件部署流程
+	02. 熟悉ansible软件模块使用
+	03. 熟悉ansible剧本编写规范
+	ansible:
+	ad-hoc    临时实现批量管理功能(模块)   --- 命令
+	playbook  永久实现批量管理功能(剧本)   --- 脚本	
+
+    剧本编写常见错误:
+	01. 剧本语法规范是否符合(空格 冒号 短横线)
+	02. 剧本中模块使用是否正确
+	03. 剧本中一个name标识下面只能写一个模块任务信息
+	04. 剧本中尽量不要大量使用shell模块
+	
+
+    [root@m01 ansible-playbook]# cat rsync_server.yaml 
+- hosts: rsync_server
+  tasks:
+    - name: 01-install rsync  
+      yum: name=rsync state=installed
+    - name: 02-push conf file    
+      copy: src=/etc/ansible/server_file/rsync_server/rsyncd.conf dest=/etc/
+    - name: 03-create user
+      user: name=rsync create_home=no shell=/sbin/nologin
+      #shell: useradd rsync -M -s /sbin/nologin 
+    - name: 04-create backup dir
+      file: path=/backup state=directory owner=rsync group=rsync
+    - name: 05-create password file
+      copy: content=rsync_backup:oldboy123 dest=/etc/rsync.password mode=600
+    - name: 06-start rsync server
+      service: name=rsyncd state=started enabled=yes
+
+- hosts: rsync_clients
+  tasks:
+    - name: 01-install rsync
+      yum: name=rsync state=installed
+    - name: 02-create password file
+      copy: content=oldboy123 dest=/etc/rsync.password mode=600
+    - name: 03-create test file
+      file: dest=/tmp/test.txt  state=touch
+    - name: 04-check test
+      shell: rsync -avz /tmp/test.txt rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+
+03. 如何配置主机清单
+    第一种方式: 分组配置主机信息
+	[web]
+    172.16.1.7
+    172.16.1.8
+    172.16.1.9
+    
+    [data]
+    172.16.1.31
+    172.16.1.41
+	操作过程
+    [root@m01 ansible-playbook]# ansible data -a "hostname"
+    172.16.1.31 | CHANGED | rc=0 >>
+    nfs01
+    
+    172.16.1.41 | CHANGED | rc=0 >>
+    backup
+    
+    [root@m01 ansible-playbook]# ansible web -a "hostname"
+    172.16.1.7 | CHANGED | rc=0 >>
+    web01
+	
+	第二种方式: 主机名符号匹配配置
+	[web]
+    172.16.1.[7:9]
+	[web]
+    web[01:03]
+	
+	第三种方式: 跟上非标准远程端口
+	[web]
+    web01:52113
+    172.16.1.7:52113
+	
+	第四种方式: 主机使用特殊的变量
+    [web]
+    172.16.1.7 ansible_ssh_port=52113 ansible_ssh_user=root ansible_ssh_pass=123456
+    [web]
+    web01 ansible_ssh_host=172.16.1.7 ansible_ssh_port=52113 ansible_ssh_user=root ansible_ssh_pass=123456
+
+    第五种方式: 主机组名嵌入配置
+	[rsync:children]    --- 嵌入子组信息
+    rsync_server
+    rsync_client
+    
+    [rsync_server]
+    172.16.1.41
+    
+    [rsync_client]
+    172.16.1.31
+    172.16.1.7
+	
+	[web:vars]         --- 嵌入式变量信息
+    ansible_ssh_host=172.16.1.7
+    ansible_ssh_port=52113
+    ansible_ssh_user=root
+    ansible_ssh_pass=123456
+    [web]
+    web01
+
+    主机清单的配置方法:
+	https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html
+	
+04. 剧本的扩展功能配置
+    参照剧本编写扩展文档说明    
+	
+05. 课程知识总结
+    1) rsync服务一键化部署剧本
+	2) 主机清单编写方法
+	   5种方式
+	3) 剧本的扩展编写方法
+	   如何设置变量信息  3种
+	   如何设置注册信息  debug
+	   如何设置判断信息  setup
+    	
+	
+作业:
+01. 一键化部署全网备份项目
+02. 一键化部署NFS服务
+03. 一键化部署实时同步服务	
+
+	

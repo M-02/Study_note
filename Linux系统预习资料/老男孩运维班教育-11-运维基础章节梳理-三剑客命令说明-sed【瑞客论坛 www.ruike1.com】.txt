@@ -1,0 +1,327 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day16-三剑客命令说明
+==============================
+00. 课程回顾说明 
+    1) 系统的特殊符号
+	   常用符号 $ # ! |
+	   引号系列 "" '' ``($())  
+	            没有引号: 可以直接识别通配符号 
+	   路径符号 . .. ~ -
+	            cd - == cd $OLDPWD
+	   [root@oldboy-xiaodao.com.cn tmp]# cd -
+       /etc
+       [root@oldboy-xiaodao.com.cn etc]# cd $OLDPWD
+       [root@oldboy-xiaodao.com.cn tmp]# echo $OLDPWD
+       /etc
+       [root@oldboy-xiaodao.com.cn tmp]# cd $OLDPWD
+       [root@oldboy-xiaodao.com.cn etc]# echo $OLDPWD
+       /tmp
+
+	   逻辑符号 && ||
+	   定向符号 > >> 2> 2>> <(tr xargs) cat>>文件<<EOF
+	2) 系统的通配符号(通配符号主要用于查找文件,根据文件名称)
+	   * {}
+	3) 系统的正则符号(主要用于查找文件内容)
+	   基础正则 ^ $ ^$ . * .* \(没有意义-有意义 有意义-没有意义 高级符号--变成普通)
+	            [1-9a-zA-Z] [^]   
+ 	   扩展正则 + oldboy|oldgirl (oldboy) {}({n,m} {n} {n,} {,m}) ?
+	  
+01. 三剑客命令说明-sed命令
+    sed - stream editor for filtering and transforming text 
+	      可以进行文本编辑  文本过滤处理
+	主要用于处理文本文件,对一些配置文件进行编辑修改
+
+02. sed命令使用方式 和 工作原理
+    标准格式 sed [选项]      [sed指令]       [文件信息]
+    举例说明 sed -i.bak 's#oldboy#oldgirl#g' oldboy.txt
+	
+	工作原理: 见图
+	01. 按行进行过滤
+	02. 将过滤出来的一行内容放入到模式空间中
+	03. 会有默认输出(-n)
+	04. 一行处理完会继续处理下一行
+	
+03. sed命令使用方法
+    环境准备:
+cat >person.txt<<EOF
+101,oldboy,CEO
+102,zhaoyao,CTO
+103,Alex,COO
+104,yy,CFO
+105,feixue,CIO
+EOF
+
+    1) 查询信息
+	   单行查找内容
+	   根据字符内容进行过滤
+	   sed -n '/Alex/p' person.txt 
+       103,Alex,COO
+	   根据行号信息进行过滤
+	   [root@oldboy-xiaodao.com.cn ~]# sed -n '3p' person.txt 
+       103,Alex,COO
+       [root@oldboy-xiaodao.com.cn ~]# sed -n '4p' person.txt 
+       104,yy,CFO
+
+	   多行查找内容
+	   按照行号信息进行过滤
+	   [root@oldboy-xiaodao.com.cn ~]# sed -n '2,4p' person.txt 
+       102,zhaoyao,CTO
+       103,Alex,COO
+       104,yy,CFO
+       按照内容信息进行过滤
+	   [root@oldboy-xiaodao.com.cn ~]# sed -n '/oldboy/,/yy/p' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       103,Alex,COO
+       104,yy,CFO
+
+	   过滤不连续的多行信息(按照过滤的字符)
+	   sed -n '/Alex/p' person.txt 
+       sed -n '/feixue/p' person.txt 
+	   sed -n '/Alex/p;/feixue/p' person.txt
+	
+	   过滤不连续的多行信息(按照行号)
+	   sed -n '3p;6p' person.txt
+	
+	2) 增加信息
+	   echo oldboy >>/oldboy.txt 
+	   
+	   如何向文件指定行的后面增加信息
+	   [root@oldboy-xiaodao.com.cn ~]# sed  '4a oldgirl' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       103,Alex,COO
+       104,yy,CFO
+       oldgirl
+       105,feixue,CIO
+       106,yy,CFO
+
+	   [root@oldboy-xiaodao.com.cn ~]# sed   '/Alex/a oldgirl02' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       103,Alex,COO
+       oldgirl02
+       104,yy,CFO
+       105,feixue,CIO
+       106,yy,CFO
+
+	   [root@oldboy-xiaodao.com.cn ~]# sed  '4a oldgirl01\noldgirl02' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       103,Alex,COO
+       104,yy,CFO
+       oldgirl01
+       oldgirl02
+       105,feixue,CIO
+       106,yy,CFO
+
+	   [root@oldboy-xiaodao.com.cn ~]# sed  '$a oldgirl01\noldgirl02' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       103,Alex,COO
+       104,yy,CFO
+       105,feixue,CIO
+       106,yy,CFO
+       oldgirl01
+       oldgirl02
+	   说明: $符号表示最后一行信息
+	
+	   如何向文件指定行的前面增加信息
+	   [root@oldboy-xiaodao.com.cn ~]# sed  '4a oldgirl01\noldgirl02' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       103,Alex,COO
+       104,yy,CFO
+       oldgirl01
+       oldgirl02
+       105,feixue,CIO
+       106,yy,CFO
+       [root@oldboy-xiaodao.com.cn ~]# sed  '4i oldgirl01\noldgirl02' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       103,Alex,COO
+       oldgirl01
+       oldgirl02
+       104,yy,CFO
+       105,feixue,CIO
+       106,yy,CFO
+
+	3) 删除信息
+	   按照行号进行单行或多行删除
+	   [root@oldboy-xiaodao.com.cn ~]# sed  '3,4d' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       105,feixue,CIO
+       106,yy,CFO
+
+	   按照信息进行单行或多行删除
+	   [root@oldboy-xiaodao.com.cn ~]# sed -r '/Alex|feixue/d' person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       104,yy,CFO
+       106,yy,CFO
+
+	   [root@oldboy-xiaodao.com.cn ~]# sed -n '/^$/!p' person.txt
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       103,Alex,COO
+       104,yy,CFO
+       105,feixue,CIO
+       106,yy,CFO
+	   说明: 利用!p表示对输出的内容信息进行取反
+
+	   真正对文件内容进行修改编辑 加上-i参数
+	   [root@oldboy-xiaodao.com.cn ~]# sed -ri.bak '/Alex|feixue/d' person.txt 
+       [root@oldboy-xiaodao.com.cn ~]# cat person.txt 
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       104,yy,CFO
+       106,yy,CFO
+	   
+	   -i 参数使用注意事项
+	   01. -i参数一定编写在所有参数之后
+	   02. -i参数在使用使用一定不能和-n参数结合使用
+	   
+	   一种情况: -i参数写到所有参数的前面了
+	   sed -i.bakr '/Alex|feixue/d' person.txt 
+	   
+	   二种情况: -i参数会将屏蔽输出的信息放入到文件中
+	   [root@oldboy-xiaodao.com.cn ~]# sed  -rn '7s#(.*=).*#\1disabled#gp' /etc/selinux/config 
+       SELINUX=disabled
+       [root@oldboy-xiaodao.com.cn ~]# sed  -rni.bak '7s#(.*=).*#\1disabled#gp' /etc/selinux/config 
+       [root@oldboy-xiaodao.com.cn ~]# cat /etc/selinux/config 
+       SELINUX=disabled
+
+	   	
+    3) 修改信息
+	   单行进行整体修改
+	   多行进行整体修改
+	   [root@oldboy-xiaodao.com.cn ~]# sed -e '3c oldboy' -e '6c oldgirl' person.txt
+       101,oldboy,CEO
+       102,zhaoyao,CTO
+       oldboy
+       103,Alex,COO
+       104,yy,CFO
+       oldgirl
+       105,feixue,CIO
+       106,yy,CFO
+	   说明:
+	   c  表示多指定行进行整体修改
+	   -e 可以用于识别sed命令中的多个指令
+	   
+	   单行或多行进行部分内容修改
+	   根据内容进行修改调整:
+	   a 按照指定行进行修改调整
+	   sed  '4s#Alex#goodman#g' person.txt
+       sed  '/103/s#Alex#goodman#g' person.txt
+
+	   b 利用正则符号进行匹配,再做调整(后向引用前向)
+	   [root@oldboy-xiaodao.com.cn ~]# echo 123456|sed -r 's#(..)(..)(..)#<\1><\2><\3>#g'
+       <12><34><56>
+       [root@oldboy-xiaodao.com.cn ~]# echo 123456|sed -r 's#([0-9]{2})#<\1>#g'
+       <12><34><56>
+
+       测验练习: 批量修改多个文件扩展名:
+	   touch oldboy{01..10}.jpg
+	   需要将oldboy01.jpg..oldboy10,jpg 所有文件扩展名改写为以png结尾
+	   利用sed命令进行批量
+	   提示:
+        mv oldboy01.jpg oldboy01.png
+	    交给bash进行修改
+
+       第一个历程: 将需要修改的文件进行查找过滤
+	   [root@oldboy-xiaodao.com.cn ~]# find /root/ -type f -name "oldboy*jpg"
+       /root/oldboy01.jpg
+       /root/oldboy02.jpg
+       /root/oldboy03.jpg
+       /root/oldboy04.jpg
+       /root/oldboy06.jpg
+       /root/oldboy07.jpg
+       /root/oldboy09.jpg
+       /root/oldboy10.jpg
+       /root/oldboy05.jpg
+       /root/oldboy08.jpg
+
+	   第二个历程: 将上面命令执行的结果交给sed命令进行处理
+	   单行信息进行修改调整
+	   echo "/root/oldboy01.jpg"|sed -r 's#(.*)jpg#mv & \1png#g'
+	   
+	   多行信息进行修改调整
+	   [root@oldboy-xiaodao.com.cn ~]# find /root/ -type f -name "oldboy*jpg"|sed -r 's#(.*)jpg#mv & \1png#g'
+       mv /root/oldboy01.jpg /root/oldboy01.png
+       mv /root/oldboy02.jpg /root/oldboy02.png
+       mv /root/oldboy03.jpg /root/oldboy03.png
+       mv /root/oldboy04.jpg /root/oldboy04.png
+       mv /root/oldboy06.jpg /root/oldboy06.png
+       mv /root/oldboy07.jpg /root/oldboy07.png
+       mv /root/oldboy09.jpg /root/oldboy09.png
+       mv /root/oldboy10.jpg /root/oldboy10.png
+       mv /root/oldboy05.jpg /root/oldboy05.png
+       mv /root/oldboy08.jpg /root/oldboy08.png
+	   
+	   第三个历程: 将命令输出的信息进行执行
+       [root@oldboy-xiaodao.com.cn ~]# echo "mv person.txt.bak person.txt.bak00" 
+       mv person.txt.bak person.txt.bak00
+       [root@oldboy-xiaodao.com.cn ~]# echo "mv person.txt.bak person.txt.bak00" |bash
+
+       find /root/ -type f -name "oldboy*jpg"|sed -r 's#(.*)jpg#mv & \1png#g'|bash
+	   [root@oldboy-xiaodao.com.cn ~]# ll
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy01.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy02.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy03.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy04.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy05.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy06.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy07.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy08.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy09.png
+       -rw-r--r--  1 root root    0 Jan 21 11:28 oldboy10.png
+
+	   标准解法:
+	   批量修改文件名称的命令: rename
+	   rename [options] expression replacement file...
+	   
+	   rename '将文件内容什么做修改' '修改成什么' 要修改的文件信息
+	   rename  'png' 'jpg' oldboy*png
+
+	   利用变量信息进行修改替换文件内容
+       [root@oldboy-xiaodao.com.cn ~]# info=oldboy
+       [root@oldboy-xiaodao.com.cn ~]# echo oldboy|sed 's#$info#oldgirl#g'
+       oldboy
+       [root@oldboy-xiaodao.com.cn ~]# echo oldboy|sed "s#$info#oldgirl#g"
+       oldgirl
+	   	
+作业: 
+01. 批量创建用户(不需使用for循环脚本)
+    a 批量创建10个用户 useradd oldboy{01..10}
+	b 给每个用户设置密码 
+	c 需要设置随机密码 随机6位密码
+	d 随机密码和用户对应关系信息要保存在一个文件中
+      oldboy01 xasdas
+      oldboy02 asda9a
+    e 以上需求利用一条命令完成
+      useradd passwd sed touch | bash echo 变量 >>	
+
+
+
+
+
+
+
+
+
+
+
+  	  
+	  
+	  

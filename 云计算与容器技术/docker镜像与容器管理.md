@@ -30,10 +30,12 @@ docker image load -i / tmp/ubu . tar						   导入镜像
 
 #### 容器管理
 
-```shell
+```bash
 docker container run -it    --name="自定义容器名"   镜像id     交互式运行容器
+-t让docker分配一个伪终端并绑定到容器的标准输入上, -i则让容器的标准输入保持打开
+
 docker container run -d    --name="自定义容器名"   镜像id     守护式运行容器
-docker container ls                                                                       查看正在运行的容器
+docker container ls                                         查看正在运行的容器
 docker container ls  -a/docker ps -a                          查看容器
 docker container inspect   容器名字                            查看容器详细信息
 

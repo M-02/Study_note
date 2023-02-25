@@ -1,0 +1,282 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day14-正则表达式信息说明
+==============================
+00. 课程回顾说明 
+    1) inode 和 block
+	   概念说明:
+	   诞生过程:
+	   特点说明:
+	   文件名称是在上一级目录的block进行存储
+       查看方式:
+	2) 文件类型 文件权限
+	   file
+	   r w x -  三个用户 
+	   文件或目录相关的命令
+	   find tar
+	3) 硬链接数 vs 软链接
+	   概念作用:
+	   特点说明:
+	   创建过程:
+       目录无法创建硬链接
+    4) 属主 属组
+       系统中的用户类型
+       超级管理员 虚拟用户  普通用户
+    5) 文件的时间信息 (修改时间)
+       atime   访问时间
+       mtime   修改时间
+	   ctime   改变时间(文件属性)
+
+       date
+       find -mtime 按天查找数据
+            -mmin	   
+	
+	   利用find找出文件之后, 进行批量处理:
+	   1) 批量删除
+	   find /oldboy_dir/ -type f -mtime -1|xargs rm -f
+
+	   xargs作用:
+	   01. 可以将多行信息整合为一行 利用空格进行分隔
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# find /oldboy_dir/ -type f -mtime -1
+       /oldboy_dir/test01.txt
+       /oldboy_dir/test02.txt
+       /oldboy_dir/test03.txt
+       /oldboy_dir/test04.txt
+       /oldboy_dir/test05.txt
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# find /oldboy_dir/ -type f -mtime -1|xargs
+       /oldboy_dir/test01.txt /oldboy_dir/test02.txt /oldboy_dir/test03.txt /oldboy_dir/test04.txt /oldboy_dir/test05.txt
+	   02. 可以将一行信息拆分为多行 利用空格作为拆分
+	   结论: 在linux系统中,不是所有的命令都可以直接操作文件
+	         tr -cd  '0-9a-zA-Z' </dev/urandom
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# xargs -n 2 <test01.txt
+       01 02
+       03 04
+       05 06
+       07 08
+       09 10
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# xargs -n 3 <test01.txt
+       01 02 03
+       04 05 06
+       07 08 09
+       10
+
+01. 系统中的符号信息
+    系统特殊符号
+    系统通配符号
+    系统正则符号
+    说明: 查询信息的时候,会带来便利
+
+02. 系统特殊符号 
+    1) 基础符号系列
+       $ 
+       a 调取变量信息
+       b 区分用户类型  $ 普通用户
+       c 结合awk对文件进行取列 	   
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# xargs -n 2 <test01.txt|awk '{print $2}'
+       02
+       04
+       06
+       08
+       10
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# xargs -n 2 <test01.txt|awk '{print $1}'
+       01
+       03
+       05
+       07
+       09
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# xargs -n 2 <test01.txt|awk '{print $0}'
+       01 02
+       03 04
+       05 06
+       07 08
+       09 10
+
+	   !
+	   a 强制的作用  wq!
+	   b 可以实现取反 
+	     [root@oldboy-xiaodao.com.cn oldboy_dir]# awk '!/oldgirl/' test02.txt 
+         oldboy01
+         oldboy02
+         oldboy03
+         oldboy04
+
+	     [root@oldboy-xiaodao.com.cn oldboy_dir]# ll /oldboy_dir/
+         total 8
+         drwxr-xr-x 2 root root  6 Feb  4  2019 oldboy01
+         -rw-r--r-- 1 root root 30 Jan 16 09:16 test01.txt
+         -rw-r--r-- 1 root root 46 Jan 16 09:39 test02.txt
+         -rw-r--r-- 1 root root  0 Jan 16 09:08 test03.txt
+         -rw-r--r-- 1 root root  0 Jan 16 09:08 test04.txt
+         -rw-r--r-- 1 root root  0 Jan 16 09:08 test05.txt
+         [root@oldboy-xiaodao.com.cn oldboy_dir]# find /oldboy_dir/ ! -type f
+         /oldboy_dir/
+         /oldboy_dir/oldboy01
+       
+	   c !信息  可以快速调取执行历史命令(慎用)
+	     cat ~/.bash_history   -- 记录历史命令信息, 但是不会实时记录
+		 history               -- 显示所有输入过的历史命令
+		 01. 查看你的错误操作,确认错误原因
+	     02. 回顾高手的操作过程
+	  
+       |
+	   a 实现管道功能
+	     将前一个命令执行的结果交给管道后面的命令进行处理
+		 一般管道符号 会经常和xargs命令配合使用
+		 批量删除操作
+		 find /oldboy -type f -name "oldboy*.txt"|xargs rm
+		 find /oldboy_dir/ -type f -delete
+	     find /oldboy_dir/ -type f -exec rm -f {} \;
+	   
+	     查找指定数据信息进行复制
+	     find /oldboy -type f -name "oldboy*.txt" |xargs -i cp {} /oldgirl/
+	     find /oldboy -type f -name "oldboy*.txt" |xargs cp -t /oldgirl/
+	     find /oldboy -type f -name "oldboy*.txt" -exec cp -a {} /oldgirl \;
+
+		 查找指定数据信息进行移动
+	     find /oldboy -type f -name "oldboy*.txt" |xargs -i mv {} /oldgirl/
+	     find /oldboy -type f -name "oldboy*.txt" |xargs mv -t /oldgirl/
+	     find /oldboy -type f -name "oldboy*.txt" -exec mv {} /oldgirl \;
+	     结论: xargs(火眼金睛)后面跟的命令,不识别别名信息
+ 
+	   #
+	   a 表示对配置文件信息进行注释
+	   b 表示用户的身份信息 超级管理员用户
+	   
+	2) 引号符号系列
+       "" 基本上和单引号功能类似 但是可以对一些特殊符号做出解析   $ `命令`==$(命令) 
+       '' 里面编写的什么内容就输出什么内容  所见即所得
+	   作用:
+	   01. 指定需要输出的信息
+	   02. 利用引号将空格分隔的信息汇总为一个整体
+	   
+       ``($()) 将引号里面命令执行结果,交给引号外面命令进行使用	   
+	
+	3) 重定向符号
+	   >/1>  	标准输出重定向符号
+	   >>/1>> 	标准输出追加重定向符号
+	   2> 		错误输出重定向符号
+	   2>> 		错误输出追加重定向符号 
+	   
+	   <  标准输入重定向符号
+	      tr xargs
+	   << 标准输入追加重定向符号
+	      一条命令生成多行信息
+		  [root@oldboy-xiaodao.com.cn oldboy_dir]# cat >>oldboy.txt<<oldboy
+          > oldgirl01
+          > oldgirl02
+          > oldgirl03
+          > oldboy
+	
+	4) 逻辑符号系列
+	   逻辑: 在完成一件事情的时候,有合理先后顺序
+	   &&  前一个命令操作执行成功了,再操作执行后面的命令
+	   ||  前一个命令操作执行失败了,再操作执行后面的命令 
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# mkdir /old_dir && echo "create dir sucess" || echo "create dir failed"
+       create dir sucess
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# mkdi /old_dir && echo "create dir sucess" || echo "create dir failed"
+       -bash: mkdi: command not found
+       create dir failed
+
+03. 系统通配符号 
+    什么通配符号: 用于匹配文件名称信息, 便于快速查找文件信息 find
+
+    *  匹配所有信息
+       find /oldboy -type f -name "oldboy*"   ---以oldboy开头的信息都查询出来
+	   find /oldboy -type f -name "*oldboy"   ---以oldboy开头的信息都查询出来
+	   find /oldboy -type f -name "oldgirl*oldboy"   
+	                                          ---以oldgirl 开头的信息
+											     以oldboy  结尾的信息都查询出来
+	{} 产生序列信息
+	   连续序列:
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# echo {01..05}
+       01 02 03 04 05
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# echo {a..z}
+       a b c d e f g h i j k l m n o p q r s t u v w x y z
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# echo {A..Z}
+       A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+	   
+	   生成不连续序列
+	   a 有规律的不连续序列
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# echo {01..05..2}
+       01 03 05
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# echo {a..z..2}
+       a c e g i k m o q s u w y
+
+       b 没规律的不连续序列
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# echo {www,bbs,blog}
+       www bbs blog
+	   
+	   生成组合序列
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# echo {1,2}{a,b}
+       1a 1b 2a 2b
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# echo {1,2}{a,b}{A,B}
+       1aA 1aB 1bA 1bB 2aA 2aB 2bA 2bB
+
+	   echo A{a,b}
+       Aa Ab	   
+	   
+       A=oldboy.txt	
+
+       echo oldboy.txt{a,b}	  
+       oldboy.txta oldboy.txtb	   
+       
+	   [root@oldboy-xiaodao.com.cn ~]# echo A{,b}
+       A Ab
+	   A=oldboy.txt	
+	   b=.bak
+	   
+	   cp oldboy.txt{,.bak} == cp oldboy.txt oldboy.txt.bak
+	   快速备份文件命令
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# cp oldboy.txt{,.bak}
+       [root@oldboy-xiaodao.com.cn oldboy_dir]# ll
+       -rw-r--r-- 1 root root 30 Jan 16 11:12 oldboy.txt
+       -rw-r--r-- 1 root root 30 Jan 16 11:56 oldboy.txt.bak
+	   快速还原数据方法
+	   [root@oldboy-xiaodao.com.cn oldboy_dir]# cp oldboy.txt{.bak,}
+       -rw-r--r-- 1 root root 30 Jan 16 12:02 oldboy.txt
+       -rw-r--r-- 1 root root 30 Jan 16 11:56 oldboy.txt.bak
+	   # echo A{B,}
+       AB A
+	   oldboy.txt{.bak,} == cp oldboy.txt.bak oldboy.txt
+	   
+04. 未知不会 别人帮助你
+    如何让高手原因帮助
+	
+终极目标
+赵 110101199901045121
+钱 110101199901045121
+孙 11010119990104512X
+李 110101299901045121
+陈 oldboy
+周 110101199981045121
+吴 110101199901045121
+郑 11010149990104512X
+刘 oldgirl
+王 110101199908045121
+冯 110111199901045121
+	
+	   
+	   
+作业:
+01. 批量数据复制或移动	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	
+	   

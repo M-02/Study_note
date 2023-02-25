@@ -1,0 +1,265 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day33-综合架构批量管理服务
+==================================	
+
+00. 课程介绍部分
+    1. ansible批量管理服务概念
+	2. ansible批量管理服务特点 
+	3. ansible批量管理服务部署
+	4. ansible批量管理服务应用---模块应用
+	   ansible模块命令语法
+	   ansible常用模块
+    
+01. 课程知识回顾
+    1. 远程管理服务介绍
+	   ssh     数据加密  22
+	   telnet  数据明文  23
+	2. SSH远程管理服务工作原理
+	   私钥  公钥  
+	   用途1: 对数据进行加密处理
+	   用途2: 对用户访问进行认证
+	3. SSH远程连接的方式
+	   a 基于口令的方式进行连接
+	   b 基于秘钥的方式进行连接
+	   
+	   基于秘钥连接的工作原理
+	4. 基于秘钥的连接部署方式
+       第一个历程: 创建秘钥对(管理端服务器)	
+	   ssh-keygen -t 秘钥的类型(dsa|rsa)
+	   第二个历程: 将公钥进行分发(被管理端服务器)
+       ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.31
+       如何批量分发公钥:
+	   01. 需要输入连接确认信息 yes/no
+	   ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.31 "-o StrictHostKeyChecking=no"
+	   02. 需要第一次连接输入密码
+	   yum install -y sshpass
+	   sshpass -p123456 ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.31 "-o StrictHostKeyChecking=no"
+	   03. 远程服务器SSH服务端口号改动了
+	   sshpass -p123456 ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.31 -p 52113 "-o StrictHostKeyChecking=no"
+       
+       基于秘钥连接排错思路:
+	   01. 利用命令进行连接测试
+	   02. 检查公钥在被管理主机上是否存在,并且与管理端公钥信息是否相同
+	   03. 利用公钥分发命令重新分发公钥
+	   04. 检查脚本的编写
+	   05. 调试脚本功能   sh -x 
+	   
+	5. SSH远程服务防范入侵案例
+       
+	6. SSH服务的配置文件编写
+	   监听地址???
+    
+	7. SSH服务的相关命令总结
+    
+02. ansible批量管理服务介绍
+    ansible批量管理服务意义
+	01. 提高工作的效率
+	02. 提高工作准确度
+	03. 减少维护的成本
+	04. 减少重复性工作
+	ansible批量管理服务功能
+	01. 可以实现批量系统操作配置
+	02. 可以实现批量软件服务部署
+	03. 可以实现批量文件数据分发
+	04. 可以实现批量系统信息收集
+
+03. ansible批量管理服务部署 
+    管理端服务器 
+	第一个历程: 安装部署软件
+	yum install -y ansible     --- 需要依赖epel的yum源
+	/etc/ansible/ansible.cfg   --- ansible服务配置文件
+    /etc/ansible/hosts         --- 主机清单文件   定义可以管理的主机信息
+    /etc/ansible/roles         --- 角色目录???
+
+	第二个历程: 需要编写主机清单文件
+    vim /etc/ansible/hosts 
+	
+	第三个历程: 测试是否可以管理多个主机
+	脚本  hostname
+	ansible all -a "hostname"
+    [root@m01 scripts]# ansible all -a "hostname"
+    172.16.1.41 | CHANGED | rc=0 >>
+    backup
+    
+    172.16.1.7 | CHANGED | rc=0 >>
+    web01
+    
+    172.16.1.31 | CHANGED | rc=0 >>
+    nfs01
+
+04. ansible服务架构信息
+    1) 主机清单配置 
+	2) 软件模块信息         OK  
+	3) 基于秘钥连接主机     OK
+	4) 主机需要关闭selinux  OK
+	5) 软件剧本功能
+
+05. ansible软件模块应用
+    ansible官方网站: https://docs.ansible.com/
+	模块的应用语法格式:
+	ansible 主机名称/主机组名称/主机地址信息/all  -m(指定应用的模块信息)  模块名称  -a(指定动作信息)  "执行什么动作"
+	
+	命令类型模块:
+	掌握第一个模块: command (默认模块)
+	command – Executes a command on a remote node
+	          在一个远程主机上执行一个命令
+	简单用法:
+	[root@m01 scripts]# ansible 172.16.1.31 -m command -a "hostname"
+    172.16.1.31 | CHANGED | rc=0 >>
+    nfs01
+  
+    扩展应用:
+	1) chdir  	Change into this directory before running the command.
+	          在执行命令之前对目录进行切换
+	   ansible 172.16.1.31 -m command -a "chdir=/tmp touch oldboy.txt"
+
+    2) creates	If it already exists, this step won't be run.
+	            如果文件存在了,不执行命令操作
+       ansible 172.16.1.31 -m command -a "creates=/tmp/hosts touch oldboy.txt" 
+	   
+    3) removes	If it already exists, this step will be run.
+                如果文件存在了,	这个步骤将执行
+	   ansible 172.16.1.31 -m command -a "removes=/tmp/hosts chdir=/tmp touch oldboy.txt"
+    4) free_form(required)
+       The command module takes a free form command to run. 
+	   There is no parameter actually named 'free form'. See the examples!
+	   使用command模块的时候,-a参数后面必须写上一个合法linux命令信息
+   
+    注意事项:
+	有些符号信息无法识别:  <", ">", "|", ";" and "&"
+	
+
+	掌握第二个模块: shell (万能模块)
+	shell   – Execute commands in nodes
+	          在节点上执行操作
+	简单用法:
+	[root@m01 scripts]# ansible 172.16.1.31 -m command -a "hostname"
+    172.16.1.31 | CHANGED | rc=0 >>
+    nfs01
+  
+    扩展应用:
+	1) chdir  	Change into this directory before running the command.
+	          在执行命令之前对目录进行切换
+	   ansible 172.16.1.31 -m command -a "chdir=/tmp touch oldboy.txt"
+
+    2) creates	If it already exists, this step won't be run.
+	            如果文件存在了,不执行命令操作
+       ansible 172.16.1.31 -m command -a "creates=/tmp/hosts touch oldboy.txt" 
+	   
+    3) removes	If it already exists, this step will be run.
+                如果文件存在了,	这个步骤将执行
+	   ansible 172.16.1.31 -m command -a "removes=/tmp/hosts chdir=/tmp touch oldboy.txt"
+    4) free_form(required)
+       The command module takes a free form command to run. 
+	   There is no parameter actually named 'free form'. See the examples!
+	   使用command模块的时候,-a参数后面必须写上一个合法linux命令信息
+	   
+	实践应用: 利用shell执行脚本  
+    第一个步骤: 编写一个脚本
+    第二个步骤: 将脚本发送到远程主机
+    第三个步骤: 将脚本权限进行修改(添加执行权限)
+	第四个步骤: 运行ansible命令执行脚本
+	
+    掌握第三个模块: script (万能模块)
+	第一个步骤: 编写一个脚本
+    第二个步骤: 运行ansible命令执行脚本
+
+    PS: scripts模块参数功能和command模块类似
+
+	文件类型模块:
+	copy – Copies files to remote locations
+	       将数据信息进行批量分发
+	
+	基本用法:
+	ansible 172.16.1.31 -m copy -a "src=/etc/hosts dest=/etc/"
+    172.16.1.31 | CHANGED => {       --- 对哪台主机进行操作
+        "changed": true,             --- 是否对主机信息进行改变
+        "checksum": "6ed7f68a1d6b4b36c1418338b2001e421eeba270",    --- 生成一个文件校验码==MD5数值
+        "dest": "/etc/hosts",        --- 显示目标路径信息  
+        "gid": 0,                    --- 显示复制后文件gid信息
+        "group": "root",             --- 显示复制后文件属组信息
+        "md5sum": "7afd7b74854f0aaab646b3e932f427c0",              --- 生成一个文件校验码==MD5数值
+        "mode": "0644",              --- 显示复制后文件权限信息
+        "owner": "root",             --- 显示复制后文件属主信息
+        "size": 401,                 --- 显示文件的大小信息
+        "src": "/root/.ansible/tmp/ansible-tmp-1557804498.23-26487341925325/source", 
+        "state": "file",             --- 显示文件的类型信息
+        "uid": 0                     --- 显示复制后文件uid信息
+    }
+
+    补充说明: ansible软件输出颜色说明:
+	01. 绿色信息:  查看主机信息/对主机未做改动
+	02. 黄色信息:  对主机数据信息做了修改
+	03. 红色信息:  命令执行出错了
+	04. 粉色信息:  忠告信息
+	05. 蓝色信息:  显示ansible命令执行的过程???
+	
+	扩展用法:
+	01. 在传输文件时修改文件的属主和属组信息
+	ansible 172.16.1.31 -m copy -a "src=/etc/ansible/file/rsync/rsync.password dest=/etc/ owner=oldboy group=oldboy"
+	02. 在传输文件时修改文件的权限信息
+	ansible 172.16.1.31 -m copy -a "src=/etc/ansible/file/rsync/rsync.password dest=/etc/ mode=1777"
+	03. 在传输数据文件信息时对远程主机源文件进行备份 
+	ansible 172.16.1.31 -m copy -a "src=/etc/ansible/file/rsync/rsync.password dest=/etc/ backup=yes"
+    04. 创建一个文件并直接编辑文件的信息
+    ansible 172.16.1.31 -m copy -a "content='oldboy123' dest=/etc/rsync.password"
+
+    自行研究: remote_src  directory_mode local_follow
+	If no, it will search for src at originating/master machine.
+	       src参数指定文件信息,会在本地管理端服务进行查找
+    If yes it will go to the remote/target machine for the src. Default is no.
+	       src参数指定文件信息,会从远程主机上进行查找
+
+    PS: ansible软件copy模块复制目录信息
+	ansible 172.16.1.31 -m copy -a "src=/oldboy dest=/oldboy"  
+	src后面目录没有/: 将目录本身以及目录下面的内容都进行远程传输复制
+	ansible 172.16.1.31 -m copy -a "src=/oldboy/ dest=/oldboy"  
+	src后面目录有/:   只将目录下面的内容都进行远程传输复制	
+	
+    file – Sets attributes of files
+	       设置文件属性信息
+	
+	基本用法:
+    ansible 172.16.1.31 -m file -a "dest=/etc/hosts owner=oldboy group=oldboy mode=666"	
+	
+	扩展用法:
+	1. 可以利用模块创建数据信息 (文件 目录 链接文件)
+	state  参数
+    =absent    --- 缺席/删除数据信息
+    =directory --- 创建一个目录信息
+    =file      --- 检查创建的数据信息是否存在 绿色存在 红色不存在
+    =hard      --- 创建一个硬链接文件
+    =link      --- 创建一个软链接文件
+    =touch     --- 创建一个文件信息
+	
+	创建目录信息:
+	ansible 172.16.1.31 -m file -a "dest=/oldboy/ state=directory"
+	ansible 172.16.1.31 -m file -a "dest=/oldboy/oldboy01/oldboy02/ state=directory"
+    创建文件信息:
+	ansible 172.16.1.31 -m file -a "dest=/oldboy/oldboy.txt state=touch"
+	创建链接文件信息:
+	ansible 172.16.1.31 -m file -a "src=/oldboy/oldboy.txt dest=/oldboy/oldboy_hard.txt state=hard"
+	ansible 172.16.1.31 -m file -a "src=/oldboy/oldboy.txt dest=/oldboy/oldboy_link.txt state=link"
+
+	2. 可以利用模块删除数据信息
+	ansible 172.16.1.31 -m file -a "dest=/oldboy/oldboy.txt state=absent"
+	ansible 172.16.1.31 -m file -a "dest=/oldboy/  state=absent"
+
+	自行研究: recurse	
+    
+作业:
+01. 预习几个新的模块:
+    yum service cron mount user group unarchive archive
+02. 预习剧本的编写格式
+
+	

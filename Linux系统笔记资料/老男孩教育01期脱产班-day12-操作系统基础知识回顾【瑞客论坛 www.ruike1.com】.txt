@@ -1,0 +1,358 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day12-操作系统知识回顾
+==================================	
+
+00. 课程介绍部分
+    1. 第三阶段回顾 *****
+	2. 第四阶段回顾 ****
+	3. 第五阶段回顾 ****
+    4. 文件属性信息
+	
+01. 课程知识回顾
+    1. 第二阶段回顾：系统安装和远程连接
+	   01. 虚拟化环境部署（网络配置）
+	       NAT模式 实现其他宿主机可以远程连接自己的虚拟主机
+		           
+	   02. 进行系统安装
+	       a 分区概念
+		   b 系统软件包组安装
+		   补充知识点：centos7
+		   命名方式：	ensxx  以太网 槽位 
+						eth    以太网 0 1
+           修改方式：
+		   01. 安装系统时--菜单的界面--install centos 7选择--teb-- net.ifnames=0 biosdevname=0
+           02. 在系统中进行修改
+		       ①. 编辑网卡配置文件中网卡名称信息
+               vim /etc/sysconfig/network-scripts/ifcfg-ens33
+			   NAME=eth0    --- net.ifnames=0
+               DEVICE=eth0	--- biosdevname=0
+               ②. 重命名网卡配置文件名称信息
+               mv ifcfg-ens33 ifcfg-eth0
+               ③. 修改网卡名称规则内核文件
+               /etc/default/grub->net.ifnames=0 biosdevname=0 ”到GRUB_CMDLINE_LINUX变量后
+               ④. 使系统重新加载grub配置文件
+               grub2-mkconfig -o /boot/grub2/grub.cfg
+       02. 远程连接
+           远程连接的异常排错方法	   
+
+    2. 第三个阶段: 系统操作管理命令
+	   1. 目录和文件创建命令
+	   2. vi/vim详细使用技巧  vim
+          
+02. vim常见错误说明
+    1). vim命令后面一定要接文件
+	vim /etc/hosts
+	2). vim只能编辑存在的目录中的文件
+	3). 编辑文件突然非正常状态退出
+	    将错误信息制造出来:
+		编辑一个文件,在没有退出前,直接断开远程连接
+	
+	vim编辑文件原理
+	01. 开始利用vim编辑一个文件
+	02. 需要判断编辑的文件所在目录中是否有隐藏文件
+	    a 拥有: 会有报错提示信息
+		b 没有: 进入到命令模式
+    03. 在命令模式就会产生临时文件
+	04. 进入编辑模式对文件进行编辑
+	05. 编辑完成之后需要确定是否正常保存退出
+	    a 是正常退出: 从编辑状态--esc--命令模式--:wq保存退出 (将临时文件重命名)
+		b 非正常退出: 临时文件会永久保留
+		
+    解决问题方法:
+	第一个步骤: 进行查看文件内容
+	按大写字母O
+	第二个步骤: 确认文件是否需要恢复
+	需要恢复: 重新编辑按R,恢复文件内容
+	不用恢复: 重新编辑按E,进行重新编辑
+	第三个步骤: 将临时文件进行删除
+	1. 按大写字母D删除文件
+	2. 利用rm命令删除临时文件
+	   rm -f /oldboy/.oldboy.txt.swp
+	
+03. 查看文件信息方法
+    1) 查看文件或者目录的属性信息
+	   命令: ls查看数据信息
+	   [root@oldboyedu ~]# ls /oldboy        		 	--- 查看目录中有什么数据信息
+       oldboy01  oldboy.txt  oldgirl.txt
+       [root@oldboyedu ~]# ls /oldboy/oldboy.txt 		--- 查看目录中文件信息是否存在				
+       /oldboy/oldboy.txt
+       [root@oldboyedu ~]# ls -l /oldboy/oldboy.txt 	--- 查看文件属性信息
+       -rw-r--r--. 1 root root 50 Apr  1 10:24 /oldboy/oldboy.txt
+	   [root@oldboyedu ~]# ls -ld /oldboy/ 				--- 查看目录属性信息
+	   drwxr-xr-x. 3 root root 59 Apr 11 10:23 /oldboy/
+	   [root@oldboyedu ~]# ls -la /oldboy/ 				--- 查看目录中所有数据信息,包含隐藏文件
+	   total 8
+	   drwxr-xr-x.  3 root root  59 Apr 11 10:23 .
+	   dr-xr-xr-x. 21 root root 282 Mar 29 16:21 ..
+	   drwxr-xr-x.  3 root root 100 Apr  1 11:00 oldboy01
+	   -rw-r--r--.  1 root root  50 Apr  1 10:24 oldboy.txt
+	   -rw-r--r--.  1 root root  18 Apr 11 10:23 oldgirl.txt
+	   
+	   企业工作的一个问题:
+	   多个运维人员维护服务器,下班着急回家,交代:将oldboy目录中最新的数据文件需要继续编辑好
+	   ls -ltr /etc/   -- 按照时间进行排序显示数据信息,并且是反向排序
+
+    2) 查看文件内容信息方法
+	   命令: cat
+       [root@oldboyedu ~]# cat /oldboy/oldboy.txt     --- 查看单个文件
+       hello world
+       oldboy shenzhen 01
+       oldboy shenzhen 02
+       [root@oldboyedu ~]# cat /oldboy/oldboy.txt  /oldboy/oldgirl.txt  --- 查看多个文件
+       hello world
+       oldboy shenzhen 01
+       oldboy shenzhen 02
+       oldboy01
+       oldboy02
+       [root@oldboyedu ~]# cat -n /oldboy/oldboy.txt   --- 查看文件时,显示每行的行号
+            1	hello world
+            2	oldboy shenzhen 01
+            3	oldboy shenzhen 02
+       命令: less/more
+	   
+	   less /etc/service  --- 类似于看书,一点点查看文件内容
+	   向下逐行显示:  回车
+	   向下逐页显示:  空格
+	   向上逐行显示:  方向键上
+	   向上逐页显示:  字母b
+	   搜索信息: /搜索的字符串信息
+	   [root@oldboyedu ~]# less -N /etc/services 
+       1 # /etc/services:
+       2 # $Id: services,v 1.55 2013/04/14 ovasik Exp $
+       3 #
+       4 # Network services, Internet style
+       5 # IANA services version: last updated 2013-04-10
+	   按q结束查看
+	   
+	   more /etc/service  --- 类似于看书,一点点查看文件内容
+	   向下逐行显示:  回车
+	   向下逐页显示:  空格
+	   向上逐行显示:  字母f/b
+	   
+	   head 前几行
+	   tail 后几行
+	
+04. 直接编辑文件命令方法
+    a 如何直接在文件中添加单行内容
+    echo "oldboy" >>/oldboy/oldboy.txt
+	补充: echo命令用法说明:
+	01. 请在屏幕上输出 oldboyedu.com信息
+	02. 请在屏幕上输出 1 2 3 .... 100 的数字信息
+	输出序列信息
+    a 显示连续的序列
+    [root@oldboyedu ~]# echo {1..100}
+    1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100
+    [root@oldboyedu ~]# echo {01..100}
+    001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034 035 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053 054 055 056 057 058 059 060 061 062 063 064 065 066 067 068 069 070 071 072 073 074 075 076 077 078 079 080 081 082 083 084 085 086 087 088 089 090 091 092 093 094 095 096 097 098 099 100
+	b 显示不连续的序列
+	  a 不连续有规律的序列
+	  问题: 
+	  显示1..10 的奇数信息 1 3 5 7 9
+	  显示1..10 的偶数信息
+	  [root@oldboyedu ~]# echo {01..10..2}
+      01 03 05 07 09
+      [root@oldboyedu ~]# echo {02..10..2}
+      02 04 06 08 10
+	  b 不连续无规律的序列
+	  mkdir -p /oldboy/oldboy01/oldboy02/{www,bbs,blog}
+	练习题一:
+	在oldboy目录下面创建出20个文件,二十个文件名称为 oldboy01,oldboy02 ..oldboy20
+    touch 
+	
+    b 如何直接在文件中添加多行内容
+	[root@oldboyedu ~]# cat /oldboy/oldboy.txt 
+    hello world
+    oldboy shenzhen 01
+    oldboy shenzhen 02
+    [root@oldboyedu ~]# cat >> /oldboy/oldboy.txt <<EOF
+    > oldboy01
+    > oldboy02
+    > oldboy03
+    > EOF
+    [root@oldboyedu ~]# cat /oldboy/oldboy.txt 
+    hello world
+    oldboy shenzhen 01
+    oldboy shenzhen 02
+    oldboy01
+    oldboy02
+    oldboy03
+    [root@oldboyedu ~]# cat >> /oldboy/oldboy.txt <<oldboy
+    > oldboy04
+    > oldboy05
+    > oldboy
+    [root@oldboyedu ~]# cat /oldboy/oldboy.txt 
+    hello world
+    oldboy shenzhen 01
+    oldboy shenzhen 02
+    oldboy01
+    oldboy02
+    oldboy03
+    oldboy04
+    oldboy05
+
+05. 过滤筛选文件内容命令
+    三剑客命令
+	老三: grep    过滤筛选信息
+	老二: sed     修改替换文件内容 擅长对文件中的行进行操作
+	老大: awk     擅长统计分析文件内容  擅长对文件中列进行操作
+	
+	grep命令如何进行过滤:
+	编辑一个测试文件
+	[root@oldboyedu ~]# cat >> /oldboy/test.txt <<EOF
+    > oldboy01
+    > oldgirl01
+    > olddog01
+    > oldboy02
+    > oldgirl02
+    > olddog02
+    > EOF
+    [root@oldboyedu ~]# cat /oldboy/test.txt 
+    oldboy01
+    oldgirl01
+    olddog01
+    oldboy02
+    oldgirl02
+    olddog02
+	需求01: 请筛选出有oldboy的信息
+	[root@oldboyedu ~]# grep "oldboy" /oldboy/test.txt 
+    oldboy01
+    oldboy02
+	需求02: 筛选有oldgirl的信息,但是要有oldgirl信息的上一行信息也显示
+	[root@oldboyedu ~]# grep -B 1  "oldgirl" /oldboy/test.txt 
+    oldboy01
+    oldgirl01
+    --
+    oldboy02
+    oldgirl02
+	需求03: 筛选有oldgirl的信息,但是要有oldgirl信息的下一行信息也显示
+    [root@oldboyedu ~]# grep -A 1  "oldgirl" /oldboy/test.txt 
+    oldgirl01
+    olddog01
+    --
+    oldgirl02
+    olddog02
+	需求04.筛选有oldgirl的信, 但是要有oldgirl信息的下一行和下一行信息也显示
+	[root@oldboyedu ~]# grep -C 1  "oldgirl" /oldboy/test.txt 
+    oldboy01
+    oldgirl01
+    olddog01
+    oldboy02
+    oldgirl02
+    olddog02
+	需求05. 统计oldgirl信息在文件中出现了几次
+	[root@oldboyedu ~]# grep -c  "oldgirl" /oldboy/test.txt 
+
+    sed命令如何进行过滤信息
+	[root@oldboyedu ~]# sed -n "/oldboy/p" /oldboy/test.txt 
+    oldboy01  edu.com
+    oldboy02
+	p  print   将过滤信息输出
+	-n         取消原文件的所有内容输出(取消默认输出)
+	
+	[root@oldboyedu ~]# awk "/oldboy/" /oldboy/test.txt 
+    oldboy01  edu.com
+    oldboy02
+
+06. 修改文件部分内容信息
+    01. sed命令  (师傅: 真正修改文件内容)
+	需求: 修改test.txt文件内容 将所有oldboy信息修改替换为 python
+	vim 替换: :%s#oldboy#python#g
+	sed 's#oldboy#python#g' /oldboy/test.txt
+	
+	实践操作
+	[root@oldboyedu ~]# sed 's#oldboy#python#g' /oldboy/test.txt
+    python01  edu.com
+    oldgirl01
+    olddog01
+    python02
+    oldgirl02
+    olddog02
+    [root@oldboyedu ~]# cat /oldboy/test.txt 
+    oldboy01  edu.com
+    oldgirl01
+    olddog01
+    oldboy02
+    oldgirl02
+    olddog02
+    [root@oldboyedu ~]# sed -i 's#oldboy#python#g' /oldboy/test.txt
+    [root@oldboyedu ~]# cat /oldboy/test.txt 
+    python01  edu.com
+    oldgirl01
+    olddog01
+    python02
+    oldgirl02
+    olddog02
+
+	02. tr命令   (徒弟: 假装修改文件内容)
+	需求: 修改test.txt文件内容 将所有python信息修改替换为 oldboy
+	[root@oldboyedu ~]# tr "python" "oldboy" </oldboy/test.txt 
+    oldboy01  edu.com
+    oldgirl01
+    olddog01
+    oldboy02
+    oldgirl02
+    olddog02
+    [root@oldboyedu ~]# cat /oldboy/test.txt
+    python01  edu.com
+    oldgirl01
+    olddog01
+    python02
+    oldgirl02
+    olddog02
+ 
+    tr用法
+	[root@oldboyedu ~]# echo 123|tr "123" "abc"
+    abc
+	小于号用法1:
+	[root@oldboyedu ~]# tr "123" "abc" < /oldboy/test01.txt 
+    abc
+    [root@oldboyedu ~]# cat /oldboy/test01.txt
+    123
+
+07. 课程知识总结:
+    1) vim编辑命令常见异常情况
+	2) vim编辑命令的执行原理
+	3) 如何查看文件内容命令  cat less more head tail
+	4) 如何编辑文件内容(直接编辑)
+	   单行编辑  echo >> > {} 序列符号
+	   多行编辑  cat >> 文件 << EOF ... EOF 
+	5) 过滤筛选文件内容 
+	   三剑客  grep sed awk 
+	6) 修改替换文件内容 
+	   1) 真正修改替换  sed 
+	   2) 假装修改替换  tr
+
+
+扩展命令:
+01. tail命令参数 -f 或者 -F
+
+扩展作业
+01. tr命令替换信息的原理
+	[root@oldboyedu ~]# tr "oldgirl" "oldboy" </oldboy/test.txt 
+    oydboyy01
+    oyddob01
+    oydboyy02
+    oyddob02   
+	为什么文件信息替换乱了
+
+	   
+
+
+
+
+
+
+
+
+
+       

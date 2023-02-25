@@ -1,0 +1,235 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day15-操作系统文件属性/系统常用符号
+==================================	
+
+00. 课程介绍部分
+    01. 文件属性信息 OK
+	02. 系统常用符号
+	03. 读写数据原理 OK
+	04. 软硬链接区别 OK
+	
+01. 课程知识回顾
+    1) find命令使用方法
+	   a 根据文件名称类型进行查找
+	   b 根据文件大小进行查找     -size +1M/-1M/1M
+	   c 根据目录层级查找文件     -maxdepth 1 -mindepth
+       d 根据文件权限查找数据     -perm
+	     [root@oldboyedu oldboy]# find /oldboy -maxdepth 1 -type f -perm 644
+         /oldboy/services
+         /oldboy/oldboy.txt
+         /oldboy/oldboy.jpg
+         /oldboy/oldboy.png
+         /oldboy/oldboy.avi
+         /oldboy/1.tar
+
+    2) tar命令压缩数据
+	   如何压缩数据:
+	   tar zcvf /tmp/oldboy.tar.gz  /etc/ /oldboy/ /oldboy/oldboy.txt 
+	   如何解压数据:
+	   tar xf /tmp/oldboy.tar.gz -C /oldboy
+	   如何查看压缩包:
+	   tar tf /tmp/oldboy.tar.gz
+	   --exclude
+	   --exclude-from
+	   
+	3) 文件属性信息 -- 权限信息
+	4) 文件属性信息 -- 用户信息 (超级用户 虚拟用户 普通用户)
+	5) 文件属性信息 -- 时间信息 (atime mtime ctime)
+ 
+ 02. 文件属性信息-inode 
+     找索引节点
+	 一份努力 一份收获 
+	 
+	 inode -- 索引节点
+     概述:
+     相当于书目录	
+     用于存储文件属性信息
+     诞生出来:
+     创建文件系统之后	 
+	 
+	 磁盘操作处理过程: 地皮
+	 磁盘       		地皮
+	 raid       		将多块地连接起来
+	 分区       		将地皮进行规划
+	 格式化     		地皮进行打扫整理
+     创建文件系统    	建房风格	        inode和block
+	 挂载               安装门
+	 特点说明:
+   	 inode用于存放的是文件属性
+     inode用于存放块的指针位置 ???
+     创建一个文件至少占用一个inode和一个block
+     在同一分区中，两个文件的inode号码相同，两个文件互为硬链接 ???
+	 查看方法:
+	 [root@oldboyedu oldboy]# df -i
+     Filesystem       Inodes IUsed    IFree IUse% Mounted on
+     /dev/sda3      25587200 61342 25525858    1% /	 
+	 
+	 block -- 数据块
+     概述:
+     目录指向的内容
+	 用于存储文件具体内容
+     诞生出来:
+     创建文件系统之后
+     特点说明:
+     block用于存放的是数据信息
+     block默认大小为4k,可以进行调整
+	 比较大的文件，会占用多个block
+	 比较小的文件，剩余空间无法使用, 浪费磁盘空间
+     创建一个文件至少占用一个inode和一个block（非空文件）
+     磁盘读取数据按block为单位读取的
+     读取一个block会消耗一次磁盘I/O（input/output 磁盘读写）	 
+	 
+	 企业中面试: 你都做过哪些系统优化操作?
+     问题: block默认大小可以调整 是大点好 小点好
+     设置大点: 10k 视频公司 图片公司
+     文件大的时候: 20K 4k -- 2个block 2s 4s   --- 节省IO消耗
+
+     设置小点: 2k 互联网公司
+     小文件的时候: 1k 2k  -- 1个block         --- 提高磁盘利用率 
+	 查看方法:
+     [root@oldboyedu oldboy]# df
+     Filesystem     1K-blocks    Used Available Use% Mounted on
+     /dev/sda3       51149416 1752080  49397336   4% /
+
+     补充:
+	 01. 文件属性信息存储在inode中
+	 02. 文件的名称信息存储在上一级目录的block中
+	 
+03. 文件属性信息-硬链接数
+    硬链接:
+    概念说明: 超市的多个门 ???  在一个分区中,inode号码相同的文件,互为硬链接
+	诞生过程:
+    ln	链接的源文件    硬链接的文件信息
+	[root@oldboyedu oldboy]# ln /oldboy/oldboy.txt /oldboy/oldboy_hard_link.txt 
+    [root@oldboyedu oldboy]# ll
+    total 8
+    -rw-r--r--. 2 root root 13 Apr 16 10:49 oldboy_hard_link.txt
+    -rw-r--r--. 2 root root 13 Apr 16 10:49 oldboy.txt
+	
+	利用find命令找到多有硬链接文件
+	[root@oldboyedu oldboy]# find / -type f -inum 33584339 
+    /etc/hosts
+    /tmp/hosts
+    系统中的目录不能创建硬链接
+	
+	[root@oldboyedu ~]# ll /etc/|grep -c "^d"
+    78
+    [root@oldboyedu ~]# ll /etc/|grep  "^d"|wc -l
+    78
+
+	
+	软链接:
+	概念说明: 文件的快捷方式
+    诞生过程:
+    ln -s 链接的源文件  软链接的文件信息
+	
+	[root@oldboyedu oldboy]# ln -s /oldboy/oldboy.txt /oldboy/oldboy_soft_link.txt 
+    [root@oldboyedu oldboy]# ll
+    total 8
+    lrwxrwxrwx. 1 root root 18 Apr 16 10:50 oldboy_soft_link.txt -> /oldboy/oldboy.txt
+    -rw-r--r--. 2 root root 13 Apr 16 10:49 oldboy.txt
+	
+	软硬链接的区别:
+	01. 链接后的文件大小不一致
+	02. 链接后的文件类型和权限不一致(颜色不一致)
+	03. 链接后的文件和源文件 inode信息有出入
+	    硬链接inode号码一致
+		软链接inode号码不一样
+    04. 源文件被删除之后
+	    硬链接文件依然有效
+		软链接文件失效
+	05. 软硬链接创建过程不一致
+
+04. 和时间相关的命令
+    时间相关的命令 date
+    01. 查看时间信息:	
+	[root@oldboyedu ~]# date
+    Tue Apr 16 11:49:51 CST 2019
+    02. 调整时间显示格式
+	[root@oldboyedu ~]# date +%F
+    2019-04-16
+    [root@oldboyedu ~]# date "+%F %T"
+    2019-04-16 11:52:54
+    [root@oldboyedu ~]# date "+%y-%m-%d %H:%M:%S"
+    19-04-16 11:53:58
+    cp oldboy.log oldboy.log-$(date "+%F_%T")
+	
+	显示历史时间信息:
+	# date +%F -d "-2day"
+    # date +%F -d "1 day ago"
+	
+	显示未来时间信息:
+	# date  -d "+2day"
+	# date  -d "2day"
+	
+	系统自动的备份数据 00:00  4月16日 -- 4月17日 00:00
+	cp /oldboy/oldboy.log /log/oldboy.log.$(date +%F)
+	调整: 
+	cp /oldboy/oldboy.log /log/oldboy.log.$(date +%F -d "-1day")
+	
+	03. 如何实际修改系统时间
+	[root@oldboyedu oldboy]# date -s "2020-04-17"
+    Fri Apr 17 00:00:00 CST 2020
+    [root@oldboyedu oldboy]# date
+    Fri Apr 17 00:00:17 CST 2020
+    [root@oldboyedu oldboy]# date -s "2020/04/17 14:00"
+    Fri Apr 17 14:00:00 CST 2020
+
+	04. 时间同步方法
+	yum install -y ntpdate
+	ntpdate
+    [root@oldboyedu oldboy]# ntpdate ntp1.aliyun.com
+    16 Apr 12:22:33 ntpdate[25718]: step time server 120.25.115.20 offset 268748517.381960 sec
+    [root@oldboyedu oldboy]# date
+    Tue Apr 16 12:22:48 CST 2019
+	
+作业:
+01. 如何修改磁盘中block大小 如何进行查看默认的block大小
+02. 总结数据存储与读取原理	 
+03. 磁盘满无法存储数据的原因	
+04. linux系统中读取数据的原理(数据无法读取-权限阻止)  权限章节
+    /oldboy/oldboy01/oldboy.txt
+05. 总结英文月份信息 星期信息
+06. 如何将文件彻底删除	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+       

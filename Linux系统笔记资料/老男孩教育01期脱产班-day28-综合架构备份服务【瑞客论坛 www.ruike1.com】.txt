@@ -1,0 +1,258 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day28-综合架构备份服务
+==================================	
+
+00. 课程介绍部分
+    1) 完成rsync守护进程模式搭建
+	2) rsync备份传输数据原理
+	3) rsync命令的常用参数
+	4) 企业应用rsync技巧
+	5) rsync常见错误
+	6) 企业项目: 全网备份项目(脚本)
+  
+    
+01. 课程知识回顾
+    1) 综合架构的组成部分
+	   前端: 防火墙 负载均衡 web服务器
+	   后端: 数据库 存储服务 缓存服务 备份服务
+	   扩展: 批量管理 跳板机 监控服务 vpn服务
+    2) 综合架构的规划
+	   IP地址规划
+	   主机名称规划
+	   系统的优化部分
+    3) 虚拟主机克隆部分
+	   a 模板机关机克隆--链接克隆
+	   b 克隆好的主机需要一台一台按顺序进行配置
+	     1. 不要随意修改调整虚拟主机的mac地址
+		 2. NetworkManager网络管理服务  	技术经理  nmtui   关闭
+		    network网络服务              	运维主管  ifcfg-eth0
+	4) 备份服务 
+	   rsync软件: 全量和增量备份的软件
+    5) rsync命令使用方法 1v4
+	6) rsync命令语法 man rsync
+	   本地备份
+	   远程备份
+	   守护进程方式备份
+
+
+02. rsync守护进程部署方式
+    客户端---服务端  上厕所 4 
+    rsync守护进程服务端配置:
+    第一个历程: 下载安装软件
+	rpm -qa|grep rsync
+    yum install -y rsync 
+	
+	第二个历程: 编写配置文件
+	man rsyncd.conf
+	vim /etc/rsyncd.conf 
+	##created by HQ at 2017
+    ###rsyncd.conf start##
+    
+    uid = rsync       --- 指定管理备份目录的用户  
+    gid = rsync       --- 指定管理备份目录的用户组
+    port = 873        --- 定义rsync备份服务的网络端口号
+    fake super = yes  --- 将rsync虚拟用户伪装成为一个超级管理员用户 
+    use chroot = no   --- 和安全相关的配置
+    max connections = 200  --- 最大连接数  同时只能有200个客户端连接到备份服务器
+    timeout = 300          --- 超时时间(单位秒)
+    pid file = /var/run/rsyncd.pid   --- 记录进程号码信息 1.让程序快速停止进程 2. 判断一个服务是否正在运行
+    lock file = /var/run/rsync.lock  --- 锁文件
+    log file = /var/log/rsyncd.log   --- rsync服务的日志文件 用于排错分析问题
+    ignore errors                    --- 忽略传输中的简单错误
+    read only = false                --- 指定备份目录是可读可写
+    list = false                     --- 使客户端可以查看服务端的模块信息
+    hosts allow = 172.16.1.0/24      --- 允许传输备份数据的主机(白名单)
+    hosts deny = 0.0.0.0/32          --- 禁止传输备份数据的主机(黑名单)
+    auth users = rsync_backup        --- 指定认证用户 
+    secrets file = /etc/rsync.password   --- 指定认证用户密码文件 用户名称:密码信息
+    [backup]                         --- 模块信息
+    comment = "backup dir by oldboy"  
+    path = /backup                   --- 模块中配置参数 指定备份目录
+
+	第三个历程: 创建rsync服务的虚拟用户
+	useradd rsync -M -s /sbin/nologin
+	
+	第四个历程: 创建备份服务认证密码文件
+	echo "rsync_backup:oldboy123" >/etc/rsync.password
+	chmod 600 /etc/rsync.password
+	
+	第五个历程: 创建备份目录并修改属主属组信息
+	mkdir /backup
+    chown rsync.rsync /backup/
+	
+	第六个历程: 启动备份服务
+	systemctl start rsyncd
+    systemctl enable rsyncd
+    systemctl status rsyncd
+
+    需要熟悉rsync守护进程名称语法:
+	Access via rsync daemon:
+	客户端做拉的操作: 恢复数据
+    Pull: rsync [OPTION...] [USER@]HOST::SRC... [DEST]
+          rsync [OPTION...] rsync://[USER@]HOST[:PORT]/SRC... [DEST]
+	客户端做退的操作: 备份数据
+    Push: rsync [OPTION...] SRC... [USER@]HOST::DEST
+	      src: 要推送备份数据信息
+		  [USER@]: 指定认证用户信息
+		  HOST: 指定远程主机的IP地址或者主机名称
+		  ::DEST: 备份服务器的模块信息
+		  
+          rsync [OPTION...] SRC... rsync://[USER@]HOST[:PORT]/DEST
+
+    rsync守护进程客户端配置:
+	第一个历程: 创建一个秘密文件
+	echo "oldboy123" >/etc/rsync.password
+	chmod 600 /etc/rsync.password
+   
+    第二个历程: 进行免交互传输数据测试
+	rsync -avz /etc/hosts rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+	
+03. rsync命令参数详细说明
+    -v, --verbose     显示详细的传输信息
+	-a, --archive     命令的归档参数 包含: rtopgDl
+	-r, --recursive   递归参数
+	-t, --times       保持文件属性信息时间信息不变(修改时间)
+	-o, --owner       保持文件属主信息不变
+	-g, --group       保持文件属组信息不变
+	PS: 如何让-o和-g参数生效,需要将配置文件uid和gid改为root,需要将 fake super参数进行注释
+	-p, --perms       保持文件权限信息不变
+	-D,               保持设备文件信息不变
+	-l, --links       保持链接文件属性不变
+	-L,               保持链接文件数据信息不变
+	-P,               显示数据传输的进度信息
+	--exclude=PATTERN   排除指定数据不被传输
+	--exclude-from=file 排除指定数据不被传输(批量排除)
+	--bwlimit=RATE    显示传输的速率  100Mb/8=12.5MB
+	                  企业案例:    马路(带宽-半)   人人网地方 
+    --delete          无差异同步参数(慎用)
+	                  我有的你也有,我没有的你也不能有
+	
+04. 守护进程服务企业应用:
+    a. 守护进程多模块功能配置
+	sa  sa_data.txt
+	dev dev_data.txt
+	dba dba_data.txt
+	[backup]
+    comment = "backup dir by oldboy"
+    path = /backup
+    [dba]
+    comment = "backup dir by oldboy"
+    path = /dba
+    [dev]
+    comment = "backup dir by oldboy"
+    path = /devdata
+
+    b. 守护进程的排除功能实践
+	准备环境:
+	[root@nfs01 /]# mkdir -p /oldboy
+    [root@nfs01 /]# mkdir -p /oldboy/{a..c}
+    [root@nfs01 /]# touch /oldboy/{a..c}/{1..3}.txt
+    [root@nfs01 /]# tree /oldboy
+    /oldboy
+    ├── 01.txt
+    ├── 02.txt
+    ├── a
+    │?? ├── 1.txt
+    │?? ├── 2.txt
+    │?? └── 3.txt
+    ├── b
+    │?? ├── 1.txt
+    │?? ├── 2.txt
+    │?? └── 3.txt
+    └── c
+        ├── 1.txt
+        ├── 2.txt
+        └── 3.txt
+
+    需求01: 将/oldboy目录下面 a目录数据全部备份 b目录不要备份1.txt文件 c整个目录不要做备份
+    --exclude=PATTERN
+    绝对路径方式:
+    [root@nfs01 /]# rsync -avz /oldboy --exclude=/oldboy/b/1.txt --exclude=/oldboy/c/ rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password 
+    sending incremental file list
+    oldboy/
+    oldboy/01.txt
+    oldboy/02.txt
+    oldboy/a/
+    oldboy/a/1.txt
+    oldboy/a/2.txt
+    oldboy/a/3.txt
+    oldboy/b/
+    oldboy/b/2.txt
+    oldboy/b/3.txt
+ 
+    相对路径方式:
+	[root@nfs01 /]# rsync -avz /oldboy --exclude=b/1.txt --exclude=c/ rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password 
+    sending incremental file list
+    oldboy/
+    oldboy/01.txt
+    oldboy/02.txt
+    oldboy/a/
+    oldboy/a/1.txt
+    oldboy/a/2.txt
+    oldboy/a/3.txt
+    oldboy/b/
+    oldboy/b/2.txt
+    oldboy/b/3.txt
+    
+    sent 502 bytes  received 177 bytes  1,358.00 bytes/sec
+    total size is 0  speedup is 0.00
+
+    需求02: 将/oldboy目录下面 a目录数据全部备份 b目录不要备份1.txt文件 c整个目录1.txt 3.txt文件不要备份
+    --exclude-from=file  --- 批量排除 
+	第一个历程: 编辑好一个排除文件
+	[root@nfs01 /]# cat /oldboy/exclude.txt 
+    b/1.txt
+    c/1.txt
+    c/3.txt
+    exclude.txt
+
+	第二个历程: 实现批量排除功能
+	[root@nfs01 /]# rsync -avz /oldboy --exclude-from=/oldboy/exclude.txt rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password 
+    sending incremental file list
+    oldboy/
+    oldboy/01.txt
+    oldboy/02.txt
+    oldboy/a/
+    oldboy/a/1.txt
+    oldboy/a/2.txt
+    oldboy/a/3.txt
+    oldboy/b/
+    oldboy/b/2.txt
+    oldboy/b/3.txt
+    oldboy/c/
+    oldboy/c/2.txt
+
+    c. 守护进程来创建备份目录
+    [root@nfs01 /]# rsync -avz /etc/hosts  rsync_backup@172.16.1.41::backup/10.0.0.31/ --password-file=/etc/rsync.password 
+    sending incremental file list
+    created directory 10.0.0.31
+    hosts
+    
+    sent 226 bytes  received 75 bytes  602.00 bytes/sec
+    total size is 371  speedup is 1.23
+	PS: 客户端无法在服务端创建多级目录
+	
+	d. 守护进程的访问控制配置
+	守护进程白名单和黑名单功能
+	PS: 建议只使用一种名单
+	
+	e. 守护进程的列表功能配置
+	[root@nfs01 /]# rsync rsync_backup@172.16.1.41::
+    backup         	"backup dir by oldboy"
+    dba            	"backup dir by oldboy"
+    dev            	"backup dir by oldboy"
+	
+	
+作业:
+01. 自己试着完成全网备份数据项目
+02. 总结每个服务的部署过程

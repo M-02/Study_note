@@ -1,0 +1,219 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day05-虚拟软件使用方法/远程连接排错/linux系统命令
+==================================
+00. 第一次测验总结
+    1) 用心的程度 
+	2) 听话完成作业 
+	要求: 下周一 下午第二次测验 60分进行补课
+	
+00. 课程介绍部分
+    1）系统的操作
+	   命令操作
+	   快捷方式操作
+	   符号介绍
+ 
+01. 课程知识回顾
+    1) 远程连接排错
+	   大保健之路
+	   1. 链路是否通畅         ping
+	   2. 链路是否有阻塞       防火墙 安全设备
+	   3. 确认远程服务是否开启 telnet systemctl status sshd
+	
+	2) 系统预备知识
+	   命令提示符: 组成: 用户@主机名 目录
+	   系统目录结构: 一切从根开始
+	      绝对路径: 从根开始的路径
+		  相对路径: 从当前路径开始
+	   命令语法规范: 命令(区分大小写 cd mkdir) 参数(-p) 对象(/data/oldboy) 
+	
+	3) 系统基础命令
+	   1) 系统运行命令 shutdown
+	   2) 目录操作命令 ls mkdir cd (.. ../../ - ~) pwd(查看当前目录的绝对路径信息)
+
+02. 文件目录相关命令
+    1) 查看文件信息命令 /oldboy/oldboy.txt
+	   [root@oldboyedu oldboy02]# ls  /etc/services 
+       /etc/services
+       [root@oldboyedu oldboy02]# ls  -l /etc/services       --- 查看文件数据的详细信息
+       -rw-r--r--. 1 root root 670293 Jun  7  2013 /etc/services 
+	   
+    2) 如何创建出一个空文件
+       touch /oldboy/oldboy.txt	
+       [root@oldboyedu oldboy02]# ls /oldboy/oldboy.txt 
+       /oldboy/oldboy.txt
+       [root@oldboyedu oldboy02]# ls -l /oldboy/oldboy.txt 
+       -rw-r--r--. 1 root root 0 Apr  1 09:57 /oldboy/oldboy.txt
+	   
+    3) 如何对空文件进行编辑
+	   1) 将文件打开进行直接编辑
+	      vi/vim  --- 用于编辑文件的命令
+		  vi oldboy.txt 
+		  第一个步骤: 进入到编辑状态(插入模式)
+		  按键盘上小写字母 i
+		  第二个步骤: 编写文件内容
+		  第三个步骤: 进行保存关闭文档
+		  按esc(退出编辑状态)--:wq 	(write写/保存 quit 退出)
+		                        :q 	(不保存直接退出)
+								:w  (只保存但不退出)
+	   
+	   2) 将文件不用打开进行直接编辑
+	      将屏幕显示的信息保存到文件中
+          第一步: 屏幕上有信息显示
+		  [root@oldboyedu oldboy]# echo "hello world"
+          hello world
+          [root@oldboyedu oldboy]# echo "hello world"
+          hello world
+          第二步: 将屏幕上显示的信息放入到文件中
+		  [root@oldboyedu oldboy]# echo "hello world" >  oldboy.txt
+          [root@oldboyedu oldboy]# vi oldboy.txt 
+          hello world
+		  
+		  [root@oldboyedu oldboy]# echo "oldboy shenzhen 02" >>  oldboy.txt
+          [root@oldboyedu oldboy]# vi oldboy.txt 
+          hello world
+          oldboy shenzhen 01
+          oldboy shenzhen 02
+		  说明: 
+		  >  执行原理: 将原有文件内容先进行清空 添加新的信息
+		  >> 执行原理: 不会覆盖情况原文件内容,而是在原文件最后一行追加新的信息
+
+    4) 查看文件内容的命令
+	   cat(猫) --- 查看文件 
+       [root@oldboyedu oldboy]# cat oldboy.txt 
+       hello world
+       oldboy shenzhen 01
+       oldboy shenzhen 02
+       [root@oldboyedu oldboy]# cat /etc/hosts
+       127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+       ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+	   
+    5) 如何复制保存数据
+	   copy(复制)--cp 
+	   用法: cp 要复制数据信息(文件/目录) 复制到什么位置(目录中)
+	   
+	   文件备份方法:
+	   [root@oldboyedu oldboy]# cp /oldboy/oldboy.txt /tmp
+       [root@oldboyedu oldboy]# ls -l /tmp/oldboy.txt
+       -rw-r--r--. 1 root root 50 Apr  1 10:36 /tmp/oldboy.txt
+       [root@oldboyedu oldboy]# ls -l oldboy.txt
+       -rw-r--r--. 1 root root 50 Apr  1 10:24 oldboy.txt
+
+       目录备份方法:
+       [root@oldboyedu oldboy]# cp -r /oldboy/oldboy01/ /tmp
+       [root@oldboyedu oldboy]# ls /tmp/oldboy01
+       oldboy02
+       [root@oldboyedu oldboy]# ls -d /tmp/oldboy01
+       /tmp/oldboy01
+       [root@oldboyedu oldboy]# ls -d /tmp/oldboy01/oldboy02
+       /tmp/oldboy01/oldboy02
+       [root@oldboyedu oldboy]# ls -d /tmp/oldboy01/oldboy02/oldboy03
+       /tmp/oldboy01/oldboy02/oldboy03
+
+       补充: 目录备份有时需要进行多次确认
+	   [root@oldboyedu oldboy01]# cp -r /oldboy/oldboy01/ /tmp/
+       cp: overwrite ‘/tmp/oldboy01/oldboy.txt’? y
+       cp: overwrite ‘/tmp/oldboy01/oldboy01.txt’? y
+       cp: overwrite ‘/tmp/oldboy01/oldboy02.txt’? y
+       cp: overwrite ‘/tmp/oldboy01/oldboy03.txt’? y
+
+       [root@oldboyedu oldboy01]# \cp -r /oldboy/oldboy01/ /tmp/  --- 进行目录中数据强行覆盖
+       [root@oldboyedu oldboy01]# cp -r /oldboy/oldboy01/ /tmp/
+       cp: overwrite ‘/tmp/oldboy01/oldboy.txt’? 
+
+    6) 删除数据命令(慎用)
+	   delete(删除)==remove(移除)==rm
+	   
+	   删除文件 
+	   [root@oldboyedu oldboy01]# rm /tmp/oldboy.txt
+       rm: remove regular file ‘/tmp/oldboy.txt’? ^C 
+       [root@oldboyedu oldboy01]# \rm /tmp/oldboy.txt
+       [root@oldboyedu oldboy01]# ls -l /tmp/oldboy.txt
+       ls: cannot access /tmp/oldboy.txt: No such file or directory
+       [root@oldboyedu oldboy01]# touch /tmp/oldboy.txt
+       [root@oldboyedu oldboy01]# ls -l /tmp/oldboy.txt
+       -rw-r--r--. 1 root root 0 Apr  1 11:09 /tmp/oldboy.txt
+       [root@oldboyedu oldboy01]# rm /tmp/oldboy.txt 
+       rm: remove regular empty file ‘/tmp/oldboy.txt’? ^C
+       [root@oldboyedu oldboy01]# rm -f /tmp/oldboy.txt 
+       [root@oldboyedu oldboy01]# ls -l /tmp/oldboy.txt
+       ls: cannot access /tmp/oldboy.txt: No such file or directory
+
+	   删除目录
+       [root@oldboyedu oldboy01]# rm /tmp/oldboy01/
+       rm: cannot remove ‘/tmp/oldboy01/’: Is a directory
+       [root@oldboyedu oldboy01]# rm -f /tmp/oldboy01/
+       rm: cannot remove ‘/tmp/oldboy01/’: Is a directory
+       [root@oldboyedu oldboy01]# rm -r /tmp/oldboy01/
+       rm: descend into directory ‘/tmp/oldboy01/’? ^C
+       [root@oldboyedu oldboy01]# rm -rf /tmp/oldboy01/
+       [root@oldboyedu oldboy01]# ls -d /tmp/oldboy01
+       ls: cannot access /tmp/oldboy01: No such file or directory
+
+       PS: 运维人员两大经典错误
+	   01. 删根目录  避免
+	   02. 删库跑路???
+
+    7) 移动数据信息(剪切)
+	   move(移动)==mv
+	   mv命令用法和cp命令类似
+	   
+	   移动剪切文件数据
+	   [root@oldboyedu ~]# mv /oldboy/oldboy.txt /tmp/
+       [root@oldboyedu ~]# ls -l /tmp/oldboy.txt
+       -rw-r--r--. 1 root root 50 Apr  1 10:24 /tmp/oldboy.txt
+       [root@oldboyedu ~]# ls -l /oldboy/oldboy.txt
+       ls: cannot access /oldboy/oldboy.txt: No such file or directory
+
+       移动剪切目录数据
+       [root@oldboyedu ~]# mv /oldboy/oldboy01/ /tmp
+       [root@oldboyedu ~]# ls -d /tmp/oldboy01
+       /tmp/oldboy01
+       [root@oldboyedu ~]# ls -ld /tmp/oldboy01
+       drwxr-xr-x. 3 root root 100 Apr  1 11:00 /tmp/oldboy01
+       [root@oldboyedu ~]# ls -ld /oldboy/oldboy01
+       ls: cannot access /oldboy/oldboy01: No such file or directory
+
+       [root@oldboyedu ~]# cd /oldboy
+       [root@oldboyedu oldboy]# ls
+       [root@oldboyedu oldboy]# touch oldboy.txt
+       [root@oldboyedu oldboy]# ls
+       oldboy.txt
+       [root@oldboyedu oldboy]# echo "oldboy shenzhen" >oldboy.txt
+       [root@oldboyedu oldboy]# cat oldboy.txt 
+       oldboy shenzhen
+       [root@oldboyedu oldboy]# mv oldboy.txt oldgirl.txt
+       [root@oldboyedu oldboy]# ls
+       oldgirl.txt
+       [root@oldboyedu oldboy]# cat oldgirl.txt 
+       oldboy shenzhen
+
+       移动数据时,出现重复信息也会提示需要覆盖
+	   [root@oldboyedu oldboy]# ls -l /tmp/oldboy.txt
+       -rw-r--r--. 1 root root 50 Apr  1 10:24 /tmp/oldboy.txt
+       [root@oldboyedu oldboy]# touch oldboy.txt
+       [root@oldboyedu oldboy]# mv oldboy.txt /tmp/
+       mv: overwrite ‘/tmp/oldboy.txt’? 
+
+03. 课程知识总结
+    1) 系统基础命令 
+	   系统运行  目录相关  文件相关
+	2) vi命令基础使用方法(非常熟悉)
+	3) 快捷方式使用
+	4) 特殊系统符号 > >> (< <<)
+
+基础作业:
+01. 总结已学命令及参数用法
+02. 预习系统目录结构
+
+
+

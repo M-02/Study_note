@@ -1,0 +1,211 @@
+=================================================================================================
+#   老男孩教育：                                                                          		#
+#   www.oldboyedu.com                                               							#
+#   邮件：miaokm@oldboyedu.com 	                                    							#
+#   地址：北京市昌平区顺沙路8号院汇德商厦4F													#
+#   电话：400-609-2893，180-1041-8396，173-1620-6489                                         	#
+#   资源老师：			QQ号码               	资源老师：              	QQ号码    	   		#
+#   范范		 	1223740011		     		依依		       		3532759635   			#
+#   安娜		 	2010068211		        	格格					1986787350				#
+#   瑶瑶		 	2023803491					金金					2918640936				#
+#   乔治			3380665979					龙龙					2090304642				#
+=================================================================================================
+
+老男孩教育01期脱产班-day40-综合架构网站服务
+================================================================================================
+00. 课程说明:
+	1. nginx服务一些常见应用 (模块功能)
+	2. LNMP架构 
+   
+01. 课程回顾:
+    1) 利用nginx搭建单个网站
+	2) 利用nginx搭建多个网站
+	   尽量每一个网站有单独的虚拟主机配置文件
+	   每一个网站有独立的站点目录
+	3) 利用nginx配置安全控制
+       根据用户访问的域名地址  www.oldboy.com/Av  access模块 --403
+       根据用户访问进行认证                       认证模块
+    4) 网站服务访问方式
+       基于域名访问
+       基于地址访问 
+
+02. nginx的企业实践应用
+    1) 利用nginx服务搭建网站文件共享服务器
+    第一个步骤: 编写配置文件(www.conf)
+	nginx模块功能: ngx_http_autoindex_module
+	
+	Syntax:	autoindex on | off;
+    Default:	
+    autoindex off;
+    Context:	http, server, location
+
+    server {
+       listen        80;
+       server_name   www.oldboy.com;
+       location / {
+         root  /html/www;
+         auth_basic      "oldboy-sz-01";
+         auth_basic_user_file password/htpasswd;
+         autoindex on;    --- 开启nginx站点目录索引功能
+    }
+    PS: 1. 需要将首页文件进行删除
+	    2. mime.types媒体资源类型文件作用
+		   文件中有的扩展名信息资源,   进行访问时会直接看到数据信息
+		   文件中没有的扩展名信息资源, 进行访问时会直接下载资源
+		   
+	网站页面目录数据,中文出现乱码,如何解决:
+    location / {
+       root  /html/www;
+       #index index.html;
+       auth_basic      "oldboy-sz-01";
+       auth_basic_user_file password/htpasswd;
+       autoindex on;
+       charset utf-8;   --- 修改目录结构中出现的中文乱码问题
+     }
+	
+	
+
+    2) 利用nginx服务搭配置文件别名功能
+	第一个历程: 编写配置文件 
+	server_name   www.oldboy.com old.com;
+    第二个历程: 配置好解析信息
+	
+	作用:
+	01. 编写网站访问测试
+	02. 定位要访问的网站服务器
+
+
+	3) 利用nginx状态模块功能对网站进行监控
+	状态模块: ngx_http_stub_status_module
+	location = /basic_status {
+        stub_status;
+    }
+    第一个历程: 编写配置文件 
+    [root@web01 conf.d]# vim state.conf
+    server {
+       listen    80;
+       server_name  state.oldboy.com
+       stub_status;
+    }	
+	
+	第二个历程: 重启nginx服务,并且编写解析文件
+	systemctl reload nginx 
+	10.0.0.7     state.oldboy.com
+	   
+    Active connections:  激活的连接数信息  4000用户  3500
+	accepts: 接收的连接数汇总(综合)  TCP
+	handled: 处理的连接数汇总(综合)  TCP
+	requests: 总计的请求数量  HTTP协议请求 
+    Reading: nginx服务读取请求报文的数量    100人点餐
+	Writing: nginx服务响应报文信息数量      100人响应
+	Waiting: nginx队列机制,要处理(读取或者响应保存进行保存)   监控
+	
+	4) nginx日志功能配置
+	访问日志: /var/log/nginx/access.log    ngx_http_log_module
+	log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '   定义日志内容格式
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+    access_log  /var/log/nginx/access.log  main;                                调用日志格式
+	
+	$remote_addr   			显示用户访问源IP地址信息
+    $remote_user            显示认证的用户名信息
+	[$time_local]           显示访问网站时间
+	"$request"              请求报文的请求行信息
+    $status                 用户访问网站状态码信息
+	$body_bytes_sent        显示响应的数据尺寸信息
+	$http_referer           记录调用网站资源的连接地址信息(防止用户盗链)                    
+                            老男孩nginx---access.log---莫文杰(荒原饮露---老男孩图片链接)---http_referer(链接)
+	$http_user_agent        记录用户使用什么客户端软件进行访问页面的  (谷歌 火狐 IE 安卓 iphone)
+	$http_x_forwarded_for   ??? 负载均衡
+
+	
+	错误日志: /var/log/nginx/error.log  --- Core functionality
+	Syntax:	    error_log file [level];  指定错误日志路径以及错误日志记录的级别
+    Default:	error_log logs/error.log error;
+    Context:	main, http, mail, stream, server, location
+
+    error_log  /var/log/nginx/error.log warn;
+	错误级别:
+	debug		:调试级别, 服务运行的状态信息和错误信息详细显示     信息越多
+	info        :信息级别, 只显示重要的运行信息和错误信息
+	notice      :通知级别: 更加重要的信息进行通知说明
+	warn        :警告级别: 可能出现了一些错误信息,但不影响服务运行
+	error		:错误级别: 服务运行已经出现了错误,需要进行纠正      推荐选择
+	crit        :严重级别: 必须进行修改调整
+	alert       :严重警告级别: 即警告,而且必须进行错误修改
+	emerg       :灾难级别: 服务已经不能正常运行                      信息越少
+	
+	PS: 日志文件信息需要做切割处理   几个G
+	
+	5) nginx服务location作用说明
+	模块说明: ngx_http_core_module
+	location进行匹配(uri)
+	错误页面优雅显示
+	location /oldboy {
+	   root /html/www;
+	   error_page  404  /oldboy.jpg;
+	}
+	location /oldgirl {
+	   root /html/www;
+	   error_page  404  /oldgirl.jpg;
+	}
+	
+	location详细配置:
+	Syntax:	location [ = | ~ | ~* | ^~ ] uri { ... }
+            location @name { ... }
+    Default:	—
+    Context:	server, location
+	location = / {              --- 精确匹配    优先级01 最高
+    [ configuration A ]
+    }
+    
+    location / {                --- 默认匹配    优先级04 最低
+        [ configuration B ]
+    }
+    
+    location /documents/ {      --- 按照目录进行匹配    优先级03
+        [ configuration C ]
+    }
+    
+    location ^~ /images/ {      --- 优先匹配/不识别uri信息中符号信息       优先级02
+        [ configuration D ]
+    }
+     
+    location ~* \.(gif|jpg|jpeg)$ {  --- 不区分大小写进行匹配  优先级03
+        [ configuration E ]
+    }
+	
+	6) 利用nginx实现页面跳转功能
+	利用rewrite模块是跳转功能:  http_rewrite_module
+	Syntax:	rewrite regex replacement [flag];   rewite  匹配的正则信息  替换成什么信息
+    Default:	—
+    Context:	server, location, if
+	
+	rewrite www.oldboy.com/(.*) http://www.oldboy.com/$1 permanent;   重写规则配置
+	    ^/        (.*)
+	baidu.com    /  oldboy.html                  跳转方式
+	
+	www.baidu.com/oldboy.html
+	
+	跳转方式:
+	永久跳转:  permanent   301    会将跳转信息进项缓存
+	临时跳转:  redirect    302    不会缓存跳转信息
+	
+	出现无限跳转如何解决:
+	第一种方法: 利用不同server区块配置打破循环
+	server {
+	   server_name  oldboy.com;
+	   rewrite ^/(.*) http://www.oldboy.com/$1 permanent;
+	}
+	第二种方法: 利用if判断实现打破循环
+	if ($host ~* "^oldboy.com$") {
+      rewrite ^/(.*) http://www.oldboy.com/$1 permanent;
+    }
+
+	www.oldboy.com/oldboy01/oldboy02/oldboy.jpg   --- www.oldboy.com/oldboy.jpg
+	
+	
+	
+作业:
+01. 利用命令取出状态页面信息中的数值???  4组  curl
+02. 搭建LNMP环境   数据库服务/php服务

@@ -1,0 +1,250 @@
+=================================================================================================
+#   老男孩教育：                                                                          		#
+#   www.oldboyedu.com                                               							#
+#   邮件：miaokm@oldboyedu.com 	                                    							#
+#   地址：北京市昌平区顺沙路8号院汇德商厦4F													#
+#   电话：400-609-2893，180-1041-8396，173-1620-6489                                         	#
+#   资源老师：			QQ号码               	资源老师：              	QQ号码    	   		#
+#   范范		 	1223740011		     		依依		       		3532759635   			#
+#   安娜		 	2010068211		        	格格					1986787350				#
+#   瑶瑶		 	2023803491					金金					2918640936				#
+#   乔治			3380665979					龙龙					2090304642				#
+=================================================================================================
+
+老男孩教育01期脱产班-day42-综合架构负载均衡
+================================================================================================
+00. 课程说明:
+    1) LNMP架构和存储服务器建立关系
+	2) LNMP架构和数据库服务器建立关系(数据迁移)
+	3) nginx负载均衡概念介绍
+	4) nginx负载均衡环境准备
+	5) nginx负载均衡设置过程
+	6) nginx负载均衡扩展说明
+	7) nginx负载均衡企业应用
+	   a 根据用户的访问uri信息进行负载均衡(动静分离的架构)
+	   b 根据用户的user-agent信息进行负载均衡(手机和客户端显示不同页面)
+   
+01. 课程回顾:
+    1) 网站服务器nginx服务概念
+	2) 网站服务器nginx服务部署
+	3) 网站服务器nginx服务配置
+	4) 网站服务器nginx服务应用
+	5) 网站LNMP架构(搭建网站页面-wordpress)
+	
+02. 课程疑问:
+    1) 上传wordpress主题,报413错误,如何解决?
+	总结:
+	第一个历程: 修改nginx配置文件
+	vim blog.conf
+	server {
+      client_max_body_size 50m;   --- 指定用户上传数据的大小限制(默认1M)
+	}
+
+    第二个历程: 修改php.ini配置文件
+	upload_max_filesize = 50M     --- 使PHP接收用户上传的更大的数据(默认2M)
+	
+	2) 如何让LNMP架构和存储服务器建立关系
+	第一个历程: 找出图片存储的目录
+	01方法: 根据图片链接地址获取图片存储位置
+	http://blog.oldboy.com  /wp-content/uploads/2019/05/meinv-1024x1024.jpg
+    	url                               uri
+    02方法: 先定位数据存放在站点目录中
+	find /html/blog -type f -mmin -5
+	inotifywait -mrq /html/blog
+	
+	第二个历程: 使web服务器和存储服务器建立关系
+	检查存储服务是否正常
+	编写存储服务配置文件
+	[root@nfs01 ~]# showmount -e 172.16.1.31
+    Export list for 172.16.1.31:
+    /data/bbs  172.16.1.0/24
+    /data/www  172.16.1.0/24
+    /data/blog 172.16.1.0/24
+	mkdir /data/{bbs,blog,www}
+	将web服务器blog存储的数据进行迁移
+	mv /tmp/2019/ /html/blog/wp-content/uploads/
+
+    默认存储服务器无法存储数据:
+	管理用户无法存储: root_squash  --- nfsnobody
+	普通用户无法存储: no_all_squash
+	解决:
+    第一个历程: 修改nfs配置文件,定义映射用户为www
+    useradd www -u 1002
+	chown -R www /data
+
+    第二个历程: 使root用户可以上传数据
+	sed -ri.bak 's#(sync)#\1,anonuid=1002,anongid=1002#g' /etc/exports
+	
+	3) 如何让LNMP架构和数据库服务器建立关系???
+	第一个历程: 将web服务器本地数据库数据进行备份
+	mysqldump -uroot -poldboy123 --all-database >/tmp/web_back.sql
+
+    第二个历程: 将备份数据进行迁移
+	scp -rp /tmp/web_back.sql 172.16.1.51:/tmp
+	
+	第三个历程: 恢复数据信息
+	yum install -y mariadb-server mariadb
+	mysql -uroot -poldboy123 </tmp/web_back.sql
+    
+	第四个历程: 修改数据库服务器中数据库用户信息
+	MariaDB [(none)]> select user,host from mysql.user;
+    +-----------+-----------+
+    | user      | host      |
+    +-----------+-----------+
+    | root      | 127.0.0.1 |
+    | root      | ::1       |
+    |           | localhost |
+    | root      | localhost |
+    | wordpress | localhost |
+    |           | web01     |
+    | root      | web01     |
+    +-----------+-----------+
+    7 rows in set (0.00 sec)
+	
+	优化: 删除无用的用户信息
+	delete from mysql.user where user="" and host="localhost";
+    delete from mysql.user where user="" and host="web01";
+	
+	添加: 添加新的用户信息
+	grant all on wordpress.* to 'wordpress'@'172.16.1.%' identified by 'oldboy123';
+	flush privileges;
+	
+	第五个历程: 修改web服务器代码文件信息
+	vim wp-config.php
+	/** MySQL hostname */
+    define( 'DB_HOST', '172.16.1.51' );
+	
+	第六个历程: 停止web服务器上数据库服务
+	....
+
+    问题01:
+	数据库服务没有正确启动: Error establishing a database connection  连接不上3306端口
+	问题02: 
+	PHP服务没有开启,报502错误
+	
+	4) web01代码信息迁移到web02服务器,并且修改了网站域名无法正确访问
+	访问新域名会自动跳转到老的域名
+	方法一: 
+	修改wordpres后台设置信息,将后台中老的域名改为新的域名
+	方法二:
+	修改数据库中的一个表, 在表中修改一个和域名有关的条目信息 (update phpmyadmin)
+	
+
+03. (反向代理)负载均衡的概念说明
+    什么是集群?
+	完成相同任务或工作的一组服务器 (web01 web02 web03 -- web集群)
+	
+	什么是负载均衡?
+	1) 实现用户访问请求进行调度分配
+	2) 实现用户访问压力分担
+	
+	什么是反向代理?
+	反向代理: 	外网 ---> (eth0外网) 代理服务器 (eth1内网) ---> 公司网站服务器web(内网)
+				外网用户(客户端)   ---  代理服务器 (服务端)
+				代理服务器(客户端) ---  web服务器(服务端)	
+	正向代理:   内网(局域网主机)  	--- (内网)代理服务器(外网) --- 互联网 --- web服务器(日本)
+                                     翻墙的操作
+	
+04. 准备负载均衡的环境
+    集群服务器部署:
+	PS: 集群中每天服务器的配置一模一样
+	企业中: 
+	01. 先部署好一台LNMP服务器,上传代码信息
+	02. 进行访问测试
+	03. 批量部署多台web服务器
+	04. 将nginx配置文件进行分发
+	05. 将站点目录分发给所有主机
+	教学中:
+	01. 将web01作为模板主机克隆
+	sed -i 's#\.7#.8#g' /etc/sysconfig/network-scripts/ifcfg-eth[01]
+	hostnamectl set-hostname web02
+	
+	利用手动方式实现负载均衡:
+    修改hosts主机地址和域名映射文件 
+	
+    负载均衡服务器部署:
+    第一个历程: 安装部署nginx软件
+    ....
+
+    第二个历程: 编写nginx负载服务配置文件
+    ngx_http_upstream_module   --- upstream   负载均衡  OK
+    ngx_http_proxy_module	   --- proxy_pass 反向代理
+	
+	upstream oldboy {
+       server 10.0.0.7:80;
+       server 10.0.0.8:80;
+       server 10.0.0.9:80;
+    }
+    server {
+        listen       80;
+        server_name  www.oldboy.com;
+        location / {
+           proxy_pass http://oldboy;
+        }
+    }
+	
+	第三个历程: 实现负载功能测试
+	搭建集群测试环境:
+	for name in www bbs blog;do echo "$name 10.0.0.7">/html/$name/wenwen.html;done
+	for name in www bbs blog;do echo "$name 10.0.0.8">/html/$name/wenwen.html;done
+	for name in www bbs blog;do echo "$name 10.0.0.9">/html/$name/wenwen.html;done
+	修改windows解析文件
+	10.0.0.5    www.oldboy.com  blog.oldboy.com bbs.oldboy.com
+	
+	负载均衡访问网站异常排错思路:
+	第一步: 负载均衡 测试后端web节点服务器是否能够正常访问
+	[root@lb01 conf.d]# curl -H host:www.oldboy.com 10.0.0.7/wenwen.html
+    www 10.0.0.7
+    [root@lb01 conf.d]# curl -H host:www.oldboy.com 10.0.0.8/wenwen.html
+    www 10.0.0.8
+    [root@lb01 conf.d]# curl -H host:www.oldboy.com 10.0.0.9/wenwen.html
+    www 10.0.0.9
+
+	第二步: 负载均衡 利用curl命令访问负载均衡服务器
+	查看两个配置文件
+	
+	第三步: 打开一个xshell连接  ping www.oldboy.com
+	第四步: 配置文件编写不正确
+	
+	
+05. 负载均衡配置模块详细说明
+    ngx_http_upstream_module   --- upstream
+	实现不同调度功能
+	1. 轮询分配请求(平均)
+	2. 权重分配请求(能力越强责任越重)
+	   upstream oldboy {
+          server 10.0.0.7:80 weight=3;
+          server 10.0.0.8:80 weight=2;
+          server 10.0.0.9:80 weight=1;
+       }
+	3. 实现热备功能(备胎功能)
+       	upstream oldboy {
+          server 10.0.0.7:80;
+          server 10.0.0.8:80;
+          server 10.0.0.9:80 backup;
+       }
+	4. 定义最大失败次数                 	健康检查参数
+	   max_fails=5
+	5. 定义失败之后重发的间隔时间			健康检查参数
+	   fail_timeout=10s  会给失败的服务器一次机会
+	
+	实现不同调度算法
+	1. rr  轮询调度算法
+	2. wrr 权重调度算法
+	3. ip_hash 算法  (出现反复登录的时候)
+	4. least_conn  根据服务器连接数分配资源
+	
+	ngx_http_proxy_module	   --- proxy_pass
+	01. 访问不同的网站地址,不能显示不同的网站页面  (面试题)
+	proxy_set_header Host $host;
+	02. 访问网站用户地址信息无法进行分析统计       (面试题)
+	proxy_set_header X-Forwarded-For $remote_addr;
+	03. 访问负载均衡会出现错误页面,影响用户体验
+	proxy_next_upstream error timeout http_404 http_502 http_403;
+	
+作业:
+01. 总结Module ngx_http_proxy_module
+02. 总结Module ngx_http_upstream_module
+03. 高可用服务 keepalived 
+    提前克隆好一台新的lb02主机 lb01+lb02 高可用集群(HA)
+   

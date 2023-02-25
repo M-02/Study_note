@@ -150,7 +150,7 @@ ps -ef|grep 3306
 #### 管理员密码设置（root@localhost）
 
 ```shell
-mysqladmin -u root -p password 'l723433302'
+mysqladmin -u root -p password 'root'
 ```
 
 #### 管理员忘记密码操作
@@ -169,8 +169,8 @@ select user,host,authentication_string from mysql.user;
 
 flush privileges;
 
-grant all on *.* to root@'localhost' identified by 'l723433302';
-grant all on *.* to HAIRUI@'%' identified by 'l723433302';
+grant all on *.* to root@'localhost' identified by 'root';
+grant all on *.* to HAIRUI@'%' identified by 'root';
 
 4，关闭数据库，正常启动验证
 

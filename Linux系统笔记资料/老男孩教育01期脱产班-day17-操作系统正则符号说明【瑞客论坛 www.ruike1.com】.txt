@@ -1,0 +1,570 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day17-操作系统正则符号说明
+==================================	
+
+00. 课程介绍部分
+    1). 系统符号 # ~ $ . ..
+	2). 通配符号 * {}
+	    根据文件名称进行匹配信息
+	3). 正则符号 *
+	    根据内容进行匹配
+    	
+01. 课程知识回顾
+    1) 系统符号:
+	   基础系列: # $ ! |  
+	   引号系列: '' "" ``=$() 没引号
+	   定向符号: > >> 2> 2>> < <<
+	   路径符号: . .. ~ -=$OLDPWD
+	   逻辑符号: && ||  mkdir /oldboy && touch /oldboy/oldboy.txt || echo "目录已经存在,无须创建"
+	2) 通配符号: 用于匹配文件名称信息
+	   * 模糊匹配信息:
+	   {}生成序列信息: 有序序列 无序序列 组合序列(快速备份和恢复文件)
+	3) 正则符号 
+	   基础正则符号: grep sed awk
+	   ^ 以什么开头的信息进行匹配:
+	   [root@oldboyedu ~]# grep "^old" /oldboy/oldboy.txt
+       oldboy-linux
+       oldboy-python-linux
+       oldboy-linux oldboy01
+       oldboy-python-linux
+       oldboy-linux
+       [root@oldboyedu ~]# sed -n '/^old/p' /oldboy/oldboy.txt
+       oldboy-linux
+       oldboy-python-linux
+       oldboy-linux oldboy01
+       oldboy-python-linux
+       oldboy-linux
+       [root@oldboyedu ~]# awk '/^old/' /oldboy/oldboy.txt
+       oldboy-linux
+       oldboy-python-linux
+       oldboy-linux oldboy01
+       oldboy-python-linux
+       oldboy-linux  
+	   
+	   $ 以什么结尾的信息进行匹配
+	   ^$取出文件中的空行内容
+	     grep -v "^$" /oldboy/oldboy.txt
+	 
+	 
+02. 系统的正则符号部分:
+    测试环境:
+cat >>~/oldboy_test.txt<<EOF
+I am oldboy teacher!
+I teach linux.
+
+I like badminton ball ,billiard ball and chinese chess!
+my blog is http://oldboy.blog.51cto.com
+our site is http://www.etiantian.org
+my qq num is 49000448.
+
+not 4900000448.
+my god ,i am not oldbey,but OLDBOY!
+EOF	
+
+    基础正则符号: 
+    1) 点符号 .  ???
+       匹配任意一个字符,且只有一个字符 
+	   命令执行结果:
+	   [root@oldboyedu ~]# grep "." ~/oldboy_test.txt 
+       I am oldboy teacher!
+       I teach linux.
+       I like badminton ball ,billiard ball and chinese chess!
+       my blog is http://oldboy.blog.51cto.com
+       our site is http://www.etiantian.org
+       my qq num is 49000448.
+       not 4900000448.
+       my god ,i am not oldbey,but OLDBOY!
+  
+	   显示匹配过程:
+       [root@oldboyedu ~]# grep "." ~/oldboy_test.txt  -o
+       I
+        
+       a
+       m
+        
+       o
+       l
+       d
+
+ 
+	2) 星符号 *  ???
+       匹配前一个字符连续出现了0次或者多次
+	   [root@oldboyedu ~]# grep "0*" ~/oldboy_test.txt
+       I am oldboy teacher!
+       I teach linux.
+       
+       I like badminton ball ,billiard ball and chinese chess!
+       my blog is http://oldboy.blog.51cto.com
+       our site is http://www.etiantian.org
+       my qq num is 49000448.
+       
+       not 4900000448.
+       my god ,i am not oldbey,but OLDBOY!
+	   
+	3) 点和星结合: .* 匹配任意所有信息  .* == *
+	   [root@oldboyedu ~]# grep "^m.*m$" ~/oldboy_test.txt
+       my blog is http://oldboy.blog.51cto.com
+	   
+	   问题: 贪婪匹配问题:
+	   [root@oldboyedu ~]# grep "^m.*o" ~/oldboy_test.txt
+       my blog is http://oldboy.blog.51cto.com
+       my god ,i am not oldbey,but OLDBOY!
+       指定具体信息阻止贪婪匹配
+       [root@oldboyedu ~]# grep "^m.*to" ~/oldboy_test.txt
+       my blog is http://oldboy.blog.51cto.com
+
+    4) 转义符号: \
+	   将文件中的以 . 结尾的信息进行过滤??
+	   \作用:
+	   01. 将有特殊意义符号,转义成普通信息进行识别
+	   02. 将没有意义的信息转义为有特殊意义的信息
+	       \n   换行符号
+		   \t   制表符号
+	       换行符号作用:
+	       [root@oldboyedu ~]# echo "oldboy01oldboy02"
+           oldboy01oldboy02
+           [root@oldboyedu ~]# echo "oldboy01\noldboy02\noldboy03"
+           oldboy01\noldboy02\noldboy03
+           [root@oldboyedu ~]# echo -e "oldboy01\noldboy02\noldboy03"
+           oldboy01
+           oldboy02
+           oldboy03
+           [root@oldboyedu ~]# echo -e "oldboy01\noldboy02\noldboy03" >oldboy.txt
+           [root@oldboyedu ~]# cat oldboy.txt
+           oldboy01
+           oldboy02
+           oldboy03
+		   
+	   [root@oldboyedu ~]# grep ".$" oldboy_test.txt 
+       I am oldboy teacher!
+       I teach linux.
+       I like badminton ball ,billiard ball and chinese chess!
+       my blog is http://oldboy.blog.51cto.com
+       our site is http://www.etiantian.org
+       my qq num is 49000448.
+       not 4900000448.
+       0101010101
+       11111
+       my god ,i am not oldbey,but OLDBOY!
+       [root@oldboyedu ~]# grep "\.$" oldboy_test.txt 
+       I teach linux.
+       my qq num is 49000448.
+       not 4900000448.
+	
+    5) 括号符号：[ ]
+       匹配多个字符信息
+       [root@oldboyedu ~]# grep "oldb[oe]y" oldboy_test.txt
+       I am oldboy teacher!
+       my blog is http://oldboy.blog.51cto.com
+       my god ,i am not oldbey,but OLDBOY!	  
+
+       问题: 将以I开头和m开头的行都找出来?
+       [root@oldboyedu ~]# grep "^[Im]" oldboy_test.txt 
+       I am oldboy teacher!
+       I teach linux.
+       I like badminton ball ,billiard ball and chinese chess!
+       my blog is http://oldboy.blog.51cto.com
+       my qq num is 49000448.
+       my god ,i am not oldbey,but OLDBOY!	   
+	 
+	   [root@oldboyedu ~]# grep "^[a-Z]" /etc/selinux/config 
+       SELINUX=enforcing
+       SELINUXTYPE=targeted 
+	 
+    6) 括号和尖号组合 [^]
+	   排除符号
+	   [root@oldboyedu ~]# grep "[abc]" oldboy_test.txt
+       I am oldboy teacher!
+       I teach linux.
+       I like badminton ball ,billiard ball and chinese chess!
+       my blog is http://oldboy.blog.51cto.com
+       our site is http://www.etiantian.org
+       my god ,i am not oldbey,but OLDBOY!
+       [root@oldboyedu ~]# grep "[^abc]" oldboy_test.txt
+       I am oldboy teacher!
+       I teach linux.
+       I like badminton ball ,billiard ball and chinese chess!
+       my blog is http://oldboy.blog.51cto.com
+       our site is http://www.etiantian.org
+       my qq num is 49000448.
+       not 4900000448.
+       0101010101
+       11111
+       my god ,i am not oldbey,but OLDBOY!
+
+    扩展正则符号:
+    默认 grep sed不能直接识别
+	grep 提升自己  -- egrep/grep -E 
+	sed  提升自己  -- sed -r 
+    1) +号符号:
+    匹配前一个字符连续出现了1次或者多次    
+    [root@oldboyedu ~]# grep "0*" oldboy_test.txt 
+    I am oldboy teacher!
+    I teach linux.
+    
+    I like badminton ball ,billiard ball and chinese chess!
+    my blog is http://oldboy.blog.51cto.com
+    our site is http://www.etiantian.org
+    my qq num is 49000448.
+    
+    not 4900000448.
+    my god ,i am not oldbey,but OLDBOY!
+    [root@oldboyedu ~]# grep "0+" oldboy_test.txt 
+    [root@oldboyedu ~]# egrep "0+" oldboy_test.txt 
+    my qq num is 49000448.
+    not 4900000448.
+    [root@oldboyedu ~]# egrep "0+" oldboy_test.txt -o
+    000
+    00000
+	
+	张三   110105199004067631
+	李四   104105199004067631
+	赵六   oldboy
+	王五   104105199004067631
+
+    找出身份证信息输入错误的内容
+	[root@oldboyedu ~]# grep [0-9] oldboy_test02.txt 
+    张三   110105199004067631
+    李四   104105199004067631
+    王五   104105199004067631
+    [root@oldboyedu ~]# grep -E "[0-9]+" oldboy_test02.txt 
+    张三   110105199004067631
+    李四   104105199004067631
+    王五   104105199004067631
+    [root@oldboyedu ~]# grep -E "[0-9]+" oldboy_test02.txt -o
+    110105199004067631
+    104105199004067631
+    104105199004067631
+    [root@oldboyedu ~]# grep -Ev "[0-9]+" oldboy_test02.txt
+    赵六   oldboy
+
+    2) 竖线符号：|  
+	并且符号,用于匹配多个信息
+	[root@oldboyedu ~]# grep -E "oldboy|oldbey" oldboy_test.txt 
+    I am oldboy teacher!
+    my blog is http://oldboy.blog.51cto.com
+    my god ,i am not oldbey,but OLDBOY!
+    [root@oldboyedu ~]# grep -E "oldb[oe]y" oldboy_test.txt 
+    I am oldboy teacher!
+    my blog is http://oldboy.blog.51cto.com
+    my god ,i am not oldbey,but OLDBOY!
+
+    3) 括号符号: ()
+	作用:
+	1. 指定信息进行整体匹配
+	[root@oldboyedu ~]# grep  "oldb[oe]y" oldboy_test.txt 
+    I am oldboy teacher!
+    my blog is http://oldboy.blog.51cto.com
+    my god ,i am not oldbey,but OLDBOY!
+    [root@oldboyedu ~]# grep  "oldboey" oldboy_test.txt 
+    my god ,i am not oldboey,but OLDBOY!
+    [root@oldboyedu ~]# grep  "oldb(oe)y" oldboy_test.txt 
+    [root@oldboyedu ~]# grep -E "oldb(oe)y" oldboy_test.txt 
+    my god ,i am not oldboey,but OLDBOY!
+    [root@oldboyedu ~]# grep -E "oldb(o|e)y" oldboy_test.txt 
+    I am oldboy teacher!
+    my blog is http://oldboy.blog.51cto.com
+    my god ,i am not oldbey,but OLDBOY!
+	
+	2. 进行后项引用前项使用: sed命令替换功能
+	批量创建用户 oldboy01..oldboy10
+	[root@oldboyedu ~]# echo oldboy{01..10}
+    oldboy01 oldboy02 oldboy03 oldboy04 oldboy05 oldboy06 oldboy07 oldboy08 oldboy09 oldboy10
+    [root@oldboyedu ~]# echo oldboy{01..10}|xargs
+    oldboy01 oldboy02 oldboy03 oldboy04 oldboy05 oldboy06 oldboy07 oldboy08 oldboy09 oldboy10
+    [root@oldboyedu ~]# echo oldboy{01..10}|xargs -n1
+    oldboy01
+    oldboy02
+    oldboy03
+    oldboy04
+    oldboy05
+    oldboy06
+    oldboy07
+    oldboy08
+    oldboy09
+    oldboy10
+    [root@oldboyedu ~]# echo oldboy{01..10}|xargs -n1|sed 's#(.*)#useradd \1#g'
+    sed: -e expression #1, char 19: invalid reference \1 on `s' command's RHS
+    xargs: echo: terminated by signal 13
+    [root@oldboyedu ~]# echo oldboy{01..10}|xargs -n1|sed -r 's#(.*)#useradd \1#g'
+    useradd oldboy01
+    useradd oldboy02
+    useradd oldboy03
+    useradd oldboy04
+    useradd oldboy05
+    useradd oldboy06
+    useradd oldboy07
+    useradd oldboy08
+    useradd oldboy09
+    useradd oldboy10
+    [root@oldboyedu ~]# echo oldboy{01..10}|xargs -n1|sed -r 's#(.*)#useradd \1#g'|bash
+    useradd: user 'oldboy02' already exists
+    useradd: user 'oldboy03' already exists
+    useradd: user 'oldboy04' already exists
+    useradd: user 'oldboy05' already exists
+    useradd: user 'oldboy06' already exists
+    useradd: user 'oldboy07' already exists
+    useradd: user 'oldboy08' already exists
+    useradd: user 'oldboy09' already exists
+    useradd: user 'oldboy10' already exists
+	
+	企业面试题: 批量创建用户 oldboy01..oldboy10,并给每个用户设置密码信息,默认初始化密码(123456)
+	01. 如何创建用户 给用户设置密码
+	02. 基础命令 echo {}/seq -w 10
+	03. sed命令替换信息方法
+	04. 正则符号 .* () 
+	05. 基础符号 ; |
+	06. bash内置命令
+	[root@oldboyedu ~]# seq -w 10|sed -r 's#(.*)#useradd oldboy\1;echo 123456|passwd --stdin oldboy\1#g'
+    useradd oldboy01;echo 123456|passwd --stdin oldboy01
+    useradd oldboy02;echo 123456|passwd --stdin oldboy02
+    useradd oldboy03;echo 123456|passwd --stdin oldboy03
+    useradd oldboy04;echo 123456|passwd --stdin oldboy04
+    useradd oldboy05;echo 123456|passwd --stdin oldboy05
+    useradd oldboy06;echo 123456|passwd --stdin oldboy06
+    useradd oldboy07;echo 123456|passwd --stdin oldboy07
+    useradd oldboy08;echo 123456|passwd --stdin oldboy08
+    useradd oldboy09;echo 123456|passwd --stdin oldboy09
+    useradd oldboy10;echo 123456|passwd --stdin oldboy10
+	
+	将输出的信息
+	echo 123456 ==> 转换为 <123456>进行显示
+	[root@oldboyedu ~]# # echo 123456 ==> 转换为 <123456>进行显示
+    [root@oldboyedu ~]# echo 123456
+    123456
+    [root@oldboyedu ~]# echo 123456|sed -r 's#([1-6]+)#\1#g'
+    123456
+    [root@oldboyedu ~]# echo 123456|sed -r 's#([1-6]+)#<\1>#g'
+    <123456>
+    [root@oldboyedu ~]# echo 123456|sed -r 's#(.*)#<\1>#g'
+    <123456>
+	
+	echo 123456 ==> 转换为 <12><34><56>进行显示
+	[root@oldboyedu ~]# # echo 123456 ==> 转换为 <12><34><56>进行显示
+    [root@oldboyedu ~]# echo 123456
+    123456
+    [root@oldboyedu ~]# echo 123456|sed -r "s#(12)(34)(56)#<\1><\2><\3>#g"
+    <12><34><56>
+    [root@oldboyedu ~]# echo 123456|sed -r "s#(12)(34)(56)#<\1><><\3>#g"
+    <12><><56>
+    [root@oldboyedu ~]# echo 123456|sed -r "s#(12)(34)(56)#<\1><\3><\3>#g"
+    <12><56><56>
+    [root@oldboyedu ~]# echo 123456|sed -r "s#(..)(..)(..)#<\1><\2><\3>#g"
+    <12><34><56>
+	
+    echo 123456 ==> 转换为 <12>34<56>进行显示	
+	
+	4) 括号符号：{}
+	可以指定字符连续匹配的次数
+	第一种情况: x{n,m}  表示前一个字符至少连续出现n次，最多出现m次
+	[root@oldboyedu ~]# grep -E "0{2,3}" oldboy_test.txt 
+    my qq num is 49000448.
+    not 4900000448.
+    [root@oldboyedu ~]# grep  "0+" oldboy_test.txt 
+    [root@oldboyedu ~]# grep -E "0+" oldboy_test.txt 
+    my qq num is 49000448.
+    not 4900000448.
+    [root@oldboyedu ~]# grep -E  "0+" oldboy_test.txt -o
+    000
+    00000
+    [root@oldboyedu ~]# grep -E "0{2,3}" oldboy_test.txt  -o
+    000
+    000
+    00
+    [root@oldboyedu ~]# grep -E "0{2,4}" oldboy_test.txt
+    my qq num is 49000448.
+    not 4900000448.
+    [root@oldboyedu ~]# grep -E "0{2,4}" oldboy_test.txt -o
+    000
+    0000
+	
+	第二种情况: x{n} 表示前一个字符正好连续出现了n次
+    [root@oldboyedu ~]# grep -E "0{2}" oldboy_test.txt
+    my qq num is 49000448.
+    not 4900000448.
+    [root@oldboyedu ~]# grep -E "0{2}" oldboy_test.txt -o
+    00
+    00
+    00
+	
+	第三种情况: x{n,} 表示前一个字符至少连续出现n次，最多出现多少次不限
+	[root@oldboyedu ~]# grep -E "0{2,}" oldboy_test.txt
+    my qq num is 49000448.
+    not 4900000448.
+    [root@oldboyedu ~]# grep -E "0{2,}" oldboy_test.txt -o
+    000
+    00000
+
+	第四种情况: x{,m} 表示前一个字符至少连续出现0次，最多出现m次
+	[root@oldboyedu ~]# grep -E "0{,2}" oldboy_test.txt
+    I am oldboy teacher!
+    I teach linux.
+    
+    I like badminton ball ,billiard ball and chinese chess!
+    my blog is http://oldboy.blog.51cto.com
+    our site is http://www.etiantian.org
+    my qq num is 49000448.
+    
+    not 4900000448.
+    my god ,i am not oldbey,but OLDBOY!
+    my god ,i am not oldboey,but OLDBOY!
+    [root@oldboyedu ~]# grep -E "0{,2}" oldboy_test.txt -o
+    00
+    0
+    00
+    00
+    0
+
+	5) 问号符号 ?
+	   定义匹配前一个字符出现0或者1次
+    
+    创建一个测试环境:
+cat >>oldboy_test03.txt<<EOF
+gd
+god
+good
+goood
+gooood
+EOF
+	
+	[root@oldboyedu ~]# grep "o*" oldboy_test03.txt 
+    gd
+    god
+    good
+    goood
+    gooood
+    [root@oldboyedu ~]# egrep "o+" oldboy_test03.txt 
+    god
+    good
+    goood
+    gooood
+    [root@oldboyedu ~]# egrep "o?" oldboy_test03.txt 
+    gd
+    god
+    good
+    goood
+    gooood
+    [root@oldboyedu ~]# egrep "o?" oldboy_test03.txt -o
+    o
+    o
+    o
+    o
+    o
+    o
+    o
+    o
+    o
+    o
+    [root@oldboyedu ~]# egrep "o+" oldboy_test03.txt -o
+    o
+    oo
+    ooo
+    oooo
+
+	补充: 想让grep sed命令可以直接识别扩展正则
+	[root@oldboyedu ~]# grep "o\+" oldboy_test03.txt
+    god
+    good
+    goood
+    gooood
+    [root@oldboyedu ~]# grep -E "0{,2}" oldboy_test.txt^C
+    [root@oldboyedu ~]# echo 123456|sed  "s#\(..\)\(..\)\(..\)#<\1><\2><\3>#g"
+    <12><34><56>
+
+	总结:
+	*  匹配前一个字符出现0次或者多次
+	+  匹配前一个字符出现1次或者多次
+	{} 匹配前一个字符指定出现多少次,至少0次
+	?  匹配前一个字符出现0次或者1次
+	
+	利用ip address show eth0只把IP地址信息显示出来?
+	[root@oldboyedu ~]# ip a s eth0
+    2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+        link/ether 00:0c:29:81:57:66 brd ff:ff:ff:ff:ff:ff
+        inet 10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+           valid_lft forever preferred_lft forever
+        inet6 fe80::31af:a93d:2d09:e293/64 scope link noprefixroute 
+           valid_lft forever preferred_lft forever
+    [root@oldboyedu ~]# ip a s eth0|grep "[0-9].[0-9].[0-9].[0-9]"
+        inet 10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+    [root@oldboyedu ~]# ip a s eth0|grep "[0-9]+.[0-9]+.[0-9]+.[0-9]+"
+    [root@oldboyedu ~]# ip a s eth0|egrep "[0-9]+.[0-9]+.[0-9]+.[0-9]+"
+        link/ether 00:0c:29:81:57:66 brd ff:ff:ff:ff:ff:ff
+        inet 10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+    [root@oldboyedu ~]# ip a s eth0|egrep "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"
+        inet 10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+    [root@oldboyedu ~]# ip a s eth0|egrep "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" -o
+    10.0.0.200
+    10.0.0.255
+    [root@oldboyedu ~]# ip a s eth0|egrep "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+" -o|head -1
+    10.0.0.200
+
+	[root@oldboyedu ~]# ip a s eth0|egrep "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"
+    inet 10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+    [root@oldboyedu ~]# ip a s eth0|egrep "([0-9]+\.)"
+        inet 10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+    [root@oldboyedu ~]# ip a s eth0|egrep "([0-9]+\.)" -o
+    10.
+    0.
+    0.
+    10.
+    0.
+    0.
+    [root@oldboyedu ~]# ip a s eth0|egrep "([0-9]+\.){3}[0-9]+" -o
+    10.0.0.200
+    10.0.0.255
+    [root@oldboyedu ~]# ip a s eth0|egrep "([0-9]+\.?){4}" -o
+    1500
+    1000
+    10.0.0.200
+    10.0.0.255
+    [root@oldboyedu ~]# ip a s eth0|egrep "([0-9]+\.?){4}" 
+    2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP group default qlen 1000
+        inet 10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+    [root@oldboyedu ~]# 
+    [root@oldboyedu ~]# ip a s eth0|egrep "([0-9]+\.?){4}" -o
+    1500
+    1000
+    10.0.0.200
+    10.0.0.255
+    [root@oldboyedu ~]# ip a s eth0|egrep "([0-9]+\.?){4}" -o|head -3|tail -1
+    10.0.0.200
+
+	
+	
+
+作业:
+01. sed/awk命令如何进行排除过滤? grep -v	 
+02. 批量创建用户 oldboy01..oldboy10,并给每个用户设置随机密码信息
+    07. shell
+        1) 如何生成随机信息
+        2) 变量设置
+        3) 循环语句		
+03. 取IP地址/取权限数值 利用grep/sed/awk + 正则符号
+04. sed	 
+	 
+	 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+       

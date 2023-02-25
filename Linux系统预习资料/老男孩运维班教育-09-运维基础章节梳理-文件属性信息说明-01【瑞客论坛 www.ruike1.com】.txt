@@ -1,0 +1,332 @@
+=============================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+=============================================================================================
+
+老男孩教育北京57期-day12-文件属性说明
+==============================
+00. 课程回顾说明    
+	1) 课程阶段回顾
+	   a vim扩展使用方法(常见问题 vim编辑软件原理)
+	   b 系统别名概念 (alias)
+	     特殊说明: 还原命令本身的操作
+		 1) 利用撬棍忽略别名功能
+		 2) 利用命令文件绝对路径(which)
+		 3) 取消别名功能(unalias)
+	
+	2) 文件属性说明 
+	   分为7列信息显示
+	   1) inode 索引信息
+	   2) 文件类型 权限信息    ok
+	   3) 硬链接数
+	   4) 文件所属用户   属主
+	   5) 文件所属用户组 属组
+	   6) 文件大小
+	   7) 文件时间信息
+	
+	3) 文件类型 
+	   a windows识别文件类型的方法  扩展名
+	     linux如何判断文件类型      file
+	   b 系统中具体文件类型分类
+	     01. 普通文件 -
+		     纯文本普通文件   直接看文件内容 直接编辑文件    (配置文件)
+			 二进制普通文件   无法查看文件内容 具有执行权限  (命令文件 数据库文件)
+			 数据类型普通文件 无法查看文件内容               (压缩过的文件)
+		 02. 目录文件 d
+		 03. 链接文件 l   快捷方式
+		     ln -s 要被链接的文件路径信息  链接文件路径信息 
+		 04. 设备文件
+		     字符设备文件 c
+			 /dev/urandom  
+			 tr -cd '0-9a-zA-Z' </dev/urandom|head -c 6  --- 生成随机数
+             /dev/zero   --- 磁盘管理里面 swap 1G-->2g
+			 /dev/null   --- 系统黑洞 命令生成的信息  定时任务 
+			                 既不要放在屏幕上: 损耗内存空间资源
+							 也不要放到文件中: 占用磁盘空间
+			 
+			 块设备文件   b
+			 /dev/sda1
+			 /dev/sr0
+		05. 套接文件      s  和网络通讯相关的文件(python 网络编程) 
+        06. 管道文件      p  		
+
+01. 文件目录操作命令总结
+    显示文件信息类型命令  file
+	显示命令绝对路径信息  which
+	显示命令路径以及文件  whereis
+	[root@oldboy-xiaodao.com.cn ~]# whereis cp
+    cp: /usr/bin/cp /usr/share/man/man1/cp.1.gz
+	补充: man手册分为以下几种级别
+	      1   Executable programs or shell commands
+          2   System calls (functions provided by the kernel)
+          3   Library calls (functions within program libraries)
+          4   Special files (usually found in /dev)
+          5   File formats and conventions eg /etc/passwd
+          6   Games
+          7   Miscellaneous (including macro packages and conventions), e.g. man(7), groff(7)
+          8   System administration commands (usually only for root)
+          9   Kernel routines [Non standard]
+          man 1 cp  --- 指定查看什么级别man手册信息
+    
+    快速定位文件路径信息
+	yum provides locate  ---> mlocate
+	locate 文件名称   --- 快速找到文件所在的路径信息
+	
+	常见错误:
+	01) 按照完软件, 直接执行命令会有报错
+	[root@oldboy-xiaodao.com.cn ~]# locate hosts
+    locate: can not stat () `/var/lib/mlocate/mlocate.db': No such file or directory
+	
+	02) 执行命令查找存在的文件没有结果信息
+	updatadb
+	[root@oldboy-xiaodao.com.cn ~]# updatedb
+    [root@oldboy-xiaodao.com.cn ~]# locate alex01
+    /root/alex01.txt
+
+    快速查找数据信息命令  find
+	用法说明:
+	find 路径信息(从哪个位置进行查找)  查找的文件类型   文件名称  
+	find /oldboy  -type f -name "oldboy.txt"
+
+    [root@oldboy-xiaodao.com.cn ~]# find /oldboy  -type f -name "oldboy.txt"
+    /oldboy/oldboy.txt
+    [root@oldboy-xiaodao.com.cn ~]# find /oldboy  -type f -name "oldboy"
+	
+	利用find命令配合*(通配符号)模糊查找数据信息
+    [root@oldboy-xiaodao.com.cn ~]# find /oldboy  -type f -name "oldboy*"
+    /oldboy/oldboy.mp3
+    /oldboy/oldboy.txt
+	
+	文件类型标识   find命令文件类型标识
+	d                 d 
+	l                 l 
+	-                 f 
+	
+	利用find命令忽略大小写查找文件
+	[root@oldboy-xiaodao.com.cn oldboy]# find /oldboy  -type f -name "oldboy*"
+    /oldboy/oldboy.mp3
+    /oldboy/oldboy.txt
+    [root@oldboy-xiaodao.com.cn oldboy]# find /oldboy  -type f -iname "oldboy*"
+    /oldboy/oldboy.mp3
+    /oldboy/oldboy.txt
+    /oldboy/Oldboy.txt
+
+	利用find命令根据文件大小查找数据
+	`c'    for bytes
+    `k'    for Kilobytes (units of 1024 bytes)
+    `M'    for Megabytes (units of 1048576 bytes)
+    `G'    for Gigabytes (units of 1073741824 bytes)
+    
+	a 找寻指定大小的文件
+	[root@oldboy-xiaodao.com.cn oldboy]# find /oldboy  -type f -iname "oldboy*" -size 10c
+	
+	b 找寻比指定数值大的文件 +10
+    [root@oldboy-xiaodao.com.cn oldboy]# find /oldboy  -type f -iname "oldboy*" -size +10c
+    /oldboy/oldboy02.txt
+    /oldboy/oldboy03.txt
+	
+	c 找寻比指定数值小的文件 -10
+    [root@oldboy-xiaodao.com.cn oldboy]# find /oldboy  -type f -iname "oldboy*" -size -10c
+    /oldboy/oldboy.mp3
+    /oldboy/oldboy.txt
+    /oldboy/Oldboy.txt
+    /oldboy/oldboy01.txt
+
+	利用find命令,指定查找数据目录层级(默认采用递归查找)
+	[root@oldboy-xiaodao.com.cn oldboy]# tree
+    .
+    ├── oldboy01
+    │?? ├── oldboy01.txt
+    │?? └── oldboy02
+    │??     ├── oldboy02.txt
+    │??     └── oldboy03
+    └── oldboy.txt
+
+	[root@oldboy-xiaodao.com.cn oldboy]# find /oldboy  -type f  -name "oldboy*"  -maxdepth 1
+    find: warning: you have specified the -maxdepth option after a non-option argument -type, but options are not positional (-maxdepth affects tests specified before it as well as those specified after it).  Please specify options before other arguments.
+    
+    /oldboy/oldboy.txt
+    [root@oldboy-xiaodao.com.cn oldboy]# find /oldboy -maxdepth 1  -type f -name "oldboy*"
+    /oldboy/oldboy.txt
+	
+	补充: tree命令显示目录结构层级信息
+	[root@oldboy-xiaodao.com.cn oldboy]# tree ./
+    ./
+    ├── oldboy01
+    │?? ├── oldboy01.txt
+    │?? └── oldboy02
+    │??     ├── oldboy02.txt
+    │??     └── oldboy03
+    └── oldboy.txt
+    
+    3 directories, 3 files
+    [root@oldboy-xiaodao.com.cn oldboy]# tree -L 1 ./
+    ./
+    ├── oldboy01
+    └── oldboy.txt
+    
+    1 directory, 1 file
+    [root@oldboy-xiaodao.com.cn oldboy]# tree -L 2 ./
+    ./
+    ├── oldboy01
+    │?? ├── oldboy01.txt
+    │?? └── oldboy02
+    └── oldboy.txt
+    
+    2 directories, 2 files
+
+	只查看目录结构中目录信息
+	[root@oldboy-xiaodao.com.cn oldboy]# tree -L 1 ./
+    ./
+    ├── oldboy01
+    └── oldboy.txt
+    
+    1 directory, 1 file
+    [root@oldboy-xiaodao.com.cn oldboy]# tree -d -L 1 ./
+    ./
+    └── oldboy01
+    
+    1 directory
+
+	对一些数据文件进行压缩处理
+	环境准备: 利用循环命令进行准备环境
+	语法格式: for 变量名 in {01..10};do 具体执行命令信息;done
+	            定义循环多少次   ;     开始进行循环执行命令  ;  结束
+				
+	实践操作举例:
+	[root@oldboy-xiaodao.com.cn oldboy]# for oldboy in {01..10};do cat /etc/services >>/oldboy/test.txt;done
+    [root@oldboy-xiaodao.com.cn oldboy]# ll /oldboy/test.txt 
+    -rw-r--r-- 1 root root 8713809 Jan 14 10:43 /oldboy/test.txt
+    [root@oldboy-xiaodao.com.cn oldboy]# ll -h /oldboy/test.txt 
+    -rw-r--r-- 1 root root 8.4M Jan 14 10:43 /oldboy/test.txt
+    [root@oldboy-xiaodao.com.cn oldboy]# for oldboy in {01..10};do cat /oldboy/test.txt >>/oldboy/test01.txt;done
+    [root@oldboy-xiaodao.com.cn oldboy]# ll -h /oldboy/test01.txt 
+    -rw-r--r-- 1 root root 84M Jan 14 10:45 /oldboy/test01.txt
+
+	a 如何对文件进行压缩处理
+	  tar 参数信息 袋/箱子  要进行压缩处理东西(数据)
+	  tar  zcvf    /oldboy/test01.tar.gz  /oldboy/test01.txt  /oldboy/test02.txt
+	  z  利用gzip方式进行压缩 
+      c  创建出一个压缩包       creat 创建
+      v  显示压缩的过程         verbose    	  
+	  f  指定压缩文件的路径信息 一定放在所有参数的最后面 
+	
+	  演示说明:
+	  [root@oldboy-xiaodao.com.cn oldboy]# tar  zcvf    /oldboy/test01.tar.gz  /oldboy/test01.txt
+      tar: Removing leading `/' from member names
+      /oldboy/test01.txt
+      [root@oldboy-xiaodao.com.cn oldboy]# ll /oldboy/ -h
+      total 109M
+      -rw-r--r-- 1 root root  17M Jan 14 11:01 test01.tar.gz
+      -rw-r--r-- 1 root root  84M Jan 14 10:45 test01.txt
+
+	b 数据压缩好之后,请检查压缩包中的数据
+	  tar tf /oldboy/test01.tar.gz
+	  t            对数据包进行查看
+	  
+	  [root@oldboy-xiaodao.com.cn oldboy]# tar tf /oldboy/test01.tar.gz
+      oldboy/test01.txt
+
+	c 压缩数据包如何进行解压缩
+	  tar xvf /oldboy/test01.tar.gz
+      x   Extract  对数据包进行解压	  
+	  实践操作:
+	  [root@oldboy-xiaodao.com.cn ~]# tar xvf /oldboy/test01.tar.gz
+      oldboy/test01.txt
+      [root@oldboy-xiaodao.com.cn ~]# ll /oldboy/
+      total 25780
+      drwxr-xr-x 3 root root       42 Jan 14 10:15 oldboy01
+      -rw-r--r-- 1 root root        0 Jan 14 10:15 oldboy.txt
+      -rw-r--r-- 1 root root 17680399 Jan 14 11:01 test01.tar.gz
+      -rw-r--r-- 1 root root  8713809 Jan 14 10:43 test.txt
+      [root@oldboy-xiaodao.com.cn ~]# find / -type f -name "test01.txt"
+      /root/oldboy/test01.txt
+      [root@oldboy-xiaodao.com.cn ~]# cd /oldboy/
+      [root@oldboy-xiaodao.com.cn oldboy]# tar xvf /oldboy/test01.tar.gz
+      oldboy/test01.txt
+      [root@oldboy-xiaodao.com.cn oldboy]# ll
+      total 25780
+      drwxr-xr-x 2 root root       24 Jan 14 11:12 oldboy
+      drwxr-xr-x 3 root root       42 Jan 14 10:15 oldboy01
+      -rw-r--r-- 1 root root        0 Jan 14 10:15 oldboy.txt
+      -rw-r--r-- 1 root root 17680399 Jan 14 11:01 test01.tar.gz
+      -rw-r--r-- 1 root root  8713809 Jan 14 10:43 test.txt
+      [root@oldboy-xiaodao.com.cn oldboy]# cd oldboy
+      [root@oldboy-xiaodao.com.cn oldboy]# ll
+      total 85096
+      -rw-r--r-- 1 root root 87138090 Jan 14 10:45 test01.txt
+	  
+	  指定解压后保存文件的路径信息
+	  [root@oldboy-xiaodao.com.cn oldboy]# tar xf test02.tar.gz -C /tmp/
+      [root@oldboy-xiaodao.com.cn oldboy]# ll /tmp/test01.txt
+      -rw-r--r-- 1 root root 87138090 Jan 14 10:45 /tmp/test01.txt
+
+	  
+	  结论:
+	  01. 默认解压文件时, 解压后的文件默认保存在当前目录路径中
+	  02. 在压缩数据信息时, 不希望携带过多的目录结构信息
+	      尽量先进入到要压缩文件的上一级目录,采用相对路径方式进行压缩数据
+		  
+		  演示说明:
+		  [root@oldboy-xiaodao.com.cn oldboy]# cd /oldboy
+          [root@oldboy-xiaodao.com.cn oldboy]# tar zcvf /oldboy/test02.tar.gz  ./test01.txt 
+          [root@oldboy-xiaodao.com.cn oldboy]# tar xf test02.tar.gz 
+          [root@oldboy-xiaodao.com.cn oldboy]# ll
+          -rw-r--r-- 1 root root 87138090 Jan 14 10:45 test01.txt
+      
+	  03. 为了避免解压数据不会覆盖原文件,并且不要有过多提示信息
+	      尽量使用相对路径进行压缩
+	      提示信息: tar: Removing leading `/' from member names
+		                 将 / 信息进行移除 
+                    /oldboy/test01.txt  --- oldboy/test01.txt    
+          1). 备份压缩
+		      tar zcvf /oldboy/oldboy.tar.gz  /etc/selinux/config   --- 优化前做了压缩备份 selinux开启
+		      没有移除/
+			  /etc/selinux/config
+	      2). 要做文件对比
+		  3). 解压文件
+		      etc/selinux/config   oldboy目录下 --- etc/selinux/config 
+		      /etc/selinux/config  /目录下      --- etc/selinux/config
+		  
+		  特殊需求: 希望直接覆盖系统中的源文件(修复系统)
+		  tar zcvPf /oldboy/selinux_conf.tar.gz /etc/selinux/config
+		  tar xvPf /oldboy/selinux_conf.tar.gz 
+	
+	      备份文件的两个重要作用:
+		  01. 还原数据信息
+		  02. 做数据信息对比
+	
+02. 文件权限说明
+    系统中有什么权限
+	4  r read    读的权限
+    2  w write   写的权限
+    1  x execute 执行权限 可以运行
+    0  -         什么权限都不具有	
+	
+	相应的权限 赋予 用户
+	rw-r--r--   一个数据文件拥有9位权限位,每三位权限位赋予一个用户
+	            每三个权限位分别具体表示  r/-  w/-  x/- 
+	三个常见用户
+	1) 文件所属用户   (文件的创造者)   监护人      rw-  读 写 没有执行权限
+	2) 文件所属用户组                  亲人 家人   r--  读 没有写 没有执行 
+	3) 文件其他用户                    隔壁老王    r--  读 没有写 没有执行
+	
+	
+		
+作业:
+01. 总结一下生成随机数的方法	
+	tr -cd '0-9a-zA-Z' </dev/urandom|head -c 6  --- 生成随机数
+02. 如何在压缩目录时候, 排除部分数据信息不要进行压缩	
+	exclude
+03. 如何利用find命令查找数据时,排除指定目录不需要进行查找
+    find / 没有放置在/proc /usr	
+	
+	
+
+	   

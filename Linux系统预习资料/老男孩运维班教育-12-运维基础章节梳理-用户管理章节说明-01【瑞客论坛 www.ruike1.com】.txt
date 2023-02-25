@@ -1,0 +1,271 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day18-用户管理章节
+==============================
+
+00. 课程回顾说明 
+    awk三剑客命令说明
+	1) 概念说明
+	   a 擅长对列进行操作处理 
+	   b 擅长对数据文件内容进行分析统计
+
+	2) awk命令使用方法
+	   语法格式
+	   awk [参数信息] '模式{动作}' 文件信息
+	   awk命令执行的逻辑
+	   00. 在读取文件之前,执行什么动作信息 特殊模式 BEGIN
+	   01. 按照文件中的每一行处理文件内容
+	   02. 在读取文件之后,执行什么动作信息 特殊模式 END
+	 
+    3) awk中模式说明
+       普通模式: 
+	   1) 利用正则信息进行匹配
+	   2) 利用数值的比较进行匹配 NR==?? NR>=??
+	   3) 利用范围匹配内容       &&
+       特殊模式:
+       1) BEGIN 
+          a 操作文件前,执行动作
+          b 用于进行计算
+          c 修改内置变量
+       2) END 
+          a 操作文件之后,执行动作 
+            可以将最终结果进行输出		  
+          b 也可以做运算
+		  
+	   补充: 什么是awk内置变量
+	   oldboy=12345  echo $oldboy
+	   awk -voldboy=12345 'BEGIN{print oldboy}'
+	   
+	   NF  表示一行中的最后一列信息
+	   NR  表示行号信息 NR==
+	   FS  表示字段分隔信息
+	   [root@oldboy-xiaodao.com.cn ~]# stat /etc/hosts|awk -F '[(/]'NR==4{print $2}'
+       [root@oldboy-xiaodao.com.cn ~]# stat /etc/hosts|awk 'BEGIN{FS="[(/]"}NR==4{print $2}'
+       0644
+       stat /etc/hosts|awk -vFS="[(/]" 'NR==4{print $2}'
+		  
+	4) awk练习题测验
+	   a 可以指定列的分隔符 -F "[]+"
+	     测验: 
+		 如何利用awk取出IP地址
+		 ip a s eth0|awk -F "[ /]+" 'NR==3{print $3}'
+		 如何利用awk取出文件权限数值信息
+		 stat /etc/hosts|awk -F '[(/]' 'NR==4{print $2}'
+	   b 可以按照列的信息进行匹配
+	     $n~/oldboy/
+		 awk中 ~表示匹配列信息 !~表示对列信息匹配时取反
+	   c 可以利用正则符号进行匹配
+       d 可以对信息进行修改操作
+         echo :250:150:90|awk '{gsub(/被修改的内容/,"修改成什么",$n第几列内容进行修改)}'
+
+	5) awk运算的方式(了解)
+       累加运算: i=i+1        --> i++
+       求和运算: sum=sum+$n	  --> sum+=$n   
+	   
+	shell---awk数组---数组???
+
+01. 解决几个常见面试题:
+    1) 系统启动流程
+    centos6启动流程: (采用串行模式启动系统)
+	01. 按下服务电源
+	02. 开机自检     						检查硬件信息是否存在问题
+	03. MBR引导      						可以加载磁盘引导系统启动(磁盘管理)
+	04. GRUB菜单     						可以选择使用的内核信息
+											可以设置是否采用单用户模式进入系统 修复系统 重置密码
+	05. 加载内核信息 						可以更好控制管理硬件设备
+	06. 运行系统的第一个进程   				init进程 -- 控制后续进程依次启动
+	07. 读取/etc/inittab   					识别系统的运行级别
+	08. 执行/etc/rc.d/rc.sysinit脚本		初始化主机名信息 初始化网卡信息
+	09. 执行/etc/rc.d/rc脚本                让开机自动运行的服务可以按顺序运行起来       
+    10. 运行最后一个进程mingetty进程        可以看登陆提示信息	    
+
+    centos7启动流程: (采用并行模式启动系统)
+	01. 按下服务电源
+	02. 开机自检     						检查硬件信息是否存在问题
+	03. MBR引导      						可以加载磁盘引导系统启动(磁盘管理)
+	04. GRUB菜单     						可以选择使用的内核信息
+											可以设置是否采用单用户模式进入系统 修复系统 重置密码
+	05. 加载内核信息 						可以更好控制管理硬件设备
+	06. 运行系统的第一个进程   				systemd进程 -- 控制后续进程并行启动   	
+    07. 识别加载系统运行级别(target)        /etc/systemd/system/default.target
+    08. 完成系统初始化过程					加载初始化target文件
+	                                        /usr/lib/systemd/system/sysinit.target
+	09. 让服务可以开机自动运行              加载此/etc/systemd/system目录中文件实现服务开机自动运行
+	10. 运行最后一个进程mingetty进程        可以看登陆提示信息	
+
+    2) 如何让命令或服务可以开机自动运行
+	centos6 
+	1) 将命令信息放入到 /etc/rc.local(脚本)
+	2) 利用chkconfig可以控制服务是否开机运行
+	   根据运行级别进行进行控制
+	
+	centos7 
+	1) 将命令信息放入到 /etc/rc.local(脚本)
+	   PS: 如果想让rc.local文件起作用,需要添加执行权限
+	   chmod +x /etc/rc.d/rc.local
+	2) 利用systemctl enable/disable 服务名称
+	   
+02. 用户管理相关知识
+    系统中用户分类
+	a 超级管理员用户   root   uid=0 
+	b 系统虚拟用户     nobody uid=1-999  centos7   不需要有家目录/不需要登陆系统
+                              uid=1-499  centos6 
+    c 系统普通用户            uid=1000+  centos7 
+                              uid=500+   centos6 
+
+    用户和组的关系
+    一个用户属于一个组   1对1关系
+    一个用户属于多个组   1对多关系
+    多个用户属于多个组   多对多关系
+    多个用户属于一个组   多对1关系
+
+03. 用户管理中重要文件信息(一定要保存好)
+    用户相关的文件:(重点关注)
+	[root@oldboy-xiaodao.com.cn ~]# ll /etc/passwd
+    -rw-r--r-- 1 root root 2103 Feb  4  2019 /etc/passwd
+	/etc/passwd    --- 用户信息记录文件
+	oldboy01:x:1003:1003:sa-xiaozhang:/home/oldboy01:/bin/bash
+    oldboy02:x:1004:1003:dev-xiaoli:/home/oldboy02:/bin/bash
+    oldboy03:x:1005:1005::/home/oldboy03:/bin/bash
+    oldboy04:x:1006:1006::/home/oldboy04:/bin/bash
+    oldboy05:x:1007:1007::/home/oldboy05:/bin/bash
+    oldboy06:x:1008:1008::/home/oldboy06:/bin/bash
+    oldboy07:x:1009:1009::/home/oldboy07:/bin/bash
+	  01    02  03   04 05     06            07 
+	  
+	第一列: 用户名称信息
+	第二列: 表示用户密码信息. 真正密码信息已经保存在了/etc/shadow文件中
+	第三列: 表示用户uid数值信息
+	第四列: 表示用户gid数值信息
+	第五列: 表示用户注释信息
+	第六列: 定义用户所在家目录信息
+	第七列: 用户是否能够登陆系统 shell信息(/etc/shells)
+	        shell信息哪些设置可以进行远程登陆
+			/bin/bash
+			
+			shell信息哪些设置不可以进行远程登陆
+			/sbin/nologin
+			/usr/sbin/nologin
+
+	/etc/shadow    --- 用户密码信息记录文件
+	[root@oldboy-xiaodao.com.cn ~]# ll /etc/shadow
+    ---------- 1 root root 3459 Jan 16 09:54 /etc/shadow
+	
+	用户组相关的文件:
+	/etc/group    --- 确认组是否存在,可以查看group文件
+	/etc/gshadow  
+    	
+04. 用户管理中重要目录信息
+    普通用户家目录      --- 房子
+    ll /etc/skel/ -d    --- 样板房
+    drwxr-xr-x. 2 root root 62 Apr 11  2018 /etc/skel/
+	
+    企业应用:
+	如何让新用户家目录主有企业注意事项文件存在
+	第一个历程: 进入到/etc/skel目录中, 添加文件信息
+	cd /etc/skel 
+	
+	第二个历程: 编辑文件
+	[root@oldboy-xiaodao.com.cn ~]# echo "info oldboy" >./readme
+    [root@oldboy-xiaodao.com.cn ~]# echo "info oldboy" >/etc/skel/readme
+
+	第三个历程: 创建用户, 并切换到指定用户下, 检查家目录中的数据信息
+	[root@oldboy-xiaodao.com.cn ~]# useradd oldboy21
+    [root@oldboy-xiaodao.com.cn ~]# su - oldboy21
+    [oldboy21@oldboy-xiaodao.com.cn ~]$ ll
+    total 4
+    -rw-r--r-- 1 oldboy21 oldboy21 12 Jan 23 17:34 readme
+    [oldboy21@oldboy-xiaodao.com.cn ~]$ cat readme 
+    info oldboy
+
+	结论: 每次创建一个用户的时候,都会将/etc/skel目录中的内容复制到用户家目录下
+    [oldboy21@oldboy-xiaodao.com.cn ~]$ ll -a
+    total 20
+    drwx------   2 oldboy21 oldboy21   76 Jan 23 17:35 .
+    drwxr-xr-x. 26 root     root     4096 Jan 23 17:35 ..
+    -rw-r--r--   1 oldboy21 oldboy21   18 Apr 11  2018 .bash_logout
+    -rw-r--r--   1 oldboy21 oldboy21  193 Apr 11  2018 .bash_profile
+    -rw-r--r--   1 oldboy21 oldboy21  231 Apr 11  2018 .bashrc
+    -rw-r--r--   1 oldboy21 oldboy21   12 Jan 23 17:34 readme
+    [oldboy21@oldboy-xiaodao.com.cn ~]$ ll -a /etc/skel/
+    total 28
+    drwxr-xr-x.  2 root root   76 Jan 23 17:34 .
+    drwxr-xr-x. 83 root root 8192 Jan 23 17:35 ..
+    -rw-r--r--.  1 root root   18 Apr 11  2018 .bash_logout
+    -rw-r--r--.  1 root root  193 Apr 11  2018 .bash_profile
+    -rw-r--r--.  1 root root  231 Apr 11  2018 .bashrc
+    -rw-r--r--   1 root root   12 Jan 23 17:34 readme
+
+    企业异常案例:
+	当家目录信息被清空之后, 命令提示符会发生变化
+	-bash-4.2$
+    解决方式:
+	将/etc/skel目录中的数据信息复制到相应用户家目录中
+	cp -a /etc/skel/.bash* ~/
+	说明: centos7.5中有时不会出现提示符变化情况
+
+05. 用户管理相关命令
+    第一个重要的命令: useradd 用于创建用户
+	只有root用户有能力创建新用户???
+	相关参数总结:
+	-u     指定新建用户的uid数值
+	-G     指定用户还属于哪个组 指定用户附属组信息
+	-g     指定用户属于主要组信息
+	-s     指定新建用户shell信息, 如果指定为/sbin/nologin,用户无法登陆系统
+	-M     创建新用户时,不要给家目录
+	-c     创建的新用户添加注释信息
+	
+	检查用户是否存在
+	id oldboy051
+    uid=1024(oldboy051) gid=1024(oldboy051) groups=1024(oldboy051)
+	用户的uid信息       用户的组id,所属组   用户所属的其他组信息
+	                    所属主要组          
+
+    如何设置uid值  666
+	如何设置所属组 666  同时还属于1024这个组
+	useradd -u 666 oldboy30 -G oldboy051
+    [root@oldboy-xiaodao.com.cn ~]# id oldboy30
+    uid=666(oldboy30) gid=1025(oldboy30) groups=1025(oldboy30),1024(oldboy051)
+
+    创建一个用户alex999指定uid为888，禁止用户登录系统，不创建家目录
+    useradd alex999  -u 888  -s /sbin/nologin  -M   --- 创建虚拟用户方法
+	虚拟用户主要用于管理服务进程
+
+    第二个重要的命令: userdel 删除用户信息
+	userdel xiadao   --- 直接利用命令删除用户,会有用户的残留信息(家目录还有 用户邮件还有)
+    userdel -r 用户  --- 彻底删除用户信息      
+	
+    彻底删除用户的方法:
+	[root@oldboy-xiaodao.com.cn ~]# userdel -r xiadao01
+    [root@oldboy-xiaodao.com.cn ~]# userdel -r xiadao01
+    userdel: user 'xiadao01' does not exist
+    [root@oldboy-xiaodao.com.cn ~]# ll -d /home/xiadao01
+    ls: cannot access /home/xiadao01: No such file or directory
+    [root@oldboy-xiaodao.com.cn ~]# ll /var/mail/xiadao01
+    ls: cannot access /var/mail/xiadao01: No such file or directory
+    [root@oldboy-xiaodao.com.cn ~]# useradd xiadao01
+
+    如果删除用户时,有残留信息没有删除掉如何解决:
+	1) 手动删除残留数据
+	2) 创建出一个相同的用户,再次删除
+	   第一个历程: 创建用户
+	   useradd -u uid值 相同用户名              --- uid值和家目录属主信息保持一致
+	   第二个历程: 彻底删除用户
+	   userdel  -r 用户名
+	   
+    第三个重要的命令: usermod 修改用户信息
+ 	-u     指定新建用户的uid数值
+	-G     指定用户还属于哪个组 指定用户附属组信息
+	-g     指定用户属于主要组信息
+	-s     指定新建用户shell信息, 如果指定为/sbin/nologin,用户无法登陆系统
+	-c     创建的新用户添加注释信息   	
+	

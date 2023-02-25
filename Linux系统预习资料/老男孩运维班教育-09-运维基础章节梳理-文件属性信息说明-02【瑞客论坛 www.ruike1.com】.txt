@@ -1,0 +1,329 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day13-文件属性说明
+==============================
+00. 课程回顾说明 
+    1) 文件类型  - d l --- file
+    2) 文件相关命令
+       which/whereis
+       find
+       tar  压缩 查看 解压
+    3) 文件权限概念
+       r w x -
+       rw-  属主用户
+       r--  属组用户
+       r--  其他用户
+	   
+01. 文件属性中-用户和用户组的概念
+    用户如何创建
+    useradd oldboy 
+    su - oldboy	
+	id oldgirl
+    uid=1002(oldgirl) gid=1002(oldgirl)
+	
+	系统中用户的分类:
+	皇帝   超级管理员(root)   uid=0  ???
+	傀儡   虚拟用户  (nobody) uid=??
+	a 主要用于管理服务进程
+	b 没有家目录 
+	c 不需要进行登陆系统
+	centos6   1-499
+	centos7   1-999
+	平民   普通用户           uid=??
+	centos6   500+
+    centos7	  1000+
+
+	如何提升root用户安全性
+	01. 修改远程服务端口号
+	    vim /etc/ssh/sshd_config
+		17 Port 52113
+        systemctl restart sshd 22
+	    如何通过命令确认服务进程的端口号码
+		ss -lntup    --- 查看服务进程端口信息
+		-l    -- 列表显示详细信息
+		-n    -- 信息中数字信息不要进行转换, 就以数值形式展示出来
+		-p    -- 显示网络协议信息
+		-t    -- 显示tcp协议信息
+		-u    -- 显示udp协议信息
+	
+	    [root@oldboy-xiaodao.com.cn ~]# ss -lntup|grep sshd
+        tcp    LISTEN     0      128       *:52113                 *:*                   users:(("sshd",pid=1480,fd=3))
+        tcp    LISTEN     0      128      :::52113                :::*                   users:(("sshd",pid=1480,fd=4))
+        [root@oldboy-xiaodao.com.cn ~]# netstat -lntup|grep sshd
+        tcp        0      0 0.0.0.0:52113           0.0.0.0:*               LISTEN      1480/sshd           
+        tcp6       0      0 :::52113                :::*                    LISTEN      1480/sshd
+	
+	02. 不允许root用户可以远程登陆
+	    扩展自行研究
+	
+	
+02. 文件属性中-文件时间信息
+    三个时间信息
+	1) 访问时间信息  文件被查看之后时间会发生变更(每次都变,第一次回看到变化)  
+	2) 修改时间信息  文件只要被编辑,都会有时间变化
+	3) 改变时间信息  文件属性信息发生变化,都会有时间变化
+	[root@oldboy-xiaodao.com.cn ~]# stat /etc/hosts
+    Access: 2019-01-15 08:42:31.759043280 +0800
+    Modify: 2019-01-07 15:35:38.743942454 +0800
+    Change: 2019-01-07 15:35:38.765942453 +0800
+
+    文件时间信息有什么作用:
+	根据文件时间信息,对文件做处理
+	环境准备:
+	系统时间如何临时修改调整
+	a 如何查看系统时间信息
+	  [root@oldboy-xiaodao.com.cn oldboy]# date
+      Tue Jan 15 09:49:00 CST 2019
+    
+	  指定显示的日期格式信息
+	  [root@oldboy-xiaodao.com.cn oldboy]# date "+%Y-%m-%d %H:%M:%S"
+      2019-01-15 09:54:37
+	  [root@oldboy-xiaodao.com.cn oldboy]# date "+%F"
+      2019-01-15
+      [root@oldboy-xiaodao.com.cn oldboy]# date "+%T"
+      09:58:11
+
+    b 修改系统时间信息
+	  [root@oldboy-xiaodao.com.cn oldboy]# date -s "19950114"
+      Sat Jan 14 00:00:00 CST 1995
+      [root@oldboy-xiaodao.com.cn oldboy]# date
+      Sat Jan 14 00:00:09 CST 1995
+      [root@oldboy-xiaodao.com.cn oldboy]# date -s "19950114 10:00"
+      Sat Jan 14 10:00:00 CST 1995
+
+	c 扩展方式查看时间信息
+	  [root@oldboy-xiaodao.com.cn oldboy]# date "+%F"
+      1995-01-14
+	  
+	  临时显示未来几天的时间信息
+      [root@oldboy-xiaodao.com.cn oldboy]# date "+%F" -d "2 day"
+      1995-01-16
+      [root@oldboy-xiaodao.com.cn oldboy]# date "+%F" -d "+2 day"
+      1995-01-16
+
+	  临时显示前几天的时间信息
+	  [root@oldboy-xiaodao.com.cn oldboy]# date "+%F" -d "-2 day"
+      1995-01-12
+	
+	时间同步的方法
+	yum install ntpdate -y
+	[root@oldboy-xiaodao.com.cn oldboy]# ntpdate ntp1.aliyun.com
+    15 Jan 10:14:09 ntpdate[1893]: step time server 120.25.115.20 offset 757468878.070363 sec
+    [root@oldboy-xiaodao.com.cn oldboy]# date
+    Tue Jan 15 10:14:24 CST 2019
+	
+	
+	
+	需求01: 需要将7天以前数据信息查询出来(借助修改时间)
+	find /oldboy/ -type f -mtime +7
+	[root@oldboy-xiaodao.com.cn oldboy]# date -s "20190204"
+    Mon Feb  4 00:00:00 CST 2019
+    [root@oldboy-xiaodao.com.cn oldboy]# date
+    Mon Feb  4 00:00:01 CST 2019
+    [root@oldboy-xiaodao.com.cn oldboy]# find /oldboy/ -type f -mtime +7
+    /oldboy/.oldboy.txt.swp
+    /oldboy/oldboy.txt
+    /oldboy/test.txt
+    /oldboy/test01.tar.gz
+    /oldboy/test02.tar.gz
+    /oldboy/test01.txt
+    /oldboy/oldboy/test01.txt
+    /oldboy/selinux_conf.tar.gz
+    /oldboy/etc/selinux/config
+    /oldboy/oldboy100.txt
+	
+03. 文件属性信息-inode
+    inode
+	概念说明
+	1) index nodes 索引节点信息  真是数据信息
+	2) inode中一般存放着文件属性信息
+	
+	诞生过程
+	买来一块新的磁盘(好几片地), 你会如何进行处理
+	1) 做raid          地整合
+	2) 分区            进行房子结构规范
+	3) 格式化          给房子进行装修
+	4) 创建文件系统    装修的风格
+    5) 进行挂载        安装好门
+    6) 使用磁盘空间    可以入住	
+	inode是在创建文件系统的时候产生出来
+	
+	特点说明
+	inode用于存放的是文件属性
+    inode用于存放块的指针位置
+    创建一个文件至少占用一个inode和一个block
+	
+	查看方法
+	[root@oldboy-xiaodao.com.cn oldboy]# df -i
+    Filesystem       Inodes IUsed    IFree IUse% Mounted on
+    /dev/sda3      25165312 59699 25105613    1% /
+    devtmpfs         251015   401   250614    1% /dev
+    tmpfs            253771     1   253770    1% /dev/shm
+    tmpfs            253771   717   253054    1% /run
+    tmpfs            253771    16   253755    1% /sys/fs/cgroup
+    /dev/sda1        524288   326   523962    1% /boot
+    /dev/sdb1       5242368     3  5242365    1% /mnt
+    tmpfs            253771     1   253770    1% /run/user/0
+
+    block	
+	概念说明
+	1) 块信息 存储数据信息
+    2) ???文件名称会存储到上一级目录的block 	
+	
+	诞生过程
+	block是在创建文件系统的时候产生出来
+	
+	特点说明 
+	block用于存放的是数据信息
+    创建一个文件至少占用一个inode和一个block（非空文件）
+    磁盘读取数据按block为单位读取的
+	
+	1G  会存储在多个block中, 每读取/写入一个block==消耗一个I(input==写)O(output==读) 
+	磁盘中如果IO操作过多,会严重较低磁盘的性能
+	
+	小的数据  占用的block会少   消耗IO少 性能更快
+	大的数据  占用的block会多   消耗IO多 性能更差
+	
+	问题: 对于一个block而言,block是大些好 小一点好
+	1) 磁盘中block数量是无限的吗 --- 是有限的
+	2) 一个block只能被一个数据所占用 
+	
+	1G==100M  10个block
+	block大点好  系统文件都是小文件 10M   保存10个文件
+	1G==1M    1000个block
+    block小点好  系统文件都是大文件 100M  占用100个block  消耗100IO
+	
+	结论: 
+	1. 如果数据比较大的场景  尽量可以将block设置大一些  较少block占用 从而减少IO损耗
+    2. 如果数据比较小的场景  尽量可以将blcok设置小一些  节省磁盘空间 避免浪费	
+	
+	
+	查看方法
+	[root@oldboy-xiaodao.com.cn oldboy]# df
+    Filesystem     1K-blocks    Used Available Use% Mounted on
+    /dev/sda3       50306052 2211192  48094860   5% /
+    devtmpfs         1004060       0   1004060   0% /dev
+    tmpfs            1015084       0   1015084   0% /dev/shm
+    tmpfs            1015084    9752   1005332   1% /run
+    tmpfs            1015084       0   1015084   0% /sys/fs/cgroup
+    /dev/sda1        1038336  126812    911524  13% /boot
+    /dev/sdb1       10474496   32944  10441552   1% /mnt
+    tmpfs             203020       0    203020   0% /run/user/0
+
+04. 文件属性信息-硬链接
+    硬链接
+    概念说明:
+	1) 就好比房子的多个门 == 相当于访问文件的一个入口
+	2) 多个入口信息就组了硬链接数
+	
+    如何创建:
+	[root@oldboy-xiaodao.com.cn oldboy]# ln /etc/hosts  /oldboy/hosts_hard_link
+    [root@oldboy-xiaodao.com.cn oldboy]# ll /etc/hosts
+    -rw-r--r-- 2 root root 182 Feb  4 00:58 /etc/hosts
+    [root@oldboy-xiaodao.com.cn oldboy]# echo 123oldboy >>/etc/hosts
+    [root@oldboy-xiaodao.com.cn oldboy]# cat /etc/hosts
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+    
+    10.0.0.203  www.jd.com
+    123oldboy
+    [root@oldboy-xiaodao.com.cn oldboy]# cat /oldboy/hosts_hard_link 
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+    ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+    
+    10.0.0.203  www.jd.com
+    123oldboy
+	
+	扩展演示说明: 目录硬链接数变化
+	[root@oldboy-xiaodao.com.cn ~]# ll -d /oldboy_dir/
+    drwxr-xr-x 2 root root 6 Feb  4 01:30 /oldboy_dir/
+    [root@oldboy-xiaodao.com.cn ~]# ll -di /oldboy_dir/
+    19083 drwxr-xr-x 2 root root 6 Feb  4 01:30 /oldboy_dir/
+    [root@oldboy-xiaodao.com.cn ~]# ll -ia /oldboy_dir/
+    total 4
+    19083 drwxr-xr-x   2 root root    6 Feb  4 01:30 .
+       64 dr-xr-xr-x. 22 root root 4096 Feb  4 01:30 ..
+    [root@oldboy-xiaodao.com.cn ~]# mkdir /oldboy_dir/oldboy01
+    [root@oldboy-xiaodao.com.cn ~]# ll -di /oldboy_dir/
+    19083 drwxr-xr-x 3 root root 22 Feb  4 01:41 /oldboy_dir/
+    [root@oldboy-xiaodao.com.cn ~]# ll -ia /oldboy_dir/oldboy01/
+    total 0
+    33583770 drwxr-xr-x 2 root root  6 Feb  4 01:41 .
+       19083 drwxr-xr-x 3 root root 22 Feb  4 01:41 ..
+	结论: 默认目录硬链接数为2  创建一个子目录, 目录硬链接数会加1
+	      默认文件硬链接数位1
+		  
+    [root@oldboy-xiaodao.com.cn ~]# ll -d /etc/
+    drwxr-xr-x. 81 root root 8192 Feb  4 01:39 /etc/
+	[root@oldboy-xiaodao.com.cn ~]# ll /etc/|grep -c "^d"
+    79
+	以上查看/etc目录硬链接数,表示/etc目录下面存在79个子目录
+
+	特点作用:
+	1) 源文件被删除, 不会影响硬链接文件
+	2) inode号码相同的文件,互为硬链接文件
+	3) 可以对文件创建硬链接(硬链接文件和源文件必须在同一分区中) 
+	   默认就不能对目录创建硬链接
+	
+	软链接
+	概念说明:
+	给源文件创建一个快捷方式
+	
+	如何创建:
+	ln -s  /etc/hosts  /oldboy/hosts_soft_link
+	
+	特点作用:
+	1) 源文件被删除, 会影响软链接(软链接会失效)
+	2) 既可以对文件创建软链接 也可以对目录创建软链接
+	
+	扩展: 避免文件丢失方法
+	      1) 利用硬链接的方式
+	      2) 利用cp备份命令
+	      避免的是误修改
+		  1) 利用cp备份命令
+	
+	结论: 只是避免文件丢失: 	建议利用硬链接进行备份文件 节省磁盘空间
+	      只是避免文件误修改:   建议利用cp命令进行备份文件
+	
+	
+05. 文件属性相关的重要原理(异常问题)
+    1) 文件数据删除原理
+       a 文件硬链接数为0                i_link=0 
+       b 确保文件没有被其他进程所调用   i_count=0
+    
+	   企业案例: 磁盘空间报警了,需要删除清空没用数据
+	   第一个历程: 确认磁盘空间是否真的满了
+	   df -h   查看block空间是否不够了   磁盘管理演示
+	   df -i   查看inode空间是否不够了   磁盘管理演示
+    	
+       第二个历程: 确认哪个数据占用磁盘空间比较多
+       du -sh /
+       du -sh /etc 
+
+       第三个历程: 删除了
+
+       第四个历程: 需要重启服务释放空间	   
+	
+	2) 
+	
+作业:
+01. 用户访问文件原理过程 (/oldboy/oldboy01/oldboy.txt)	
+	绘图说明(文件权限)
+02. 为什么第一次访问之后,时间就不会有变更了
+    inode存放什么  block存放什么	
+	
+	
+	
+	
+	
+	
+	   

@@ -1,0 +1,179 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day29-综合架构备份项目
+==================================	
+
+00. 课程介绍部分
+    1) 根据需求搭建环境
+	2) 按照需求编写脚本
+	3) 进行功能测试
+    4) NFS存储服务
+  
+01. 课程知识回顾
+    1) rsync守护进程的部署过程
+	服务端部署
+	a 下载安装软件
+	b 编写配置文件*****
+	c 创建虚拟用户(管理备份存储目录)
+	d 创建认证密码文件(修改文件权限为600)
+	e 创建备份目录(修改目录属主属组信息)
+	f 启动守护进程服务
+	客户端部署
+	a 创建认证密码文件(只有密码信息即可)
+	b 进行免交互传输测试  --password-file=密码文件
+	
+	2) rsync备份传输数据的原理
+	a 有用户的身份转换 其他所有用户---rsync
+	b 用户存储数据的权限 (目录本身权限755 目录的属主信息rsync)
+	
+	3) rsync服务的常见错误
+	4) rsync命令的参数信息  -avz(压缩数据)
+	5) rsync服务的企业应用
+	   服务的多模块配置
+	   服务的排除功能
+	   服务的备份目录创建
+	   服务的列表功能
+	   服务的策略控制
+	   服务的无差异同步
+    
+02. 全网备份项目环境准备
+    三台服务器准备完毕
+	
+03. 完成项目需求
+    1)所有服务器的备份目录必须都为/backup   OK
+	  web01 nfs01 backup
+	
+    2)要备份的系统配置文件包括但不限于：    OK  
+      a.定时任务服务的配置文件(/var/spool/cron/root)（适合web和nfs服务器）。
+      b.开机自启动的配置文件(/etc/rc.local)（适合web和nfs服务器）。
+      c.日常脚本的目录(/server/scripts)。
+      d.防火墙iptables的配置文件(/etc/sysconfig/iptables)。
+      e.自己思考下还有什么需要备份呢？ 
+	  web01 nfs01
+	  
+	  
+    3)Web服务器站点目录假定为(/var/html/www)。  OK 
+    4)Web服务器A访问日志路径假定为（/app/logs） OK
+	  web01
+	
+	
+    5)Web服务器保留打包后的7天的备份数据即可(本地留存不能多于7天，因为太多硬盘会满)  OK
+	  web01 nfs01
+	
+    6)备份服务器上,保留每周一的所有数据副本，其它要保留6个月的数据副本。             OK
+	  部署好rsync守护进程服务 
+	  backup
+	
+    7)备份服务器上要按照备份数据服务器的内网IP为目录保存备份，备份的文件按照时间名字保存。OK
+	
+	
+    8)需要确保备份的数据尽量完整正确，在备份服务器上对备份的数据进行检查，把备份的成功及失败结果信息发给系统管理员邮箱中（发邮件技巧见VIP群资料）。
+      backup 
+
+    
+
+    备份客户端要完成的工作
+	mkdir -p /backup/10.0.0.31/
+	
+	cd /
+            tar zchf /backup/system_backup_$(date +%F_week%w).tar.gz ./var/spool/cron/root ./etc/rc.local ./server/scripts ./etc/sysconfig/iptables
+	tar zchf /backup/www_backup_$(date +%F_week%w).tar.gz  ./var/html/www
+	tar zchf /backup/www_log_backup_$(date +%F_week%w).tar.gz  ./app/logs
+
+	find /backup -type f -mtime +7|xargs rm 
+	
+	find /backup/ -type f -mtime -1 ! -name "finger*"|xargs md5sum >/backup/10.0.0.31/finger.txt
+	
+	rsync -avz /backup/ rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+	
+
+	补充: 
+	01. tar命令用法
+	    -h, --dereference          follow symlinks; archive and dump the files they point to
+		                           将链接文件所指向的原文件进行保存备份
+	
+	备份服务端要完成的工作
+
+	find /backup/ -type f -mtime +180 ! -name "*week1.tar.gz"
+	
+	find /backup/ -type f -name "finger.txt"|xargs md5sum -c >/tmp/check.txt
+	
+	mail -s "邮件测试" 330882721@qq.com </tmp/check.txt
+
+	补充说明:
+	01. 保留周一数据的方法
+	    a 在数据名称信息上加上周的信息
+		find /backup/ -type f -mtime +180 ! -name "*week1.tar.gz"
+        b 在服务端进行检查,将每周一传输的数据进行单独保存
+    02. 如何验证数据完整性
+	    利用md5算法进行验证数据完整性
+		#md5sum -c 指纹文件命令执行原理
+        # 第一个历程: 打开一个指纹文件,将信息记录到缓存中
+        # 第二个历程: 根据指纹文件的路径信息,生成md5数值信息
+        # 第三个历程: 将新生成md5数值和原有指纹文件中的数值进行比较
+        # 第四个历程: 如果相同显示结果为ok,如果不同显示failed
+    03. 如何实现发送邮件
+	    a 配置163企业邮箱
+		b 编写linux服务邮件相关配置文件
+		vim /etc/mail.rc
+		set from=17778058507@163.com smtp=smtp.163.com    		     
+        set smtp-auth-user=17778058507@163.com smtp-auth-password=oldboy123 smtp-auth=login
+		systemctl restart postfix.service
+		c 发送邮件测试
+		echo "邮件发送测试"|mail -s "邮件测试" 330882721@qq.com
+        mail -s "邮件测试" 330882721@qq.com </etc/hosts 
+
+04. 编写全网备份脚本
+    客户端脚本:
+#!/bin/bash
+# create backep dir
+mkdir -p /backup/10.0.0.31/
+
+#tar backup date
+cd /
+tar zchf /backup/system_backup_$(date +%F_week%w).tar.gz ./var/spool/cron/root ./etc/rc.local ./server/scripts ./etc/sysconfig/iptables
+
+#del 7 day ago data
+find /backup -type f -mtime +7|xargs rm
+	
+#cerate finger file
+find /backup/ -type f -mtime -1 ! -name "finger*"|xargs md5sum >/backup/10.0.0.31/finger.txt
+
+#backup data info
+rsync -avz /backup/ rsync_backup@172.16.1.41::backup --password-file=/etc/rsync.password
+
+
+
+
+
+
+	nfs01服务器备份脚本:
+    省略:
+	
+	web01服务器备份脚本:
+	省略
+
+	服务端脚本:
+	
+	测试检验脚本方法: sh -x 脚本信息
+
+05. 实现自动完成全网数据备份(定时任务)
+    客户端定时任务:
+	crontab -e 
+	# backup data
+	0 0 * * *  /bin/sh /server/scripts/backup.sh &>/dev/null
+	
+	服务端定时任务
+	# check backup data
+	0 5 * * *  /bin/sh /server/scripts/backup_server.sh &>/dev/null
+
+06. 还有什么完善余地 

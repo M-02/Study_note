@@ -1,4 +1,4 @@
-![image-20210705094109530](D:\BaiduNetdiskDownload\安全\WEB漏洞概述\WEB漏洞概述.assets\image-20210705094109530.png)
+![image-20210705094109530](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\WEB漏洞概述.assets\image-20210705094109530.png)
 
 高危漏洞：漏洞会直接影响网站权限或者数据权限，可以获取网站数据或者敏感数据，涉及到权限问题
 

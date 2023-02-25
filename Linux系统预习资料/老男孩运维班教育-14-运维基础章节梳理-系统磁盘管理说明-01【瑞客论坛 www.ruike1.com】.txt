@@ -1,0 +1,247 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day22-系统磁盘管理说明
+==============================
+
+00. 课程回顾说明
+    定时任务
+	1) 定时任务的作用
+	   原则: 重复性的工作都可以让系统来自动完成
+	2) 实现定时任务的软件
+	   cronie    --- centos6/centos7默认的定时任务软件
+	   rpm -qa cronie
+	   rpm -ql cronie 
+	   rpm -qc cronie 
+	   rpm -qf `which crontab`
+	   yum install -y cronie
+	3) 实现配置定时任务的方法
+	   a 系统已经设置好的定时任务
+	     /etc/cron.daily     --- 按天执行定时任务
+         /etc/cron.hourly    --- 按小时执行定时任务
+         /etc/cron.monthly   --- 按月执行定时任务
+         /etc/cron.weekly    --- 按周执行定时任务
+         经典应用: 
+		 [root@oldboy-xiaodao.com.cn ~]# ll /etc/cron.daily/
+         total 12
+         -rwx------. 1 root root 219 Apr 11  2018 logrotate   --- 自动切割日志
+		 oldboy.log      --- 10M
+		 oldboy.log      --- 100M
+		 ...
+		 oldboy.log      --- 1G    大文件查看/过滤都会严重的损耗磁盘IO
+         将日志文件进行定期切割处理
+		 第一天:   10M    mv oldboy.log oldboy-01.log; 重启程序服务,生成新的oldboy.log  0k
+	     第二天:   10M    mv oldboy.log oldboy-02.log; 重启程序服务,生成新的oldboy.log  0k
+	   
+	   b 利用系统定时任务服务,人为定义定时任务信息
+	     1) 可以更加灵活的设定定时任务
+		 2) 可以将定时任务周期设定为每分钟(???)  PM: 8:00-10:00 8:00--8:00:59  实时同步
+		 
+	4) 如何设置编写定时任务
+       一个重要的命令: 	
+	   -u <user>  define user              伪装成什么用户编写定时任务
+       -e         edit user's crontab  	   编辑定时任务,具有语法检查功能(vim /var/spool/cron/root)    
+       -l         list user's crontab      查看定时任务信息
+       -r         delete user's crontab    删除用户的定时任务(小心)
+       PS: 企业环境中定时任务配置文件必须进行备份保存
+	   
+	   一个重要的文件:
+	   /var/spool/cron/root
+	   相关文件:
+	   /var/log/cron     --- 日志文件, 用于检测定时任务是否触发执行(排查工作)
+	   /etc/cron.deny    --- 定时任务黑名单, 阻止哪些用户不能设置定时任务
+	      [root@oldboy-xiaodao.com.cn ~]# echo oldboy >>/etc/cron.deny
+          [root@oldboy-xiaodao.com.cn ~]# cat /etc/cron.deny
+          oldboy
+	   /var/spool/cron/root
+	   
+	   
+	  1) 打开配置文件: crontab -e 
+	  2) 编写配置文件: 文件格式信息 注意事项
+	  # xxxx
+	  * * * * *   完成什么工作操作(cp)
+	  确认时间同步服务是否安装
+      [oldboy@oldboy-xiaodao.com.cn ~]$ rpm -qf `which ntpdate` 
+      ntpdate-4.2.6p5-28.el7.centos.x86_64
+	  # cronid-01 time sync
+      */5 * * * *  ntpdate ntp1.aliyun.com &>/dev/null
+	     编写的技巧: *  */n  10-15  10,12,13
+	  PS: 定时任务日期和周信息不能同时出现
+      3) 定时任务检查功能
+         a 先将时间信息改为每分钟
+         b 调整时间信息改为指定时间 最好和真实时间相差2分钟		 
+	   
+	5) 编写定时任务的问题:
+       a 定时任务中不识别一些特殊符号
+       b 定时任务中不要使用相对路径
+       c 定时任务环境变量问题 PATH: /usr/bin /bin	   
+	   
+02. 定时任务扩展说明
+    编辑定时任务规范:
+	a 在定时任务中执行命令
+    第一个历程: 在命令行测试命令是否有问题
+	第二个历程: 将命令放入到定时任务中
+	第三个历程: 检查日志文件, 确认命令是否触发
+
+	b 在定时任务中执行脚本
+	第一个历程:  在命令行测试命令是否有问题(测试脚本中命令)
+    第二个历程:  编写脚本信息, 并且授权脚本文件为执行权限
+	第三个历程:  命令行直接运行脚本
+	第四个历程:  编写定时任务的问题
+	第五个历程:  进行测试
+	
+03. 测验练习
+    a 每分钟将自己的名字追加到/oldboy/oldboy.txt中
+	第一个历程: 在命令行测试命令是否有问题
+	echo oldboy >>/oldboy/oldboy.txt
+	
+	第二个历程: 将命令放入到定时任务中
+	* * * * *  echo oldboy >>/oldboy/oldboy.txt
+	完善:
+	# cornd....
+	* * * * *  /bin/echo oldboy >>/oldboy/oldboy.txt >/dev/null 2>&1 
+	
+	补充: 为什么在定时任务后面需要加上 >/dev/null 
+	问题一: 磁盘block空间占用
+	- 如果命令执行失败, 会发送有邮件(开启postfix)
+	- 生成了一个邮件相关的文件, 将所有错误提示信息保存到文件中 (var/spool/mail/root)
+	问题二: 磁盘inode空间占用
+	- 不要生成错误邮件信息(关闭ipostfix)
+	- 错误信息还会存放在另外的一个目录中(var/spool/postfix/maildrop),会生成大量小文件
+	解决方式: 彻底不要让错误信息占用磁盘空间
+    将错误数据信息重定向到系统黑洞中
+    a xxxxx   &>/dev/null 
+	b xxxxx   >/dev/null 2>&1
+	
+	第三个历程: 检查日志文件, 确认命令是否触发
+	
+	
+    b 每分钟显示系统时间（年-月-日_周）追加到/tmp/time.log
+    第一个历程: 在命令行进行测试执行命令
+	date +%F_%w >>/tmp/time.log
+	
+	第二个历程: 在脚本文件中编写脚本信息
+	vim /server/scripts/date_info.sh
+	/bin/date  +%F_%w >>/tmp/time.log
+	
+	第三个历程: 编写定时任务 
+	# xxxxx
+	* * * * *   /bin/sh  /server/scripts/date_info.sh >/dev/null 2>&1 
+	
+    c 每天23到第二天7点每隔1小时重启nginx服务
+    # cronid-02 restart nginx
+    00 23,0-7 * * * echo "rstart nginx" &>/dev/null
+
+系统磁盘管理:
+04. 磁盘分区操作步骤
+    购买了多块新磁盘 --- 真实使用磁盘
+	1) 进行创建阵列(raid)      将几块地皮整合
+	2) 进行分区操作            重新规划
+	3) 进行格式化操作          清理地皮
+	4) 创建文件系统            建房子的风格
+	5) 进行挂载操作            有了门
+
+05. 磁盘体系结构第一层: 磁盘体系结构详述
+    磁盘外部结构:
+	a 组成部分:
+	  磁盘主轴: 控制磁盘转速（rpm-round per minute==rpm）
+	            转速越快, 读写效率更高
+				转速越低, 读写效率越低
+			    家用磁盘转速   7200 rpm  5400 rpm
+			    企业磁盘转速   15k rpm   10k rpm
+	  
+	  磁盘盘片: 用于存储数据
+	  磁盘磁头: 用于读取数据
+	  磁盘接口: 用于连接主板
+   
+    b 接口分类: 磁盘类型
+	  机械硬盘: SATA(串型接口) < SCSI(串行接口) < SAS 
+	  固态硬盘: PCI-e
+
+	磁盘内部结构:
+	磁头: 读取数据
+	磁道: 存储数据
+	扇区: 存储数据 数据存储最小单位  512字节
+	柱面: 存储数据 不同盘面上相同的磁道组成（圆柱体）
+	单元块: 表示单个柱面大小
+	
+	1) 可以更准确知道磁盘读取数据原理
+	   固态硬盘 优于 机械硬盘
+	   a. 用户发出读取磁盘数据请求 /oldboy/oldboy.txt 
+	   b. 磁盘开始读取数据, 从0磁头,0磁道,1扇区开始读取..10扇区
+	   c. 利用电子切换, 切换1磁头,0磁道,1扇区开始读取..10扇区
+	   d. 利用径向运动, 切换磁道信息, 继续寻找数据
+	
+	2) 可以进行磁盘大小运算
+	   centos7:
+	   fdisk -l   --- 查看磁盘具体参数信息
+	   Disk /dev/sda: 53.7 GB, 53687091200 bytes, 104857600 sectors   总共有多少扇区
+       Units = sectors of 1 * 512 = 512 bytes               单元块??  一个扇区大小
+       Sector size (logical/physical): 512 bytes / 512 bytes
+       I/O size (minimum/optimal): 512 bytes / 512 bytes
+       Disk label type: dos
+       Disk identifier: 0x000bf20e
+	   
+	   centos6:
+	   # fdisk -l    # 显示磁盘大小信息
+       Disk /dev/sda: 53.7 GB, 53687091200 bytes
+       # 显示磁头数，扇区数/每磁道数， 柱面数
+       255 heads, 63 sectors/track, 6527 cylinders
+       # 单元块大小
+       Units = cylinders of 16065 * 512 = 8225280 bytes
+       Sector size (logical/physical): 512 bytes / 512 bytes
+
+       计算磁盘大小公式: 
+	   1) 已知扇区数量和一个扇区大小  得知磁盘总大小        centos7
+          awk 'BEGIN{print (104857600*512)/1000/1000/1000}'
+
+       2) 已知扇区大小512  每隔磁道扇区数量  多少个磁道==柱面 已知磁头数
+	      awk 'BEGIN{print 512*63*6527*255/1000/1000/1000}' centos6 
+
+05. 磁盘体系结构第二层: 磁盘阵列配置 LVM配置???
+    1) 磁盘阵列作用
+	   a 提供更多存储空间
+	   b 提高数据读写效率
+	   c 提高数据存储安全
+	   
+	2) 磁盘阵列的配置级别
+	   raid 0 (至少两块)
+	   a: 空间   不会损失磁盘容量
+	   b: 效率   可以提升读写效率
+	   c: 安全   没有安全可言
+	   没有企业使用raid 0 / 民用场景(游戏比赛WCG)
+	   
+	   raid 1 (至少两块)
+	   a: 空间   会损失一半容量
+	   b: 效率   不会有效率提升
+	   c: 安全	 具有安全保障
+	   企业场景: 对数据安全关注比较高的服务器 (存储服务器 数据库服务器)
+	   
+	   raid 5 (至少三块磁盘) -- raid 6
+	   a: 空间   只损失一块磁盘空间 
+	   b: 效率   可以提升读写效率
+	   c: 安全   有安全保证(只能有一块磁盘损坏 热备盘 可以坏两块(不能同时))
+	   企业场景: 大部分互联网服务器都会应用
+	   
+	   raid 10(至少四块磁盘)
+	   a: 空间   损失一半
+	   b: 效率   会有提升
+	   c: 安全   具有保障(每组只能坏一块)
+	   企业应用场景: 数据库服务器  
+	 
+	   raid 01(至少四块磁盘
+	   a: 空间   损失一半   
+	   b: 效率   会有提升
+	   c: 安全	 具有保障(损坏机率较高)  
+	  
+作业:
+01. 如何利用系统自带的日志切割软件切割日志文件
+    系统自带切割日志软件:  logrotate   

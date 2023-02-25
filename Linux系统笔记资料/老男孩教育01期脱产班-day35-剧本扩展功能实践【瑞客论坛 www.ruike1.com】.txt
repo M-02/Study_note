@@ -1,0 +1,209 @@
+=================================================================================================
+#   老男孩教育：                                                                          		#
+#   www.oldboyedu.com                                               							#
+#   邮件：miaokm@oldboyedu.com 	                                    							#
+#   地址：北京市昌平区顺沙路8号院汇德商厦4F													#
+#   电话：400-609-2893，180-1041-8396，173-1620-6489                                         	#
+#   资源老师：			QQ号码               	资源老师：              	QQ号码    	   		#
+#   范范		 	1223740011		     		依依		       		3532759635   			#
+#   安娜		 	2010068211		        	格格					1986787350				#
+#   瑶瑶		 	2023803491					金金					2918640936				#
+#   乔治			3380665979					龙龙					2090304642				#
+=================================================================================================
+
+
+ansible剧本功能实践介绍
+================================================================================================
+01. 编写剧本的重要功能介绍
+    a 在剧本中设置变量信息  OK
+	b 在剧本中设置注册信息  OK 执行剧本时,可以显示输出命令结果信息
+	b 在剧本中设置判断信息  OK
+	c 在剧本中设置循环信息
+	d 在剧本中设置错误忽略
+	d 在剧本中设置标签信息
+	e 在剧本中设置触发信息
+	f 在剧本中进行剧本整合
+	
+	
+02. 在剧本中设置变量信息
+    方式一：直接在剧本文件编写  
+	vars:
+      oldboy01: data01
+      oldboy02: data02
+ 
+    方式二：在命令行中进行指定
+    ansible-playbook --extra-vars=oldboy01=data01
+
+    方式三：在主机清单文件编写
+    [oldboy]
+    oldboy01=data01
+    oldboy02=data02
+
+    三种变量设置方式都配置了,三种方式的优先级???
+	最优先: 命令行变量设置
+	次优先: 剧本中变量设置
+    最后:   主机清单变量设置
+
+	如何全局设置变量: roles 剧本整合
+	
+	
+03. 在剧本中设置注册信息
+    - hosts: oldboy
+      tasks:
+        - name: check server port
+          shell: netstat -lntup  --- 端口信息
+          register: get_server_port<--端口信息
+    
+        - name: display port info
+          debug: msg={{ get_server_port.stdout_lines }}
+	显示进程信息,表示服务已经正常启动
+	PS: 设置变量不能有空格信息
+		  
+04. 在剧本中设置判断信息
+    如何指定判断条件:
+	(ansible_hostname == "nfs01")
+	(ansible_hostname == "web01")
+	setup模块中显示被管理主机系统的详细信息
+
+    - hosts: oldboy
+      remote_user: root
+      tasks:
+        - name: Check File
+          file: path=/tmp/this_is_{{ ansible_hostname }}_file state=touch
+          when: (ansible_hostname == "nfs") or (ansible_hostname == "backup")	
+	
+	    - name: install httpd
+		  yum: name=httpd state=installed
+		  when: (系统情况 == "CentOS")
+		  
+		- name: install httpd2
+          yum: name=httpd2 state=installed
+          when: (系统情况 == "ubuntu") 
+
+	获取内置变量方法：
+	ansible oldboy -m setup -a "filter=ansible_hostname"
+    常见主机信息：
+    ansible_all_ipv4_addresses：				仅显示ipv4的信息。
+    ansible_devices：							仅显示磁盘设备信息。
+    ansible_distribution：						显示是什么系统，例：centos,suse等。
+    ansible_distribution_major_version：		显示是系统主版本。
+    ansible_distribution_version：				仅显示系统版本。
+    ansible_machine：							显示系统类型，例：32位，还是64位。
+    ansible_eth0：								仅显示eth0的信息。
+    ansible_hostname：							仅显示主机名。
+    ansible_kernel：							仅显示内核版本。
+    ansible_lvm：								显示lvm相关信息。
+    ansible_memtotal_mb：						显示系统总内存。
+    ansible_memfree_mb：						显示可用系统内存。
+    ansible_memory_mb：							详细显示内存情况。
+    ansible_swaptotal_mb：						显示总的swap内存。
+    ansible_swapfree_mb：						显示swap内存的可用内存。
+    ansible_mounts：							显示系统磁盘挂载情况。
+    ansible_processor：							显示cpu个数(具体显示每个cpu的型号)。
+    ansible_processor_vcpus：					显示cpu个数(只显示总的个数)。
+	
+	获取子信息方法:
+	ansible_eth0[ipv4]
+
+04. 在剧本中设置循环信息
+    vim test04.yml
+    - hosts: all
+      remote_user: root
+      tasks:
+        - name: Add Users
+          user: name={{ item.name }} groups={{ item.groups }} state=present
+          with_items: 
+    	    - { name: 'testuser1', groups: 'bin' }
+    		- { name: 'testuser2', groups: 'root' }
+    
+    vim test05.yml
+    - hosts: all
+      remote_user: root
+      tasks:
+        - name: Installed Pkg
+          yum: name={{ item }}  state=present
+          with_items:
+    	    - wget
+    		- tree
+    		- lrzsz	
+
+05. 在剧本中设置忽略错误
+    默认playbook会检查命令和模块的返回状态，如遇到错误就中断playbook的执行
+    可以加入ignore_errors: yes忽略错误
+    vim test06.yml
+    - hosts: all
+      remote_user: root
+      tasks:
+        - name: Ignore False
+          command: /bin/false
+    	  ignore_errors: yes
+        - name: touch new file
+    	  file: path=/tmp/oldboy_ignore state=touch		
+
+06. 在剧本中设置标签功能
+    - hosts: oldboy
+      ignore_errors: yes
+      remote_user: root
+      tasks:
+        - name: Check File
+          file: path=/tmp/this_is_{{ ansible_hostname }}_file state=touch
+          when: (ansible_hostname == "nfs01") or (ansible_hostname == "backup")
+		  tags: t1
+    
+        - name: bad thing
+          command: ech 123
+          #ignore_errors: yes
+		  tags: t2
+    
+        - name: install httpd
+          yum: name=httpd state=installed
+          when: (ansible_all_ipv4_addresses == ["172.16.1.7","10.0.0.7"])
+		  tags: t3
+    
+        - name: install httpd2
+          yum: name=httpd2 state=installed
+          when: (ansible_distribution == "ubuntu")
+		  tags: t4
+		  
+	指定执行哪个标签任务： ansible-playbook --tags=t2 test05.yml 
+	跳过指定标签任务：     ansible-playbook --skip-tags=t2 test05.yml 		
+
+07. 在剧本中设置触发功能
+    - hosts: backup
+      remote_user: root
+      tasks:
+        - name: 01 Install rsync
+          yum: name=rsync state=present
+        
+        - name: 02 push config file
+          copy: src=./file/{{ item.src }} dest=/etc/{{ item.dest }} mode={{ item.mode }} 
+          with_items:
+            - { src: "rsyncd.conf", dest: "rsyncd.conf", mode: "0644" }
+            - { src: "rsync.password", dest: "rsync.password", mode: "0600" }
+          notify: restart rsync server
+
+      handlers:
+        - name: restart rsync server
+          service: name=rsyncd state=restarted   
+
+
+08. 将多个剧本进行整合
+    方式一：include_tasks: f1.yml
+    - hosts: all
+      remote_user: root
+      tasks:
+        - include_tasks: f1.yml
+        - include_tasks: f2.yml
+
+    方式二：include: f1.yml
+    - include：f1.yml	
+    - include：f2.yml
+
+	方式三：- import_playbook:
+	[root@m01 ansible-playbook]# cat main.yml 
+    - import_playbook: base.yml     
+    - import_playbook: rsync.yml    
+    - import_playbook: nfs.yml      
+	- import_playbook: oxxx.yml
+    - import_playbook: rsync.yml
+    - import_playbook: nfs.yml

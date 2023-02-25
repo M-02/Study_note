@@ -1,0 +1,299 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day21-操作系统用户权限
+==================================	
+
+00. 课程介绍部分
+    1) 用户相关的命令 
+	2) 用户权限(如何让普通用户可以像root用户一样进行操作)
+    
+01. 课程知识回顾
+    1) 系统启动流程
+       1开机自检-2MBR引导???--3grub菜单(内核 进入单用户模式)---4加载内核
+	   --->5启动系统的第一个进程init/systemd--->6自动加载系统运行级别
+	   --->7加载初始化脚本--->8运行相应的自启动服务--->9加载显示登陆界面进程
+	2) 系统用户管理
+       a 用户的分类
+       b 数据文件权限说明(rwx)
+         文件权限:(更多关注一定要有read权限)
+         read  读文件内容的能力	(有了读文件block能力)
+         write 写文件内容的能力(有了读文件block能力)	重命名文件???	 
+		 execute 执行文件的能力(脚本文件)
+		 补充: 文件是否可以编辑查看,和上一级或上n级目录有关
+		 读取文件数据原理 / oldboy/ oldboy01/ oldboy.txt
+		 
+		 目录权限:(更多关注一定要有执行权限)
+		 read  读取目录下文件属性信息
+		 write 可以在目录中创建或删除数据
+		 execute 可以切换进入到目录中
+	3) 文件数据权限修改方法
+       chmod u/g/o + - = rwx   --- 针对不同用户进行设置
+       chmod a + - = rwx       --- 全部用户统一设置权限
+       chmod 644 xxx           --- 全部用户统一设置权限(更加灵活)	 
+    4) 文件的默认权限是如何设置
+       文件是: 644  666-umask(奇数+1)
+       目录是: 755  777-umask
+       umask(内置命令): 可以影响系统数据默认权限
+	   umask如何永久设置
+	   if [ $UID -gt 199 ] && [ "`/usr/bin/id -gn`" = "`/usr/bin/id -un`" ]
+	          条件一             
+	   then
+           umask 002
+       else
+           umask 022
+       fi
+	     
+	   $UID: 显示当前登录系统用户id数值
+	   判断比较符号
+	   -gt greater than  >
+	   -lt less than     <
+	   -eq equal         ==
+	   -ge greater && equal >=
+	   -le less && equal    <=
+	   -ne not equal     <>
+	   /usr/bin/id -gn  -- 显示当前用户的组名
+	   /usr/bin/id -un  -- 显示当前用户名称
+	   
+	   if 判断的条件(有>100万) && 长得帅
+	   then
+	      娶到好看的女生
+	   else
+	      是个女的就行
+	   fi
+	   
+	5) 特殊的目录: /etc/skel 样板房
+	   用户家目录都参照样板房设计
+	   用户家目录中特殊文件:
+	   -rw-------.  1 oldboy oldgirl 1454 Apr 24 09:12 .bash_history   --- 历史命令记录文件
+	   曾经输入的历史命令保存位置:
+	   01. 保存在内存中      histroy
+	       history -c
+	   02. 保存在磁盘文件中: .bash_history 
+	   
+       -rw-------.  1 oldboy oldgirl  651 Apr 23 10:16 .viminfo        --- vim样式设置
+	   自动加载文件样式信息
+	   #!/bin/bash
+       # 编写人: oldboy
+       # 编写时间: 2019
+       # 脚本作用: 
+
+02. 系统中和用户相关的文件
+    /etc/passwd*****  --- 记录系统用户信息文件 
+    [root@oldboyedu oldboy]# head /etc/passwd
+    root	:x	:0	:0	:root		:/root				:/bin/bash
+    bin		:x	:1	:1	:bin		:/bin				:/sbin/nologin
+    daemon	:x	:2	:2	:daemon		:/sbin				:/sbin/nologin
+    adm		:x	:3	:4	:adm		:/var/adm			:/sbin/nologin
+    lp		:x	:4	:7	:lp			:/var/spool/lpd		:/sbin/nologin
+	01      02  03  04  05          06                  07
+	
+	第一列: 用户名
+	第二列: 用户密码信息
+	第三列: 用户的uid信息
+	第四列: 用户的gid信息
+	第五列: 用户的注释信息 
+	        mysql(manager database user)
+			www  (manager web server)
+	第六列: 用户家目录信息
+	第七列: 用户登录系统方式
+            /bin/bash       --- 通用的解释器
+			/usr/bin/sh     --- 等价于/bin/bash
+			/usr/bin/bash
+            /sbin/nologin       --- 无法登录系统
+            /usr/sbin/nologin
+	/etc/shadow*      --- 系统用户密码文件
+	/etc/group*       --- 组用户记录文件
+	/etc/gshadow*     --- 组用户密码信息
+       	   
+03. 系统用户相关命令
+    a 创建用户命令
+	  useradd oldboy   普通用户被创建出来
+      useradd oldboy01 -M -s /sbin/nologin 虚拟用户被创建出来
+      -M 不创建家目录
+	  -s 指定使用的shell方式
+	  [root@oldboyedu oldboy]# useradd Alex01 -M -s /sbin/nologin
+      [root@oldboyedu oldboy]# id Alex01
+      uid=1067(Alex01) gid=1067(Alex01) groups=1067(Alex01)
+      [root@oldboyedu oldboy]# grep Alex01 /etc/passwd
+      Alex01:x:1067:1067::/home/Alex01:/sbin/nologin
+      [root@oldboyedu oldboy]# ll /home/Alex01 -d
+      ls: cannot access /home/Alex01: No such file or directory
+      
+	  useradd Alex03 -u 2000
+	  -u 指定用户uid数值信息
+      [root@oldboyedu oldboy]# id Alex03
+      uid=2000(Alex03) gid=2000(Alex03) groups=2000(Alex03)
+	  
+	  useradd Alex04 -u 2001 -g Alex02
+	  -g 指定用户所属的主要组信息
+      [root@oldboyedu oldboy]# id Alex04
+      uid=2001(Alex04) gid=1068(Alex02) groups=1068(Alex02)
+      [root@oldboyedu oldboy]# useradd Alex05 -u 2002 -g 1068
+      [root@oldboyedu oldboy]# id Alex05
+      uid=2002(Alex05) gid=1068(Alex02) groups=1068(Alex02)
+
+      [root@oldboyedu oldboy]# useradd Alex07 -u 2004 -g Alex02 -G Alex03
+	  -G 指定用户所属的附属组信息
+      [root@oldboyedu oldboy]# id Alex07
+      uid=2004(Alex07) gid=1068(Alex02) groups=1068(Alex02),2000(Alex03)
+
+      useradd mysql -s /sbin/nologin -M -c "manager database"
+	  -c 添加指定用户注释说明信息
+      [root@oldboyedu oldboy]# grep mysql /etc/passwd
+      mysql:x:2005:2005:manager database:/home/mysql:/sbin/nologin
+
+    b 修改用户信息
+	  usermod
+	  -s    修改用户的登录方式
+	  -g    修改用户的主要的组信息
+	  -G    修改用户的附属组信息
+	  -c    修改用户的注释信息
+	  
+	  修改用户shell信息
+	  [root@oldboyedu oldboy]# usermod Alex02 -s /sbin/nologin
+      [root@oldboyedu oldboy]# grep Alex02 /etc/passwd
+      Alex02:x:1068:1068::/home/Alex02:/sbin/nologin
+
+      修改用户uid信息
+	  [root@oldboyedu oldboy]# usermod Alex02 -u 3000
+      [root@oldboyedu oldboy]# id Alex02
+      uid=3000(Alex02) gid=1068(Alex02) groups=1068(Alex02)
+
+    c 删除用户信息
+	  userdel
+	  userdel -r Alex04
+	  -r 彻底删除用户以及用户的家目录
+      [root@oldboyedu oldboy]# ll /home/Alex04 -d
+      ls: cannot access /home/Alex04: No such file or directory
+      [root@oldboyedu oldboy]# useradd Alex04
+	  
+	d 用户密码设置方法
+	  交互式设置密码
+	  passwd oldboy 
+	  非交互设置密码
+	  echo 123456|passwd --stdin oldboy
+	  
+	  企业中设置密码和管理密码的方式
+	  01. 密码要复杂12位以上字母数字及特殊符号
+      02. 保存好密码信息
+	      keepass
+		  密码保险柜，本地存储密码
+	      lastpass
+		  密码保险柜，在线存储密码
+	  03. 大企业用户和密码统一管理（相当于活动目录AD）
+	      openldap域
+		  用户信息统一保存在一个用户管理服务器中 用户的家目录中的文件 用户密码 用户名称
+      04. 动态密码：动态口令，第三方提供自己开发也很简单。
+	  
+
+04. 用户组相关命令
+    # groupadd 创建用户组
+    [root@oldboyedu oldboy]# groupadd python
+    [root@oldboyedu oldboy]# useradd python -g python
+    [root@oldboyedu oldboy]# id python
+    uid=3003(python) gid=3003(python) groups=3003(python)   
+	
+	# groupmod 修改用户组信息
+	# groupdel 删除用户组信息
+	
+05. 用户属主属组设置命令
+    chown  修改属主和属组信息
+    [root@oldboyedu oldboy]# ll /etc/hosts
+    -rw-r--r--. 2 root root 192 Apr 15 12:19 /etc/hosts
+    [root@oldboyedu oldboy]# chown oldboy.root /etc/hosts
+    [root@oldboyedu oldboy]# ll /etc/hosts
+    -rw-r--r--. 2 oldboy root 192 Apr 15 12:19 /etc/hosts
+
+    chown -R  递归修改目录属主和属组信息
+    [root@oldboyedu oldboy]# ll oldboy_dir -d
+    dr-xr-xr-x. 2 oldboy oldgirl 24 Apr 23 10:36 oldboy_dir
+    [root@oldboyedu oldboy]# touch oldboy_dir/root.txt
+    [root@oldboyedu oldboy]# ll oldboy_dir/root.txt
+    -rw-r--r--. 1 root root 0 Apr 24 11:29 oldboy_dir/root.txt
+    [root@oldboyedu oldboy]# id Alex01
+    uid=1067(Alex01) gid=1067(Alex01) groups=1067(Alex01)
+    [root@oldboyedu oldboy]# chown Alex01.Alex01 oldboy_dir
+    [root@oldboyedu oldboy]# ll oldboy_dir -d
+    dr-xr-xr-x. 2 Alex01 Alex01 40 Apr 24 11:29 oldboy_dir
+    [root@oldboyedu oldboy]# ll oldboy_dir/
+    total 0
+    -rw-r--r--. 1 root root 0 Apr 23 10:36 oldboy.txt
+    -rw-r--r--. 1 root root 0 Apr 24 11:29 root.txt
+    [root@oldboyedu oldboy]# chown -R Alex01.Alex01 oldboy_dir
+    [root@oldboyedu oldboy]# ll oldboy_dir -d
+    dr-xr-xr-x. 2 Alex01 Alex01 40 Apr 24 11:29 oldboy_dir
+    [root@oldboyedu oldboy]# ll oldboy_dir/
+    total 0
+    -rw-r--r--. 1 Alex01 Alex01 0 Apr 23 10:36 oldboy.txt
+    -rw-r--r--. 1 Alex01 Alex01 0 Apr 24 11:29 root.txt
+	
+06. 用户信息查看命令
+    a id  显示用户信息命令 (uid gid)
+	b w   显示正在登陆系统的用户信息
+	  [root@oldboyedu oldboy]# w
+      11:33:31 up  6:33,  1 user,  load average: 0.00, 0.01, 0.05
+      USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+      root     pts/0    10.0.0.1         08:55    3.00s  0.20s  0.00s w
+	  01       02       03               04       05         06       07
+	  
+	  01. 什么用户登录到了系统中
+	  02. 登录的方式  
+	      pts/x 远程登录系统
+		  tty1  本地登录
+		  [root@oldboyedu oldboy]# echo "请不要修改恢复hosts文件配置" >/dev/pts/1 
+      03. 从哪连接的服务器 
+	  04. 登录时间
+	  05. IDLE 空闲时间
+      06. 用户操作系统 消耗的CPU资源时间
+	  07. 用户在干什么
+
+07. 用户权限说明:
+    普通用户如何像root用户一些操作管理系统:
+    01. 直接切换到root账户下管理系统   篡权夺位
+    02. 直接修改要做的数据文件权限	
+	03. root用户赋予了普通用户权利     大宝剑--sudo
+	    sudo root用户授权一个能力给普通用户
+		a 怎么进行授权:
+		  visudo
+		  93 oldboy  ALL=(ALL)       /usr/sbin/useradd, /usr/bin/rm
+		  
+        b 如何验证oldboy已经获取了root用户能力
+		  [oldboy@oldboyedu ~]$ sudo -l 
+          We trust you have received the usual lecture from the local System
+          Administrator. It usually boils down to these three things:
+          
+              #1) Respect the privacy of others.
+              #2) Think before you type.
+              #3) With great power comes great responsibility.
+          [sudo] password for oldboy: 
+          User oldboy may run the following commands on oldboyedu:
+              (ALL) /usr/sbin/useradd, /usr/bin/rm
+			  
+	    c 执行root用户可以执行的命令
+		  [oldboy@oldboyedu ~]$ sudo useradd Alex06
+          useradd: user 'Alex06' already exists
+          [oldboy@oldboyedu ~]$ sudo useradd Alex07
+          useradd: user 'Alex07' already exists
+          [oldboy@oldboyedu ~]$ sudo useradd Alex08
+          [oldboy@oldboyedu ~]$ sudo rm -f /etc/hosts
+
+
+
+
+
+
+
+
+
+
+
+       

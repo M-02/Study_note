@@ -814,7 +814,7 @@ uname=admin&passwd=1'or'1'='1&submit=Submit
 uname=admin&passwd=1'||'1'='1&submit=Submit
 ```
 
-因为这是一个 POST 型的注入，那么国光这里就再啰嗦一遍，走一遍详细的流程吧
+因为这是一个 POST 型的注入，那么 这里就再啰嗦一遍，走一遍详细的流程吧
 
 ### 联合查询注入
 

@@ -1,0 +1,369 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day16-操作系统正则符号说明
+==================================	
+
+00. 课程介绍部分
+    1). 系统符号 # ~ $ . ..
+	2). 通配符号 * {}
+	    根据文件名称进行匹配信息
+	3). 正则符号 *
+	    根据内容进行匹配
+    	
+01. 课程知识回顾
+    文件属性章节:
+	ll -i /etc/hosts
+	33584339 -rw-r--r--. 2 root root 192 Apr 15  2019 /etc/hosts
+    1) inode信息:
+	   inode是什么?
+	   作用概述: 索引节点/存储文件属性信息
+	   诞生过程: 磁盘格式化=创建文件系统
+	   特点说明: inode号码相同,互为硬链接
+	   
+	   block是什么?
+       作用概述: 数据块/存储文件具体内容     
+       诞生过程: 磁盘格式化=创建文件系统
+	   特点说明: 根据企业情况,调整block大小
+	    
+       企业面试题: 系统中文件读取原理??
+
+    2) 文件类型和文件权限
+       文件类型: 普通文件 - 目录文件 d 链接文件 l  -- file
+                  find tar which
+	   文件权限: r=4 读  w=2 写 x=1 执行 - 没有权限 0
+	             属主 属组 其他用户
+				 
+	3) 硬链接数
+	   硬链接:
+       作用概述: 读取文件的多个入口	   
+	   诞生过程: ln 源文件 链接文件
+	   特点说明:
+	   01. inode号码相同
+	   02. 源文件删除,链接文件依旧有效
+	   03. 目录无法创建硬链接
+	   04. 创建出的新的目录硬链接数默认为2 
+	   
+	   软链接:
+	   作用概述: 文件数据的快捷方式
+	   诞生过程: ln -s 源文件 链接文件
+	   特点说明:
+	   01. 源文件删除,链接文件失效
+	   02. 普通文件和目录都可以创建软链接
+	   
+	   企业面试题: 如何将数据真正的删除?
+	   01. 确保文件的硬链接数为0   i_link
+	   02. 确保文件没有被进程占用  i_count
+	   
+	4) 属组和属主
+	   用户的类型:
+	   超级管理员   root    皇帝
+	   虚拟用户     nobody  傀儡
+	   普通用户     oldboy  平民
+	   
+	5) 文件时间信息
+	   修改时间信息  mtime
+	   访问时间信息  atime
+	   改变时间信息  ctime
+	   find /oldboy -type f -mtime +7  --- 7天以前
+	   find /oldboy -type f -mtime -7  --- 最近7天
+	   find /oldboy -type f -mtime 7   --- 正好前面第7天
+	   date命令如何使用 
+	   ntpdate命令进行时间同步
+     
+02. 系统符号学习作用
+    a 简化操作 .. ~ ; &&
+    b 进行匹配	
+	 
+03. 系统特殊符号:
+    1) 基础符号系列	
+	   美元符号：$
+	   叹号符号: !  取反
+	   竖线符号: | 管道符号 前一个命令执行结果交给后面命令处理
+	                xargs  命令|xargs 命令
+                    xargs: 将信息进行分组显示
+  
+       补充: 如何忽略别名功能:
+       01. 使用命令的绝对路径
+       02. 在命令执行前加撬棍
+       03. 在xargs信息后面命令自动忽略别名	   
+       
+	   查找指定数据信息进行复制  查找出*.txt文件,批量复制到/tmp目录
+	   01. 将找到的信息放到cp 和 最终目录中间
+           find /oldboy -type f -name "*.txt"|xargs -i cp {} /oldgirl   
+	   02. 利用cp指明谁是数据最终保存的目录信息
+           find /oldboy -type f -name "*.txt"|xargs  cp -t /oldgirl	   
+		   
+	   查找指定数据信息进行移动  查找出*.txt文件,批量移动到/tmp目录
+	   01. 将找到的信息放到cp 和 最终目录中间
+           find /oldboy -type f -name "*.txt"|xargs -i mv {} /oldgirl   
+	   02. 利用cp指明谁是数据最终保存的目录信息
+           find /oldboy -type f -name "*.txt"|xargs mv -t /oldgirl
+   
+       井号符号: #
+
+    2) 引号符号系列
+       ''  输出的信息,所见即所得
+	   [root@oldboyedu oldboy]# echo 'oldboy $LANG $oldgirl'
+       oldboy $LANG $oldgirl
+	   ""  和单引号功能类似 但对特殊信息会做解析
+	   [root@oldboyedu oldboy]# echo "oldboy $LANG $oldgirl"
+       oldboy en_US.UTF-8 123
+	   ``($())   将引号中的命令先执行,将执行结果交给引号外面的命令进行处理
+	   没有引号 和双引号功能类似 但是可以直接识别通配符信息
+
+	3) 重定向符号:
+	   >/1>    标准输出重定向符号
+	   2>      错误输出重定向符号
+	   >>/1>   标准输出追加重定向符号
+	   2>>     错误输出追加重定向符号
+	   
+	   如何将正确信息和错误信息都输出到文件中:(日志文件)
+	   [root@oldboyedu oldboy]# cho oldboy >/oldboy/ok.txt 2>/oldboy/error.txt
+       [root@oldboyedu oldboy]# cat /oldboy/error.txt
+       -bash: cho: command not found
+       [root@oldboyedu oldboy]# echo oldboy >/oldboy/ok.txt 2>/oldboy/error.txt
+       [root@oldboyedu oldboy]# cat /oldboy/ok.txt 
+       oldboy
+	   
+	   方法一: 将正确和错误信息同时保留到一个文件
+	   [root@oldboyedu oldboy]# echo oldboy >>/oldboy/info.log 2>>/oldboy/info.log 
+       [root@oldboyedu oldboy]# cho oldboy >>/oldboy/info.log 2>>/oldboy/info.log 
+       [root@oldboyedu oldboy]# cat /oldboy/info.log
+       oldboy
+       -bash: cho: command not found
+	   
+	   方法二: 将正确和错误信息同时保留到一个文件
+       [root@oldboyedu oldboy]# echo oldboy &>/oldboy/info.log  
+       [root@oldboyedu oldboy]# cat /oldboy/info.log
+       oldboy
+       [root@oldboyedu oldboy]# cho oldboy &>/oldboy/info.log  
+       [root@oldboyedu oldboy]# cat /oldboy/info.log
+       -bash: cho: command not found
+
+       方法三: 将正确和错误信息同时保留到一个文件
+	   [root@oldboyedu oldboy]# echo oldboy >/oldboy/info.log 2>&1 
+       [root@oldboyedu oldboy]# cat /oldboy/info.log
+       oldboy
+       [root@oldboyedu oldboy]# cho oldboy >/oldboy/info.log 2>&1 
+       [root@oldboyedu oldboy]# cat /oldboy/info.log
+       -bash: cho: command not found
+
+       <    标准输入重定向符号
+	   tr <  xargs <
+	   <<   标准输入追加重定向符号
+	   cat >>/oldboy.txt<<EOF
+	   XXX
+	   XXX
+	   EOF
+	   
+	4) 路径信息系列
+	   ../  上一级目录
+	   ./   当前路径
+	   ~    返回到家目录
+	   -    两个目录之间进行快速切换
+	        An argument of - is equivalent to $OLDPWD(环境变量)
+	   补充说明:
+	   [root@oldboyedu tmp]# cd $OLDPWD
+       [root@oldboyedu oldboy]# cd $OLDPWD
+       [root@oldboyedu tmp]# cd $OLDPWD
+       [root@oldboyedu oldboy]# echo $OLDPWD
+       /tmp
+       [root@oldboyedu oldboy]# cd /tmp/
+       [root@oldboyedu tmp]# echo $OLDPWD
+       /oldboy
+
+    5) 逻辑符号系列
+	   &&  与逻辑符号  前一个命令执行成功, 再执行后面的命令
+	   ||  或逻辑符号  前一个命令执行失败, 再执行后面的命令
+	   
+	   &&符号实践操作:
+	   [root@oldboyedu tmp]# # 需求: 想创建一个/alex目录, 在目录中创建一个oldboy.txt 一条命令搞定
+       [root@oldboyedu tmp]# mkdi /alex ; touch /alex/oldboy.txt
+       -bash: mkdi: command not found
+       touch: cannot touch ‘/alex/oldboy.txt’: No such file or directory
+       [root@oldboyedu tmp]# 
+       [root@oldboyedu tmp]# mkdi /alex && touch /alex/oldboy.txt
+       -bash: mkdi: command not found
+       [root@oldboyedu tmp]# mkdir /alex && touch /alex/oldboy.txt
+       [root@oldboyedu tmp]# ll /alex/oldboy.txt 
+       -rw-r--r--. 1 root root 0 Oct 10 03:00 /alex/oldboy.txt
+       [root@oldboyedu tmp]# 
+	   
+	   ||符号实践操作
+       [root@oldboyedu tmp]# # 需求: /alex/oldboy.txt删除失败了,在/alex/error.txt文件中生成失败信息
+       [root@oldboyedu tmp]# rmx /alex/oldboy.txt || echo "failed" >>/alex/error.txt
+       -bash: rmx: command not found
+       [root@oldboyedu tmp]# cat /alex/error.txt
+       failed
+       [root@oldboyedu tmp]# rm /alex/oldboy.txt || echo "failed" >>/alex/error.txt
+       [root@oldboyedu tmp]# cat /alex/error.txt
+       failed
+
+04. 系统通配符号:
+    利用通配符号匹配文件名称信息
+	*  模糊匹配所有内容  oldboy old ol o*
+	   find -name "*.txt"
+	   ll /oldboy/*.txt 
+	
+	{} 生成序列信息 (生成一行序列)
+	   生成连续序列
+	   echo {1..10}
+	   echo {01..100}
+	   echo {a..z}
+	   echo {A..Z}
+	   生成不连续序列
+	   echo {1..10..2}  奇数序列
+	   echo {2..10..2}  奇数序列
+	   echo {www,bbs,blog}
+	   
+	   生成组合序列
+	   [root@oldboyedu tmp]# echo {A,B}{01,02}
+       A01 A02 B01 B02
+       [root@oldboyedu tmp]# echo A{01,02}
+       A01 A02
+       [root@oldboyedu tmp]# echo A{,02}
+       A A02
+
+       快速备份文件数据方法
+	   [root@oldboyedu tmp]# # cp /oldboy/oldboy.txt /oldboy/oldboy.txt.bak
+       [root@oldboyedu tmp]# echo oldboy.txt{,bak}
+       oldboy.txt oldboy.txtbak
+       [root@oldboyedu tmp]# echo oldboy.txt{,.bak}
+       oldboy.txt oldboy.txt.bak
+       [root@oldboyedu tmp]# echo /oldboy/oldboy.txt{,.bak}
+       /oldboy/oldboy.txt /oldboy/oldboy.txt.bak
+       [root@oldboyedu tmp]# cp /oldboy/oldboy.txt{,.bak}   --最终命令
+	   
+	   # 测试题:
+	   01. 在/oldboy目录中创建alex.txt文件,并在/oldboy目录中生成alex.txt.ori备份文件
+	   mkdir /oldboy 
+	   touch alex.txt 
+	   cp /oldboy/alex.txt{,.ori}
+	   
+	   02. 如何将备份文件快速还原
+	   rm /oldboy/alex.txt -f 
+	   mv /oldboy/alex.txt{.ori,}
+	   快速还原
+	   mv /oldboy/alex.txt.ori /oldboy/alex.txt
+
+	
+05. 正则符号 
+    1. 利用正则符号匹配文件内容信息
+	2. 正则符号经常出现在各种开发语言中, python java php 
+	3. 正则符号经常被三剑客命令使用
+	 
+	基础正则符号: basic    regular expression BRE
+	1. 尖角符号：＾ 
+	   以什么开头的信息 ll /oldboy|grep "^d" 
+	2. 美元符号：＄
+	   以什么结尾的信息 ll -F /etc/|grep /$
+	
+	创建测试环境:
+    cat >>/oldboy/oldboy.txt<<EOF
+    # oldboyedu-sz-01
+    oldboy-linux
+    oldboy-python-linux
+    
+    # oldboyedu-sh
+    oldboy-linux
+    oldboy-python-linux
+    
+    # oldboyedu-bj
+    oldboy-linux
+    java
+    mysql
+    go
+    python
+    EOF
+    [root@oldboyedu tmp]# cat /oldboy/oldboy.txt
+    # oldboyedu-sz-01
+    oldboy-linux
+    oldboy-python-linux
+    
+    # oldboyedu-sh
+    oldboy-linux
+    oldboy-python-linux
+    
+    # oldboyedu-bj
+    oldboy-linux
+    java
+    mysql
+    go
+    python
+	
+	01. 将以oldboy开头的行找出来?
+	grep "^oldboy" 文件中过滤
+	
+	grep "^oldboy" 文件中过滤  
+	发屁
+	cat 文件|grep  "^oldboy"
+	脱裤子    发屁
+	
+	02. 将以linux结尾的行找出来?
+	grep "linux$"  文件中过滤 
+	
+	03. 将全部内容显示,但不要显示空行
+    ^oldboy     linux$
+	^$  -- 空行
+	grep -v "^$" 文件中过滤 
+	
+	3. 尖号美元：^＄
+       空行符号	
+	
+	
+	扩展正则符号: extended regular expression ERE 
+
+06. 课程内容总结
+    01. 系统符号
+        1. 系统常用符号 # $ 
+        2. 路径系列符号 ~ - .. .
+        3. 重定向符号   > >> 2> 2>> < <<
+        4. 逻辑符号     && ||
+        5. 引号符号     "" '' `` 没有引号		
+	02. 通配符号 根据文件名称进行筛选过滤
+	    *  模糊匹配字符
+		{} 生成序列信息 / 生成组合序列 (快速备份文件/快速恢复文件)
+	03. 正则符号 根据文件内容进行筛选过滤
+        1. 基础正则符号 grep  sed  awk    马云
+		2. 扩展正则符号 grep? sed? awk    贝索斯 亚马逊  
+
+
+	 
+王有才: 表演才艺 唱歌 跳舞 段子	 
+	 
+作业:
+01. 利用linux什么命令真正统计目录的大小? 
+    du -xxx	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+	 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+       

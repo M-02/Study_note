@@ -1,0 +1,402 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day18-操作系统三剑客命令-sed
+==================================	
+
+00. 课程介绍部分
+    1) sed命令使用方法
+    
+    	
+01. 课程知识回顾
+    1) 正则符号
+	基础正则符号:
+	^  以什么开头的信息进行匹配  ^oldboy
+    $  以什么结尾的信息进行匹配  oldboy$
+    ^$ 表示匹配空行信息
+    .  匹配任意一个且只有一个字符 grep "." 
+    *  匹配前一个字符连续出现0次或者多次
+    .* 匹配所有任意信息 类似于通配符*
+    \  将有意义的字符信息,转义成普通字符进行识别  
+	   --> 找出文件中以点结尾的信息	
+	   将特殊的扩展正则符号,转换成基础正则符号
+	   将没有意义的字符信息转成有意义的字符
+	   \n \r \t
+	[] 匹配多个字符信息,多个字符匹配时,是或者的关系
+	   [ok] 在文件中找有O的字符信息 找文件中有k的字符信息
+	   PS: 将一个字符串信息,进行拆分成一个一个的字符进行匹配
+   [^] 对匹配的字符信息进行排除
+       [^ok]  在文件中找有O的字符信息 找文件中有k的字符信息,进行排除不要显示,显示其他信息
+       [^o^k] 	   
+	
+	扩展正则符号:
+	+  匹配前一个字符连续出现1次或者多次
+	|  利用竖线可以匹配多个字符串信息
+	() 将多个字符信息汇总成整体,进行过滤
+	   进行后项引用前项  (oldboy) \1--sed  
+    {} 指定匹配前一个字符连续出现了多少次  
+       {n,m} 至少连续n次,最多连续m次
+       {n}	 匹配只连续n次的信息
+       {n,}  至少连续n次,最多不限
+       {,m}	 至少连续0次,最多m次  
+	?  匹配前一个字符连续出现0次或者1次 
+	 
+    grep命令识别扩展正则: egrep -E
+	sed命令识别扩展正则:  sed -r 
+	
+	学生问题:
+	01. 文件中有\撬棍信息,如何进行过滤
+	[root@oldboyedu ~]# grep '\\' oldboy_test.txt 
+    I \teach \linux.
+	02. 文件中有$符号, 是识别变量, 还是识别普通符号
+    [root@oldboyedu ~]# grep '$oldgirl' oldboy_test.txt 
+    $oldgirl
+    [root@oldboyedu ~]# grep "\$oldgirl" oldboy_test.txt 
+    $oldgirl
+	
+02. sed命令概述说明:
+    sed命令: 字符流编辑工具(行编辑工具)==按照每行中的字符进行处理操作
+	PS: 全屏编辑工具 vi/vim
+	
+	sed命令作用说明:
+	1). 擅长对行进行操作处理
+	2). 擅长将文件的内容信息进行修改调整/删除
+    编写脚本: 修改文件内容信息时
+    网络服务中的IP地址进行修改:  50台主机迁移机房--新机房
+    第一个步骤: vi ifcfg-eth0 
+    第二个步骤: 重启网络服务
+    第三个步骤: 检查测试	
+  
+    自动修改网卡地址脚本:
+	第一个步骤: 修改地址
+	sed -i "s#10.0.0.200#10.0.0.201#g" ifcfg-eth0 
+	
+	第二个步骤: 重启网络服务 
+	systemctl restart network 
+	
+	第三个步骤: 过滤ip a s eth0 网卡地址信息存储到一个文件中 共享存储
+    
+    具体功能作用:
+	1) 文件中添加信息的能力 (增) ok
+	2) 文件中删除信息的能力 (删) ok
+	3) 文件中修改信息的能力 (改)
+	4) 文件中查询信息的能力 (查) OK
+  
+03. sed命令的语法信息
+    sed [OPTION]... {script-only-if-no-other-script} [input-file]...
+    命令 参数        条件+处理= (指令)              处理文件信息
+
+    显示出文件中有oldboy行的信息
+    sed  -n          '/oldboy/p'                      oldboy.txt	
+  
+  
+04. sed命令执行原理
+    参见原理图
+
+05. sed命令实践操作:
+    创建测试环境:
+cat >person.txt<<EOF
+101,oldboy,CEO
+102,zhaoyao,CTO
+103,Alex,COO
+104,yy,CFO
+105,feixue,CIO
+EOF	
+
+    a sed命令查询信息方法
+	根据文件内容的行号进行查询:
+	测试1: 显示单行信息
+	[root@oldboyedu ~]# sed -n '3p' person.txt 
+    103,Alex,COO
+	测试2: 根据行号信息,输出多行内容(连续)
+	[root@oldboyedu ~]# sed -n '1,3p' person.txt 
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+	测试3: 根据行号信息,输出多行内容(不连续)
+    [root@oldboyedu ~]# sed -n '1p;3p' person.txt 
+    101,oldboy,CEO
+    103,Alex,COO
+
+	根据文件内容的信息进行查询:
+	测试1: 根据内容信息,输出单行内容
+	#将有oldboy行的信息找出来
+    [root@oldboyedu ~]# sed -n '/oldboy/p' person.txt 
+    101,oldboy,CEO
+
+    测试2: 根据内容信息,输出多行内容(连续)
+	#将有oldboy到alex行的信息都输出出来
+	[root@oldboyedu ~]# sed -n '/oldboy/,/Alex/p' person.txt 
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+
+	测试3: 根据内容信息,输出多行内容(不连续)
+	#将有oldboy和alex行的信息都输出出来
+	[root@oldboyedu ~]# sed -n '/oldboy/p;/Alex/p' person.txt 
+    101,oldboy,CEO
+    103,Alex,COO
+    106,oldboy,CIO
+
+    b sed命令添加信息方法
+    在文件第一行添加信息:
+    100,oldgirl,UFO
+	[root@oldboyedu ~]# sed  '1i100,oldgirl,UFO' person.txt
+    100,oldgirl,UFO
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+    104,yy,CFO
+    105,feixue,CIO
+    106,oldboy,CIO
+
+    在文件最后一行添加信息:
+	[root@oldboyedu ~]# sed  '$a108,oldgirl,UFO' person.txt
+    100,oldgirl,UFO
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+    104,yy,CFO
+    105,feixue,CIO
+    106,oldboy,CIO
+    108,oldgirl,UFO
+	
+	测试:
+	01. 在第三行后面添加oldboy.txt信息
+	sed '3aoldboy.txt' person.txt
+	02. 在第二行前面添加oldboy.txt信息
+	sed '2ioldboy.txt' person.txt
+	03. 在有oldboy行的前面添加oldgirl 后面添加olddog信息
+	sed -e '/oldboy/ioldgirl' -e  '/oldboy/aolddog' person.txt
+	
+	[root@oldboyedu ~]# sed -e '/oldboy/ioldgirl' -e  '/oldboy/aolddog' person.txt
+    100,oldgirl,UFO
+    oldgirl
+    101,oldboy,CEO
+    olddog
+    102,zhaoyao,CTO
+    103,Alex,COO
+    104,yy,CFO
+    105,feixue,CIO
+    oldgirl
+    106,oldboy,CIO
+    olddog
+	
+	sed  '$a100\n101' person.txt  添加多行信息
+	企业中编写配置文件:
+	IPaddress=10.10.10.1
+	mask=255.255.255.0
+	gateway=10.10.10.254
+	
+	sed '$aIPaddress=10.10.10.1\nmask=255.255.255.0\ngateway=10.10.10.254' 文件名称
+
+    c sed命令删除信息方法
+	练习:
+	01. 删除单行信息
+	[root@oldboyedu ~]# #删除文件中第三行信息
+    [root@oldboyedu ~]# sed '3d' person.txt 
+    100,oldgirl,UFO
+    101,oldboy,CEO
+    103,Alex,COO
+    104,yy,CFO
+    105,feixue,CIO
+    106,oldboy,CIO
+	
+	02. 删除多行信息
+    [root@oldboyedu ~]# #删除文件中第二行到第六行内容
+    [root@oldboyedu ~]# sed '2,6d' person.txt 
+    100,oldgirl,UFO
+    106,oldboy,CIO
+	
+	测试: 
+	01. 删除有oldboy信息的行
+	sed '/oldboy/d' person.txt 
+	
+	02. 删除第三行和第六行
+	[root@oldboyedu ~]# #删除文件中第二行到第六行内容
+    [root@oldboyedu ~]# sed '2,6d' person.txt 
+    100,oldgirl,UFO
+    106,oldboy,CIO
+    
+    [root@oldboyedu ~]# sed '3d;6d' person.txt 
+    100,oldgirl,UFO
+    101,oldboy,CEO
+    103,Alex,COO
+    104,yy,CFO
+    106,oldboy,CIO
+	
+	问题: 如何利用sed命令取消空行显示
+	[root@oldboyedu ~]# sed -n '/./p' person.txt 
+    100,oldgirl,UFO
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+    104,yy,CFO
+    105,feixue,CIO
+    106,oldboy,CIO
+    
+    [root@oldboyedu ~]# sed '/^$/d' person.txt 
+    100,oldgirl,UFO
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+    104,yy,CFO
+    105,feixue,CIO
+    106,oldboy,CIO
+    
+    [root@oldboyedu ~]# sed -n '/^$/!p' person.txt 
+    100,oldgirl,UFO
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+    104,yy,CFO
+    105,feixue,CIO
+    106,oldboy,CIO
+
+	d sed命令修改信息方法
+	
+	sed 's#原有内容#修改后内容#g' 文件信息  
+	[root@oldboyedu ~]# sed 's##oldgirl#old#g' person.txt 
+    sed: -e expression #1, char 12: unknown option to `s'
+    [root@oldboyedu ~]# sed 's/#oldgirl/old/g' person.txt 
+    100,old,UFO
+    
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+    
+    104,yy,CFO
+    105,feixue,CIO
+    106,oldboy,CIO
+	
+	sed 's#()#\n#g' 文件信息 后项引用前项进行替换修改
+    利用sed命令取出IP地址信息:
+	第一个历程: 取出有IP地址的行
+	[root@oldboyedu ~]# ip a s eth0|sed -n '3p'
+    inet 10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+	
+	第二个历程: 取出IP地址
+	[root@oldboyedu ~]# ip a s eth0|sed -n '3p'|sed -r 's#^.*net (.*)#\1#g'
+    10.0.0.200/24 brd 10.0.0.255 scope global noprefixroute eth0
+    [root@oldboyedu ~]# ip a s eth0|sed -n '3p'|sed -r 's#^.*net (.*)#\1#g'|sed -r 's#(.*)/24.*#\1#g'
+    10.0.0.200
+
+	sed -r 's#^.*net (.*)#\1#g'|sed -r 's#(.*)/24.*#\1#g'  进行整合
+	ip a s eth0|sed -n '3p'|sed -r 's#^.*net (.*)/24.*#\1#g'
+	
+	sed -n '3p'|sed -r 's#^.*net (.*)/24.*#\1#g'  进行整合 
+	
+	sed -n '3                        p'
+	sed -r 's#^.*net (.*)/24.*#\1#g'
+	sed -rn '3s#^.*net (.*)/24.*#\1#gp'  
+	最终取IP地址方法
+	[root@oldboyedu ~]# ip a s eth0|sed -rn '3s#^.*net (.*)/24.*#\1#gp'
+    10.0.0.200
+
+    补充01: 修改文件内容直接进行自动备份
+	[root@oldboyedu ~]# sed -i.bak  's#oldboy#oldold#g' person.txt 
+    [root@oldboyedu ~]# ll person.txt.bak 
+    -rw-r--r--. 1 root root 104 Oct 10 11:40 person.txt.bak
+    [root@oldboyedu ~]# cat person.txt.bak 
+    100,#oldgirl,UFO
+    
+    101,oldboy,CEO
+    102,zhaoyao,CTO
+    103,Alex,COO
+    
+    104,yy,CFO
+    105,feixue,CIO
+    106,oldboy,CIO
+
+    补充02: 在真实替换文件内容时候,一定不能让n和i参数同时出现
+    [root@oldboyedu ~]# sed -ni 's#Alex#aaaa#gp' person.txt
+    103,aaaa,COO
+	[root@oldboyedu ~]# cat person.txt
+    103,aaaa,COO
+	说明: ni和参数同时使用,会将文件内容进行清空
+
+
+	测验替换功能:
+	创建测试环境:
+	-rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy01.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy02.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy03.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy04.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy05.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy06.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy07.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy08.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy09.txt
+    -rw-r--r--. 1 root root      0 Oct 10 02:10 oldboy10.txt
+	批量修改文件的扩展名称 将oldboyxx.txt扩展名修改为oldboyxx.jpg
+	
+	[root@oldboyedu oldboy]# ls oldboy*.txt|sed -r 's#(.*)txt#mv & \1jpg#g'
+    mv oldboy01.txt oldboy01.jpg
+    mv oldboy02.txt oldboy02.jpg
+    mv oldboy03.txt oldboy03.jpg
+    mv oldboy04.txt oldboy04.jpg
+    mv oldboy05.txt oldboy05.jpg
+    mv oldboy06.txt oldboy06.jpg
+    mv oldboy07.txt oldboy07.jpg
+    mv oldboy08.txt oldboy08.jpg
+    mv oldboy09.txt oldboy09.jpg
+    mv oldboy10.txt oldboy10.jpg
+    mv oldboy.txt oldboy.jpg
+    [root@oldboyedu oldboy]# ls oldboy*.txt|sed -r 's#(.*)txt#mv & \1jpg#g'|bash
+	
+	批量重命名专业命令: rename
+    rename  .txt                           .jpg                 oldboy*.txt
+	命令    文件名称需要修改的部分信息    修改成什么信息      将什么样的文件进行修改
+	
+	[root@oldboyedu ~]# cat person.txt|sed -i 's#COO#CEO#g'
+    sed: no input files
+    [root@oldboyedu ~]# sed -i 's#COO#CEO#g' person.txt
+
+	
+	文件中添加内容方法:
+	01. vim/vi 
+	02. cat >>xxx<EOF .. EOF 
+	03. echo -e "xxx\nxxx"
+	04. sed 'na/i xxxx\nxxxx\nsxxxx'
+	
+	
+	总结: sed命令的指令信息
+	p  print        输出信息
+	i  insert       插入信息,在指定信息前面插入新的信息
+	a  append       附加信息,在指定信息后面附加新的信息
+	d  delete       删除指定信息
+	s  substitute   替换信息 s###g(全局替换)
+	c               替换修改指定的一整行信息
+	[root@oldboyedu ~]# sed '2coldboyedu-sz-01' person.txt
+    103,aaaa,CEO
+    oldboyedu-sz-01
+
+    总结: sed命令的参数信息
+    -n  取消默认输出
+    -r  识别扩展正则
+    -i  真实编辑文件(将内存中的信息覆盖到磁盘中)	
+	-e  识别sed命令多个操作指令
+	
+作业:
+01. 总结正则符号
+02. 总结sed命令
+03. 总结find tar date	
+	
+	
+	
+	
+	
+	
+	
+  
+  
+  
+       

@@ -1,0 +1,241 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day20-操作系统用户管理
+==================================	
+
+00. 课程介绍部分
+    1) 常见面试题 (系统启动流程 服务开机自启方法)
+	2) 用户管理概念
+	3) 用户权限说明(*)
+	4) 企业中用户管理注意事项
+
+    	
+01. 课程知识回顾
+    1) awk命令概念说明
+	   擅长取列 擅长统计分析日志
+	   awk命令语法: awk [参数] '模式{动作}' 文件
+	   awk执行原理: BEGIN{} END{}
+	2) awk实际解决了一些问题
+	   awk匹配查询信息 ==grep
+	   ~ !~  指定列进行匹配
+       awk匹配替换信息 
+	   gsub(/要替换的信息/,"替换的内容",将第几列进行替换)
+	   awk匹配删除信息 
+	   awk '!/oldboy/'
+    3) awk统计分析能力
+	   累加运算: i=i+1 i++
+	   求和运算: i=i+$n  
+    01 求出测试文件中 所有人第一次捐款的总额和第三次捐款总额
+       显示表头 
+       第一总额  第三次总额 	
+       xxx        xxxx	 
+	   awk -F ":" 'BEGIN{print "第一次总额","第三次总额"};/.*/{print $2,$4}'  awk_test.txt
+	   [root@oldboyedu ~]# awk -F ":" 'BEGIN{print "第一次总额","第三次总额"}{a=a+$2;b=b+$4}END{print a,b}' awk_test.txt|column -t
+       第一次总额  第三次总额
+       2130        1661
+
+02. 常见面试题: 
+    系统的启动流程:
+    centos6
+	01. 加电自检
+	    检查服务器硬件是否正常
+    02. MBR引导
+	    读取磁盘的MBR存储记录信息,引导系统启动
+	03. grup菜单
+	    选择启动的内核/进行单用户模式重置密码
+    04. 加载系统内核信息
+	    可以更好的使用内核控制硬件
+	05. 系统的第一个进程运行起来 init (串行)
+	    init进程控制后续各种服务的启动: 启动顺序 网络服务 sshd 
+	
+	06. 加载系统运行级别文件/etc/inittab
+	07. 初始化脚本运行
+	    初始化系统主机名称 和 网卡信息
+	08. 运行系统特殊的脚本
+	    服务运行的脚本 
+	09. 运行mingetty进程
+	    显示开机登录信息界面
+	
+	
+    centos7	
+	01. 加电自检
+	    检查服务器硬件是否正常
+    02. MBR引导
+	    读取磁盘的MBR存储记录信息,引导系统启动
+	03. grup菜单
+	    选择启动的内核/进行单用户模式重置密码
+    04. 加载系统内核信息
+	    可以更好的使用内核控制硬件	
+	05. 系统的第一个进程运行起来 systemd (并行)
+	    服务启动的时候,同时一起启动
+	06. 读取系统启动文件
+	    /etc/systemd/system/default.target
+	07. 读取系统初始化文件
+	    /usr/lib/systemd/system/sysinit.target
+	08. 使服务可以开机自启动
+	    /etc/systemd/system 加载此目录中的信息,实现服务开机自动启动
+	09. 运行mingetty进程
+	    显示开机登录信息界面
+
+03. 用户管理章节
+    用户概念介绍:
+    管理员用户  root    0      	权利至高无上
+    虚拟用户    nobody  1-999 	管理进程  没家目录 不能登录系统
+    普通用户    oldboy	1000+   权利有限
+    
+	r read
+	w write
+	x execute
+	
+	文件信息:
+	r  可以读文件的内容
+	w  可以编辑文件的内容
+	x  执行这个文件(脚本文件)
+	
+	touch oldboy_root.txt -- 属主是root
+	touch oldboy.txt --      属主是oldboy
+	                         其他用户oldgirl
+	环境准备:
+	[root@oldboyedu ~]# touch oldboy_root.txt
+    [root@oldboyedu ~]# ll oldboy_root.txt 
+    -rw-r--r--. 1 root root 0 Apr 23 10:02 oldboy_root.txt
+    [root@oldboyedu ~]# touch oldboy.txt
+    [root@oldboyedu ~]# ll oldboy.txt 
+    -rw-r--r--. 1 root root 51 Apr 23 10:02 oldboy.txt
+    [root@oldboyedu ~]# chown oldboy oldboy.txt
+    [root@oldboyedu ~]# ll oldboy.txt 
+    -rw-r--r--. 1 oldboy root 51 Apr 23 10:02 oldboy.txt
+    [root@oldboyedu ~]# chmod 000 oldboy_root.txt 
+    [root@oldboyedu ~]# chmod 000 oldboy.txt 
+    [root@oldboyedu ~]# ll oldboy_root.txt 
+    ----------. 1 root root 0 Apr 23 10:02 oldboy_root.txt
+    [root@oldboyedu ~]# ll oldboy.txt 
+    ----------. 1 oldboy root 51 Apr 23 10:02 oldboy.txt
+
+    文件权限配置的结论:
+	01. root用户对所有文件有绝对的权限,只要有了执行权限,root用户可以无敌存在
+	02. 对于文件来说,写的权限和执行的权限,都需要有读权限配合
+	03. 如何想对文件进行操作,必须对文件赋予读的权限
+	
+	
+	目录信息:
+	r  读目录中的文件属性信息
+	w  可以在目录中添加或删除文件数据信息
+	x  是否可以进入到目录中
+	
+	当目录赋予读的权限
+	[oldboy@oldboyedu ~]$ ll /home/oldboy/oldboy_dir/文件 
+    ls: cannot access oldboy_dir/oldboy.txt: Permission denied
+    total 0
+    -????????? ? ? ? ?            ? oldboy.txt
+	
+	/           inode (5 r_x) -- block (home)
+    home        inode (5 r_x) -- block (oldboy)
+    oldboy   	inode (7 rwx) -- block (oldboy_dir)
+	oldboy_dir  inode (4 r--) -- block (目录中文件名称)
+	无法进入目录
+	oldboy.txt  inode 目录中的文件inode信息无法获取,会显示文件属性信息为??? 
+	
+	两个权限问题:
+	/oldboy/oldboy.txt 
+	01. oldboy.txt   权限 rwx--xr--  属主如何操作文件  其他用户可以如何操作这个文件
+
+    目录权限配置的结论:
+	01. root用户对目录信息有绝对权限
+	02. 对于目录来说,写的权限和读的权限,都需要有执行权限配合
+	03. 如何想对目录进行操作,必须对目录赋予执行的权限
+
+    一个普通文件默认权限: 644  保证属主用户对文件可以编辑  保证其他用户可以读取文件内容
+	一个目录文件默认权限: 755  保证属主用户对目录进行编辑  保证其他用户可以读取目录中的信息,可以进入到目录中
+
+    文件目录数据设置权限的方法:
+	1) 根据用户信息进行设定 (属主 属组 其他用户)
+	   属主-user       u  
+	   属组-group      g 
+	   其他用户-other  o 
+	   chmod u+r/w/x u-r/w/x u=rw
+	   chmod g+r/w/x u-r/w/x u=rw
+       chmod o+r/w/x u-r/w/x u=rw
+	2) 根据用户进行批量设定
+	   数值设定:
+	   [root@oldboyedu ~]# chmod 761 oldboy.txt
+       [root@oldboyedu ~]# ll oldboy.txt
+       -rwxrw---x. 1 root root 0 Apr 23 11:42 oldboy.txt
+
+	   字符设定:
+	   [root@oldboyedu ~]# chmod a=x oldboy.txt
+       [root@oldboyedu ~]# ll oldboy.txt
+       ---x--x--x. 1 root root 0 Apr 23 11:42 oldboy.txt
+
+    问题一: 为什么创建的文件和目录权限一致
+	目录权限都是 755
+	文件权限都是 644 
+	
+	[root@oldboyedu ~]# umask 
+    0022
+
+	默认文件权限: 666 - 022 = 644
+	umask数值是奇数  666 - 033 = 633 + 11 = 644
+	umask数值是偶数  666 - 022 = 644
+	
+    默认目录权限: 777 - 022 = 755	
+	umask数值是奇数  777 - 033 = 744
+	umask数值是偶数  777 - 022 = 755	
+	
+	问题二: 如何永久修改umask信息
+	vim /etc/profile
+	if [ $UID -gt 199 ] && [ "`/usr/bin/id -gn`" = "`/usr/bin/id -un`" ]; then
+      umask 002
+    else
+      umask 022  --- 可以永久修改umask数值
+    fi
+	
+	系统中的一个特殊的目录: /etc/skel  样板房 
+	[root@oldboyedu ~]# ll /etc/skel/ -a
+    total 24
+    drwxr-xr-x.  2 root root   62 Apr 11  2018 .
+    drwxr-xr-x. 81 root root 8192 Apr 23 12:11 ..
+    -rw-r--r--.  1 root root   18 Apr 11  2018 .bash_logout   当系统退出登录状态会执行的命令
+    -rw-r--r--.  1 root root  193 Apr 11  2018 .bash_profile  别名和环境变量(只针对某个用户)  家规
+    -rw-r--r--.  1 root root  231 Apr 11  2018 .bashrc        别名和环境变量(只针对某个用户)  家规
+ 
+	useradd oldgirl --> /home/oldgirl/ --> 目录中的数据内容会参考/etc/skel目录中的信息
+	
+	/etc/skel目录作用:
+	01. 目录中可以存储运维操作规范说明文件
+	02. 调整命令提示符信息
+	    出现问题: 命令提示符: -bash-4.2$ 
+    -bash-4.2$ ll /etc/hosts
+    -rw-r--r--. 2 root root 192 Apr 15 12:19 /etc/hosts
+    -bash-4.2$ cp /etc/skel/.b* /home/new01/
+    -bash-4.2$ exit
+    logout
+    [root@oldboyedu ~]# 
+    [root@oldboyedu ~]# su - new01
+    Last login: Tue Apr 23 12:23:36 CST 2019 on pts/2
+
+	
+04. 课程知识总结:
+    1) 系统的开机流程 (centos6 centos7)
+	2) 系统用户概念
+	   a 用户的分类
+	   b 用户的权限(文件-权限 目录-权限)
+	     读写数据原理
+	     / -- inode/block -- oldboy 
+       c umask是什么? 控制文件或目录的默认权限
+	     如何永久修改 
+    3) 系统的特殊目录 /etc/skel (样板房)
+	
+作业:
+01. chmod命令使用方法进行总结
+	   
+       

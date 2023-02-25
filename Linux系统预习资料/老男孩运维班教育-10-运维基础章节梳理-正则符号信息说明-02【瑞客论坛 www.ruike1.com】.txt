@@ -1,0 +1,405 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day15-正则表达式信息说明
+==============================
+00. 课程回顾说明 
+    1) 系统中的符号作用
+	   a 便于搜索查找信息(文件名 文件中数据内容)
+	   b 表示一些特殊意义,便于我们操作 ~ . ..
+	   c 便于配合三剑客进行分析过滤文件内容
+	2) 系统中常见符号分类
+       系统特殊符号
+          基础符号: $ !(histroy) | #
+          引号符号: ""(会对部分特殊符号做解析) 
+		            ''(所见即所得) 
+					``(将引号里面的命令执行的结果交给外面的命令进行调用处理)
+          定向符号: > >> 2> 2>> <(tr xargs) <<EOF(用于生成多行信息)	
+          路径符号: . .. ~ -	
+          逻辑符号: && 与  并且  前面条件满足(真),  执行后面的操作
+                    || 或  或者  前面条件不满足(假),执行后面的操作		  
+       系统通配符号: 用于匹配文件名称!!! 
+          匹配符号: *  注意型号放置位置
+          序列符号: {} {01..05} {01..05..2} {01,03,07}
+                       {a..d}{1..5}
+                       实现快速备份数据的方式:
+                       cp /etc/hosts{,.bak}
+                       实现快速还原数据的方式:
+                       cp /etc/hosts{.bak,}					   
+		
+       系统正则符号: 用于匹配文件内容!!!	   
+	   	   
+01. 正则符号说明(用于结合三剑客命令用于过滤或处理编辑文件)
+    编写模拟测试文件
+cat >>~/oldboy_test.txt<<EOF
+I am oldboy teacher!
+I teach linux.
+
+I like badminton ball ,billiard ball and chinese chess!
+my blog is http://oldboy.blog.51cto.com
+our site is http://www.etiantian.org
+my qq num is 49000448.
+
+not 4900000448.
+my god ,i am not oldbey,but OLDBOY!
+EOF
+
+    基础正则符号:basic regular expression    (BRE)
+    扩展正则符号:extended regular expression (ERE)	
+	   
+	基础正则符号:
+    a 尖角符号：＾
+      以什么开头的信息进行过滤出来
+      需求01: 将以I开头的信息都过滤出来
+      [root@oldboy-xiaodao.com.cn ~]# grep "^I" ~/oldboy_test.txt 
+      I am oldboy teacher!
+      I teach linux.
+      I like badminton ball ,billiard ball and chinese chess!
+
+      需求02: 将不是以I开头的信息都过滤出来
+      [root@oldboy-xiaodao.com.cn ~]# grep -v "^I" ~/oldboy_test.txt 
+
+      my blog is http://oldboy.blog.51cto.com
+      our site is http://www.etiantian.org
+      my qq num is 49000448.
+      
+      not 4900000448.
+      my god ,i am not oldbey,but OLDBOY!	
+
+      企业需求: web服务配置文件请进行精简化处理	  
+	  grep -v "^#" nginx.conf.default >nginx.conf
+	  
+	  find / -type f -name "^oldboy"  错误
+	  find / -type f -name "oldboy*"  正确 
+	   
+    b 美元符号：$
+      以什么结尾的信息进行过滤出来	
+	  需求01: 请找出以m结尾信息, 并且显示上1行 和 下2行的信息
+	  [root@oldboy-xiaodao.com.cn ~]# grep "m$" -A 2 -B 1 ~/oldboy_test.txt 
+      I like badminton ball ,billiard ball and chinese chess!
+      my blog is http://oldboy.blog.51cto.com
+      our site is http://www.etiantian.org
+      my qq num is 49000448.
+	  
+	  错误说明:
+	  如何确认每行结尾有空格信息
+	  方法一:
+	  cat -A ~/oldboy_test.txt
+	  my blog is http://oldboy.blog.51cto.com $
+	  方法二:
+	  vim 底行模式输入命令 --- :set list
+	  
+	c 尖角美元符号：^$
+      取出文件中空行信息
+      grep "^$" ~/oldboy_test.txt
+      grep -v "^$" ~/oldboy_test.txt	  
+	  
+	d 点符号: .
+      表示匹配任意一个且只有一个字符
+      [root@oldboy-xiaodao.com.cn ~]# grep "." ~/oldboy_test.txt 
+      I am oldboy teacher!
+      I teach linux.
+      I like badminton ball ,billiard ball and chinese chess!
+      my blog is http://oldboy.blog.51cto.com 
+      our site is http://www.etiantian.org
+      my qq num is 49000448.
+      not 4900000448.
+      my god ,i am not oldbey,but OLDBOY!
+      [root@oldboy-xiaodao.com.cn ~]# grep "." ~/oldboy_test.txt -o
+      I
+       
+      a
+      m
+       
+      o
+      l
+	  
+	e 星号符号: *
+      匹配星号前面一个字符连续出现0次或多次  0次?
+      [root@oldboy-xiaodao.com.cn ~]# echo aababababb|grep "ab*" -o
+      a
+      ab
+      ab
+      ab
+      abb
+      [root@oldboy-xiaodao.com.cn ~]# echo aababababb|grep "a*b*" -o
+      aab
+      ab
+      ab
+      abb
+	  
+	f 点和星号组合: .*
+      匹配所有信息	
+	  grep ".*"  ~/oldboy_test.txt
+	  
+	  需求01: 找出以m开头的行,并且以m结尾的行,请过滤出来
+	  grep "^m.*m$" ~/oldboy_test.txt 
+      my blog is http://oldboy.blog.51cto.com
+	  
+	  需求02: 只过滤一行中部分内容:
+	  以m 到o结束的信息
+      my blog is http://o
+	  说明: 正则符号在匹配数据信息的时候具有贪婪特性
+	  [root@oldboy-xiaodao.com.cn ~]# grep "^m.*o" ~/oldboy_test.txt 
+      my blog is http://oldboy.blog.51cto.com
+      my god ,i am not oldbey,but OLDBOY!
+      [root@oldboy-xiaodao.com.cn ~]# grep "^m.*/o" ~/oldboy_test.txt 
+      my blog is http://oldboy.blog.51cto.com
+	  说明: 避免贪婪特性的方法,实在指定一行信息中唯一节点信息
+
+	g 转译符号: \
+      1) 将一些有意义的符号进行转译, 变为一个普通符号
+  
+      需求: 请取出以.结尾行信息  
+	  [root@oldboy-xiaodao.com.cn ~]# grep "\.$" ~/oldboy_test.txt 
+      I teach linux.
+      my qq num is 49000448.
+      not 4900000448.
+
+	  2) 将一些没有意义的符号进行转译,变为有意义符号
+	     \n  换行符号 linux
+		 \r  换行符号 windows
+	     \t  制表符号(tab)
+
+      3) 可以将扩展正则符号转换成普通正则让grep sed命令可以直接识别'
+         [root@oldboy-xiaodao.com.cn oldboy_dir]# grep "o\?" ~/oldboy_test03.txt
+         gd
+         god
+         good
+         goood
+         gooood
+	  
+	h 括号符号：[]  
+      匹配括号中每一个字符,并且匹配的关系是或者的关系
+      需求: 找出文件中oldboy 和 oldbey两个单词信息
+      grep "oldb[oe]y" ~/oldboy_test.txt
+
+      企业应用: 找寻文件中字母 数字信息
+	  grep "[0-9a-zA-Z]" ~/oldboy_test.txt
+
+	i 尖号和中括号组合使用 : [^]
+	  对中括号里面匹配的字符信息进行排除
+	  grep  "[^0-9a-zA-Z]" ~/oldboy_test.txt   --- 将字母数字都排除,只留下符号信息
+      尖号和中括号组合使用 : ^[]
+	  以中括号里面匹配的字符作为一行开头的字符
+      grep "^[Im]" ~/oldboy_test.txt 
+
+    结论:正则符号注意事项
+	①. 按照每行信息进行过滤处理
+    ②. 注意正则表达符号禁止中文
+    ③. 附上颜色信息进行正则过滤 --color=auto/--color
+	④. 基础正则符号可以被三剑客命令直接识别 grep sed awk
+    5. 扩展正则符号不可以被三剑客命令中老二和老三直接识别
+	   sed命令想识别正则符号: sed -r 
+	   grep命令想识别正则符号: egrep / grep -E
+	
+	扩展正则符号:
+    a 加号符号：＋
+      匹配加号前面一个字符连续出现1次或者多次
+      [root@oldboy-xiaodao.com.cn ~]# egrep "0+" ~/oldboy_test.txt 
+      my qq num is 49000448.
+      not 4900000448.
+      [root@oldboy-xiaodao.com.cn ~]# grep -E "0+" ~/oldboy_test.txt 
+      my qq num is 49000448.
+      not 4900000448.
+	  
+	  grep -E "[0-9]+" ~/oldboy_test.txt -o
+
+	  终极目标
+      cat >>~/oldboy_test02.txt<<EOF
+      赵 110101199901045121
+      钱 110101199901045121
+      孙 11010119990104512X
+      李 110101299901045121
+      陈 oldboy
+      周 110101199981045121
+      吴 110101199901045121
+      郑 11010149990104512X
+      刘 oldgirl
+      王 110101199908045121
+      冯 110111199901045121
+      EOF
+	  问题解决方式:
+	  [root@oldboy-xiaodao.com.cn ~]# egrep -v "[0-9X]+" ~/oldboy_test02.txt 
+      陈 oldboy
+      刘 oldgirl
+      [root@oldboy-xiaodao.com.cn ~]# egrep  "[^0-9X]+" ~/oldboy_test02.txt 
+      赵 110101199901045121
+      钱 110101199901045121
+      孙 11010119990104512X
+      李 110101299901045121
+      陈 oldboy
+      周 110101199981045121
+      吴 110101199901045121
+      郑 11010149990104512X
+      刘 oldgirl
+      王 110101199908045121
+      冯 110111199901045121
+
+	b 竖线符号：|
+	  或者关系符号
+	  [root@oldboy-xiaodao.com.cn ~]# egrep "oldboy|oldbey" ~/oldboy_test.txt
+      I am oldboy teacher!
+      my blog is http://oldboy.blog.51cto.com
+      my god ,i am not oldbey,but OLDBOY!
+	  
+	  企业应用: 在配置文件可能有#信息 空行信息, 都要进行过滤掉不要显示
+	  egrep -v "^#|^$" 文件名称
+
+	  扩展: 如何利用sed完成+ |信息过滤
+	        1) 如何过滤数值信息
+			   sed -rn '/[0-9]+/p' ~/oldboy_test.txt 
+			2) 如何过滤两个字符串信息(oldboy oldbey)
+	           sed -nr '/oldboy|oldbey/p' ~/oldboy_test.txt 
+	
+	c 括号符号：()
+	  将多个字符信息进行汇总为一个整体
+	  [root@oldboy-xiaodao.com.cn ~]# egrep "(oldboy)" ~/oldboy_test.txt 
+      I am oldboy teacher!
+      my blog is http://oldboy.blog.51cto.com
+
+	  需求: 找出文件中oldboy 和 oldbey两个单词信息
+	  [root@oldboy-xiaodao.com.cn ~]# egrep "(oldboy)|(oldbey)" ~/oldboy_test.txt 
+      I am oldboy teacher!
+      my blog is http://oldboy.blog.51cto.com
+      my god ,i am not oldbey,but OLDBOY!
+      [root@oldboy-xiaodao.com.cn ~]# egrep "oldb(o|e)y" ~/oldboy_test.txt 
+      I am oldboy teacher!
+      my blog is http://oldboy.blog.51cto.com
+      my god ,i am not oldbey,but OLDBOY!
+	
+	  进行后向引用前向的一个操作(sed)
+	  [root@oldboy-xiaodao.com.cn ~]# echo "123456"|sed -r "s#(.*)#<\1>#g"
+      <123456>
+      [root@oldboy-xiaodao.com.cn ~]# echo "123456"|sed -r "s#(..)(..)(..)#<\1><\2><\3>#g"
+      <12><34><56>
+
+      企业实践应用:
+	  01. 修改配置文件内容
+	  [root@oldboy-xiaodao.com.cn ~]# grep "^S.*UX=" /etc/selinux/config 
+      SELINUX=disabled
+      [root@oldboy-xiaodao.com.cn ~]# sed -rn "s#(^S.*UX=)#\1enforcing#g" /etc/selinux/config 
+      [root@oldboy-xiaodao.com.cn ~]# sed -rn "s#(^S.*UX=)#\1enforcing#gp" /etc/selinux/config 
+      SELINUX=enforcingdisabled
+      [root@oldboy-xiaodao.com.cn ~]# sed -rn "s#(^S.*UX=).*#\1enforcing#gp" /etc/selinux/config 
+      SELINUX=enforcing
+	  说明: 可以将替换命令放入到脚本中,从而实现快速部署操作
+	  
+	  02. 批量修改文件名称(作业)
+	      oldboy01.txt
+          oldboy02.txt
+          oldboy03.txt
+          oldboy04.txt
+          oldboy05.txt
+          oldboy06.txt
+          oldboy07.txt
+          oldboy08.txt
+          oldboy09.txt
+          oldboy10.txt
+		  将以上文件扩展名修改为.jpg
+	  
+	d 括号符号：{}
+      指定花扩号前一个字符连续匹配多少次
+      * 连续匹配 0 次 或 多次
+      + 连续匹配 1 次 或 多次
+      1) {n,m}   n表示最少连续匹配多少次  m表示最多连续匹配多少次
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{3,4}" ~/oldboy_test.txt
+      my qq num is 49000448.
+      not 4900000448.
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{3,4}" ~/oldboy_test.txt -o
+      000
+      0000
+	  
+	  2) {n}   n表示只连续匹配n次
+	  [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{3}" ~/oldboy_test.txt
+      my qq num is 49000448.
+      not 4900000448.
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{3}" ~/oldboy_test.txt -o
+      000
+      000
+
+	  3) {n,}   n表示至少连续匹配n次,至多没有限制
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{3,}" ~/oldboy_test.txt
+      my qq num is 49000448.
+      not 4900000448.
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{3,}" ~/oldboy_test.txt -o
+      000
+      00000
+	  
+	  4) {,m}   m表示至多连续匹配n次,至少0次
+	  [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{,3}" ~/oldboy_test.txt
+      I am oldboy teacher!
+      I teach linux.
+      
+      I like badminton ball ,billiard ball and chinese chess!
+      my blog is http://oldboy.blog.51cto.com
+      our site is http://www.etiantian.org
+      my qq num is 49000448.
+      
+      not 4900000448.
+      my god ,i am not oldbey,but OLDBOY!
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{,3}" ~/oldboy_test.txt -o
+      000
+      000
+      00
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "0{,4}" ~/oldboy_test.txt -o
+      000
+      0000
+      0
+
+	e 问号符号：?
+      * + {} 
+      表示匹配问号前面一个字符出现0次或者1次
+cat >>~/oldboy_test03.txt<<EOF
+gd
+god
+good
+goood
+gooood
+EOF
+    
+      演示说明:
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# grep "o*" ~/oldboy_test03.txt 
+      gd
+      god
+      good
+      goood
+      gooood
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# grep "o+" ~/oldboy_test03.txt 
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "o+" ~/oldboy_test03.txt 
+      god
+      good
+      goood
+      gooood
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "o?" ~/oldboy_test03.txt 
+      gd
+      god
+      good
+      goood
+      gooood
+      [root@oldboy-xiaodao.com.cn oldboy_dir]# egrep "o?" ~/oldboy_test03.txt -o
+      o
+      o
+      o
+      o
+      o
+      o
+      o
+      o
+      o
+      o
+	  
+	  
+	  
+	  
+	  
+	  
+	  

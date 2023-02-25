@@ -1,0 +1,370 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day17-三剑客命令说明-awk(基础应用 扩展应用awk数组???--shell)
+==============================
+
+00. 课程回顾说明 
+    三剑客命令老二: sed
+	1) 概述说明
+	   a 擅长对行进行操作
+	   b 擅长编辑修改文件(后向引用前向)
+	   
+	2) 命令执行过程
+	   1. 按行读取文件内容
+	   2. 将每一行读取出来,存放模式空间
+	   3. 检查是否匹配上了需求 
+	      匹配上了: 进行操作处理 增 删 改
+		  没有匹配: 将一行内容进行默认输出,再读取下一行
+		  PS: 不想让信息默认输出 -n 取消默认输出
+	   4. 处理操作完成后, 会继续处理下一行
+
+    3) 命令实际操作演示
+	   查询匹配
+	   a 按照行号进行匹配  
+	     sed -n '3p' 文件信息
+		 1) 进行多行匹配(连续的)
+		 sed -n '3,5p' 文件信息
+		 2) 进行多行匹配(不连续的)
+		 sed -n '3p;5p' 文件信息
+	   b 按照字符进行匹配  
+	     sed -n '/oldboy/p' 文件信息
+		 1) 进行多行匹配(连续的)
+		 sed -n '/oldboy/,/oldgirl/p' 文件信息
+		 2) 进行多行匹配(不连续的)
+		 sed -n '/oldboy/p;/oldgirl/p' 文件信息
+       PS: 查询信息时如果使用了正则符号,对于扩展正则符号(-r)
+	   
+	   添加信息
+	   a 再一行的后面进行添加信息
+	     sed '3a oldboy' 文件信息
+         sed '/oldboy/a oldboy100' 文件信息		 
+	   b 再一行的前面进行添加信息
+         sed '3i oldboy' 文件信息	   
+         sed '/oldboy/i oldboy100' 文件信息	
+	   PS: 如果想添加多行内容
+	     sed '3a oldboy03;4a oldboy04' 文件信息          错误的	
+		 sed -e '3a oldboy03' -e '4a oldboy04' 文件信息  正确的
+		 
+	   删除信息
+	   按行删除数据信息
+	   sed '3d' 文件信息
+	   按字符信息删除数据
+	   sed '/oldboy/d' 文件信息
+	   PS: 此时的删除只是模拟删除, 真正删除需要使用-i参数
+	   
+	   修改信息
+	   a 按行整个一行内容进行修改
+	   sed '3c oldboy01' 文件信息
+	   
+	   b 按行一行部分内容进行修改
+	   sed '3s#(.*)#<\1>#g' 文件信息
+	   PS: 此时的修改只是模拟修改, 真正修改需要使用-i参数
+	   
+	   sed命令要真正对文件进行编辑 需要使用 -i参数
+	   使用注意事项:
+	   a 再使用-i参数时, 请把参数放在所有参数后面使用  再-i参数后写上 .bak 继续备份
+	   b 再使用-i参数时, 请一定不要结合-n参数一起使用
+
+    4) sed命令练习题:
+       1) 如何批量修改文件扩展名
+       2) 如何批量创建用户并设置随机密码
+
+01. 企业需求测验:
+    1) 如何取出IP地址信息(grep sed)
+	方法一: 利用sed
+	第一个历程: 如何获得IP地址
+	ip address show eth0
+
+	第二个历程: 将IP地址所在的行过滤出来
+	ip address show eth0|sed -n '3p'
+	
+	第三个历程: 将一行中没有的信息进行删除
+	ip address show eth0|sed -n '3p'|sed -r 's#^.*net (.*)#\1#g'|sed -r 's#(.*)/24.*$#\1#g'
+	                                     截取IP地址前的信息         截取IP地址后的信息
+    命令优化
+	ip address show eth0|sed -n '3p'| sed -r 's#^.*net (.*)/24.*$#\1#g'
+	终极优化
+	ip address show eth0|sed -nr '3s#^.*net (.*)/24.*$#\1#gp'
+	
+	sed -n '3                        p'
+	sed -r 's#^.*net (.*)/24.*$#\1#g'
+	
+	sed -nr '3s#^.*net (.*)/24.*$#\1#gp'
+	
+	
+	方法二: 利用grep
+	第一个历程: 如何获得IP地址
+	ip address show eth0	
+	
+	第二个历程: 将IP地址所在的行过滤出来
+    ip address show eth0|grep "inet "
+	
+    第三个历程: 取出IP地址信息
+    ip address show eth0|grep "inet "|grep -E "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"	
+	
+	命令优化  
+    ip address show eth0|grep "inet "|grep -E "([0-9]+\.){3}[0-9]+"
+  	终极优化 
+    ip address show eth0|grep "inet "|grep -E "([0-9]+\.?){3}"	
+	ip address show eth0|grep "inet "|grep -E "([0-9]+\.?){4}" -o|head -1  
+	  
+	方法三: 利用awk取出IP地址  
+	  
+02. 三剑客命令-老大 awk
+    概念说明:
+    a 擅长对列进行操作处理
+    b 擅长对文件数据进行分析统计
+    	
+03. awk命令操作处理文件内容的方法
+    1) 查询操作
+    2) 排除操作
+    3) 替换操作
+    4) 统计操作
+
+04. awk命令格式与操作原理
+    命令格式:
+	sed [参数] '指令信息'   文件信息 
+	awk [选项] '模式{动作}' [文件信息] 
+	模式: 匹配的条件 /oldboy/
+
+05. awk实践操作过程:
+    生成模拟环境
+cat >> ~/reg.txt<<EOF
+Zhang  Dandan    41117397    :250:100:175
+Zhang  Xiaoyu    390320151   :155:90:201
+Meng   Feixue    80042789    :250:60:50
+Wu     Waiwai    70271111    :250:80:75
+Liu    Bingbing  41117483    :250:100:175
+Wang   Xiaoai    3515064655  :50:95:135
+Zi     Gege      1986787350  :250:168:200
+Li     Youjiu    918391635   :175:75:300
+Lao    Nanhai    918391635   :250:100:175
+EOF	
+	采取测验完成需求的方式
+	01. 显示xiaoyu的姓氏和ID号码
+    第一历程: 根据需求找到符合条件的信息
+    按行查找
+	awk 'NR==2' ~/reg.txt
+	[root@oldboy-xiaodao.com.cn ~]# awk 'NR==2' ~/reg.txt
+    Zhang  Xiaoyu    390320151   :155:90:201
+    [root@oldboy-xiaodao.com.cn ~]# awk 'NR==2{print $0}' ~/reg.txt
+    Zhang  Xiaoyu    390320151   :155:90:201
+	
+    字符查找
+	~  表示按列进行匹配
+	!~ 表示案列进行排除匹配
+	awk '/Xiaoyu/' ~/reg.txt     错误 
+	awk '$2~/Xiaoyu/' ~/reg.txt  按列匹配
+
+    第二历程: 满足条件的信息进行处理	
+	[root@oldboy-xiaodao.com.cn ~]# awk 'NR==2{print $1,$3}' ~/reg.txt
+    Zhang 390320151
+    [root@oldboy-xiaodao.com.cn ~]# awk 'NR==2{print $1" "$3}' ~/reg.txt
+    Zhang 390320151  
+	  
+	[root@oldboy-xiaodao.com.cn ~]# awk '$2~/Xiaoyu/{print $1" "$3}' ~/reg.txt
+    Zhang 390320151
+  
+	02. 姓氏是zhang的人,显示他的第二次捐款金额及他的名字  
+	第一历程: 根据需求找到符合条件的信息  
+	字符查找
+    [root@oldboy-xiaodao.com.cn ~]# awk '$1~/Zhang/' reg.txt
+    Zhang  Dandan    41117397    :250:100:175
+    Zhang  Xiaoyu    390320151   :155:90:201
+    [root@oldboy-xiaodao.com.cn ~]# awk '/^Zhang/' reg.txt
+    Zhang  Dandan    41117397    :250:100:175
+    Zhang  Xiaoyu    390320151   :155:90:201	
+	  
+	第二历程: 满足条件的信息进行处理  
+	[root@oldboy-xiaodao.com.cn ~]# awk '/^Zhang/{print $2,$4}' reg.txt
+    Dandan :250:100:175
+    Xiaoyu :155:90:201
+	无法取出第4列中的部分内容
+	[root@oldboy-xiaodao.com.cn ~]# awk -F "[ :]+" '/^Zhang/{print $2,$5}' reg.txt
+    Dandan 100
+    Xiaoyu 90
+	[root@oldboy-xiaodao.com.cn ~]# awk -F "[ :]+" '/^Zhang/{print $2,$(NF-1)}' reg.txt
+    Dandan 100
+    Xiaoyu 90
+
+    awk参数说明:
+	-F   用于指定awk切割列的条件信息
+	     利用[]+ 可以将连续多个切割字符整合为一个整体
+	  
+	03. 显示所有以41开头的ID号码的人的全名和ID号码
+	第一历程: 根据需求找到符合条件的信息
+	[root@oldboy-xiaodao.com.cn ~]# awk '$3~/^41/' reg.txt
+    Zhang  Dandan    41117397    :250:100:175
+    Liu    Bingbing  41117483    :250:100:175
+	
+	第二历程: 满足条件的信息进行处理 
+	[root@oldboy-xiaodao.com.cn ~]# awk '$3~/^41/{print $1,$2,$3}' reg.txt
+    Zhang Dandan 41117397
+    Liu Bingbing 41117483
+
+	
+    04. 显示所有ID号码最后一位数字是1或5的人的全名
+	第一历程: 根据需求找到符合条件的信息
+	[root@oldboy-xiaodao.com.cn ~]# awk '$3~/[15]$/' reg.txt
+    Zhang  Xiaoyu    390320151   :155:90:201
+    Wu     Waiwai    70271111    :250:80:75
+    Wang   Xiaoai    3515064655  :50:95:135
+    Li     Youjiu    918391635   :175:75:300
+    Lao    Nanhai    918391635   :250:100:175
+	
+	第二历程: 满足条件的信息进行处理 
+	[root@oldboy-xiaodao.com.cn ~]# awk '$3~/[15]$/{print $1,$2}' reg.txt
+    Zhang Xiaoyu
+    Wu Waiwai
+    Wang Xiaoai
+    Li Youjiu
+    Lao Nanhai
+	
+	05. 显示Xiaoyu的捐款,每个时都有以$开头, 如$110$220$330
+	第一历程: 根据需求找到符合条件的信息
+	[root@oldboy-xiaodao.com.cn ~]# awk '$2~/Xiaoyu/' reg.txt
+    Zhang  Xiaoyu    390320151   :155:90:201
+
+	第二历程: 满足条件的信息进行处理
+	[root@oldboy-xiaodao.com.cn ~]# awk '$2~/Xiaoyu/{print $4}' reg.txt
+    :155:90:201
+	
+	[root@oldboy-xiaodao.com.cn ~]# awk '$2~/Xiaoyu/{gsub(/:/,"$",$4);print $4}' reg.txt
+    $155$90$201
+
+	awk替换测试命令
+	[root@oldboy-xiaodao.com.cn ~]# echo :155:90:201|awk '{gsub(/:/,"$",$1);print $1}'  
+    $155$90$201
+
+	补充: awk替换信息语法格式
+    awk '{gsub(//,"",$n);print $n}'
+               /要替换修改的信息/,'修改成什么信息',需要修改的列的信息
+               /:/,"$",			   
+	  
+06. awk特殊模式说明
+    BEGIN{}
+	1) 再操作文件之前,执行相应操作动作
+	   实际应用: 输出每列的表头信息
+	2) 可以进行运算
+	   [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 3+2}'
+       5
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 3-2}'
+       1
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 3*2}'
+       6
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 3/2}'
+       1.5
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 3^2}'
+       9
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 3%2}'
+       1
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 5%3}'
+       2
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 5**3}'
+       125
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 2**3}'
+       8
+       [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{print 2^3}'
+       8
+    
+	3) 修饰内置变量???
+	   
+	
+    END{}
+	1) 再操作文件之后,执行相应操作动作
+	   实际应用: 用于输出最终结果信息???
+	
+	  
+07. awk对数据文件信息分析处理练习
+    1) 统计/etc/services文件中空行数量
+	第一个历程: 如何进行累加运算
+	[root@oldboy-xiaodao.com.cn ~]# i=1
+    [root@oldboy-xiaodao.com.cn ~]# awk 'BEGIN{i=i+1;print i}'
+    1
+    [root@oldboy-xiaodao.com.cn ~]# awk -vi=1 'BEGIN{i=i+1;print i}'
+    2
+    [root@oldboy-xiaodao.com.cn ~]# awk -vi=2 'BEGIN{i=i+1;print i}'
+    3
+    说明:
+	a awk -v参数可以设置变量
+	c awk 调取变量不需要加上$
+	d awk 默认会将字符当成变量进行调取  如果不想被识别为变量需要加上双引号
+    e awk 进行累加运算的公式 i=i+1
+
+    第二个历程: 将空号找出来,进行累加运算
+	[root@oldboy-xiaodao.com.cn ~]# awk '/^$/{i=i+1;print i}' /etc/services 
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+    10
+    11
+    12
+    13
+    14
+    15
+    16
+    17
+	只想看最终结果
+	[root@oldboy-xiaodao.com.cn ~]# awk '/^$/{i=i+1}END{print i}' /etc/services 
+    17
+
+    02. 统计/etc/passwd文件中有多少个虚拟用户
+	    统计文件中所有以nologin结尾的行,总计有多少
+    [root@oldboy-xiaodao.com.cn ~]# awk '/nologin$/{i=i+1}END{print i}' /etc/passwd
+    18
+    [root@oldboy-xiaodao.com.cn ~]# awk '/nologin$/{i++}END{print i}' /etc/passwd
+    18
+
+    03. 直接完成求和运算
+	[root@oldboy-xiaodao.com.cn ~]# seq 10
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+    10
+	[root@oldboy-xiaodao.com.cn ~]# seq 10|awk '{i=i+$1;print i}'
+    1
+    3
+    6
+    10
+    15
+    21
+    28
+    36
+    45
+    55
+	[root@oldboy-xiaodao.com.cn ~]# seq 10|awk '{i=i+$1}END{print i}'
+    55
+    [root@oldboy-xiaodao.com.cn ~]# seq 10|awk '{i+=$1}END{print i}'
+    55
+
+作业:
+01. 根据secure文件, 如果统计出哪个IP地址失败次数最多
+    显示失败的IP地址 显示失败了多少次
+	按顺序显示前10名
+	(awk 数组)
+
+
+
+	
+	  

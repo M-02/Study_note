@@ -1,0 +1,144 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码      #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+01. default  默认 
+	
+02. style    风格	
+
+03. unit     单元
+
+04. install  安装
+
+05. enabled  启动，启用
+
+06. disable  关闭
+
+07. test     测试
+
+08. media    介质/光盘介质
+
+09. troubleshooting   排错
+
+10. system   系统
+
+11. network  网络
+
+12. hostname 主机名称
+
+13. configure/config    配置
+
+14. general             通用配置
+
+15. setting             设置
+
+16. manual              手动
+
+17. save                保存
+
+18. apply               应用
+
+19. destination         目标
+
+20. standard partition  标准分区
+
+21. boot                启动/引导
+
+22. cancel              取消
+
+23. accept changes      接受改变
+
+24. security policy     安全策略
+
+25. begin               开始
+
+26. complete            完成
+
+27. reboot              重启
+
+28. login               登录
+
+29. edit a connection   编辑一个连接/编辑网络配置信息
+
+30. back                返回
+
+31. quit                退出
+
+32. start               开启
+    restart             重启
+	stop                停止
+	status              检查服务状态
+========================================================
+
+33. device              设备
+
+34. Connection failed       连接失败
+    Connection established  连接成功
+	
+35. active              服务激活状态
+    running             服务运行状态
+    inactive            服务未激活状态
+	
+36. command not found   命令不能找到
+
+37. Failed              失败
+
+38. Permission denied   权限阻止
+
+39. halt                系统关闭
+
+40. No such file or directory   没有这个文件或目录
+
+41. File exists         文件已经存在
+
+42. insert              插入
+
+43. omitting directory  忽略目录
+
+44. force               强制
+
+45. /dev/sr0 is write-protected, mounting read-only 
+    /dev/sr0 是一个写保护的设备，挂载之后目录是一个只读状态
+
+46. give root password for maintenance
+    需要你输入一个root用户密码，并且会进入到维修模式
+
+47. Memory              内存
+
+48. info                信息
+
+49. Average             平均
+
+50. load                负载
+
+51. Warning: Changing a readonly file  
+    警告:    你正在修改的文件是一个只读文件
+
+52. 'readonly' option is set (add ! to override)
+    只读文件,如果想进行保存需要加上一个参数 !(强制)	
+
+53. Permission denied   权限不足,权限阻止
+
+54. query               查询
+
+55. reverse             反向 逆向
+
+56. before              在..之前
+
+57. after               在..之后
+
+58. center              中心
+
+59. count               计数/会计
+
+60. exclude             排除
+    include             包含
+
+

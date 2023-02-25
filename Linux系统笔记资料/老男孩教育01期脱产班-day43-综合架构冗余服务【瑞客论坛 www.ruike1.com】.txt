@@ -1,0 +1,494 @@
+=================================================================================================
+#   老男孩教育：                                                                          		#
+#   www.oldboyedu.com                                               							#
+#   邮件：miaokm@oldboyedu.com 	                                    							#
+#   地址：北京市昌平区顺沙路8号院汇德商厦4F													#
+#   电话：400-609-2893，180-1041-8396，173-1620-6489                                         	#
+#   资源老师：			QQ号码               	资源老师：              	QQ号码    	   		#
+#   范范		 	1223740011		     		依依		       		3532759635   			#
+#   安娜		 	2010068211		        	格格					1986787350				#
+#   瑶瑶		 	2023803491					金金					2918640936				#
+#   乔治			3380665979					龙龙					2090304642				#
+=================================================================================================
+
+老男孩教育01期脱产班-day43-综合架构高可用服务
+================================================================================================
+00. 课程说明:
+    1) 负载均衡遗留知识点补充
+	2) 高可用服务的概念介绍
+	3) 部署安装高可用服务
+	4) 高可用服务配置文件参数说明
+	5) 高可用服务VRRP协议原理
+	6) 高可用服务常见问题(脑裂文件)
+	7) 高可用服务如何进行监控
+	8) 高可用服务实现双主配置
+      
+01. 课程回顾:
+    1) LNMP架构常见问题
+	   a 如何实现WEB服务器和存储服务器建立关系
+	     web+nfs   
+         1) 找到网站数据存储的本地目录
+		 2) 如果本地存储目录有数据,需要进行迁移备份
+		 3) 编写查看nfs服务配置参数(xxx_squash)
+		 4) 实现挂载操作(实现开机自动挂载)
+		 
+		 web+mysql
+		 1) 将本地数据数据进行备份 mysqldump --all-database
+		 2) 将备份数据进行迁移
+		 3) 将数据进行还原
+		 4) 修改代码文件,连接新的数据库服务
+       b 负载均衡概念说明
+	     什么是集群
+		 什么是负载
+		 什么是反向代理
+	   c 负载均衡集群架构部署
+	     集群环境部署
+		 负载均衡部署
+		 upstream模块  实现负载均衡
+		 proxy_pass    实现反向代理
+	   d 负载均衡相关模块详细说明
+	   e 负载均衡异常排错思路
+	
+02. 负载均衡企业实践应用
+    1) 根据用户访问的uri信息进行负载均衡
+	第一个历程: 架构环境规划
+	/upload	  集群-10.0.0.8:80	html/www/upload	   upload服务器集群
+	/static   集群-10.0.0.7:80  html/www/static    static服务器集群
+	/         集群-10.0.0.9:80  html/www           default服务器集群
+	
+	web02上进行环境部署:
+	[root@web02 ~]# mkdir /html/www/upload
+    [root@web02 ~]# echo  "upload-web集群_10.0.0.8" >/html/www/upload/oldboy.html
+    web01上进行环境部署:
+	[root@oldboy01 html]# mkdir /html/www/static
+    [root@oldboy01 html]# echo static-web集群_10.0.0.7 >/html/www/static/oldboy.html
+	web03上进行环境部署:
+    echo  "default-web集群_10.0.0.9" >/html/www/oldboy.html	
+
+	第二个历程: 编写负载均衡配置文件
+    [root@lb01 conf.d]# cat lb.conf
+    upstream upload {
+       server 10.0.0.8:80;
+    }
+    upstream static {
+       server 10.0.0.7:80;
+    }
+    upstream default {
+       server 10.0.0.9:80;
+    }
+    
+    
+    server {
+        listen       80;
+        server_name  www.oldboy.com;
+        location / {
+           proxy_pass http://default;
+           proxy_set_header Host $host;
+           proxy_set_header X-Forwarded-For $remote_addr;
+           proxy_next_upstream error timeout http_404 http_502 http_403;
+        }
+        location /upload {
+           proxy_pass http://upload;
+           proxy_set_header Host $host;
+           proxy_set_header X-Forwarded-For $remote_addr;
+           proxy_next_upstream error timeout http_404 http_502 http_403;
+        }
+        location /static {
+           proxy_pass http://static;
+           proxy_set_header Host $host;
+           proxy_set_header X-Forwarded-For $remote_addr;
+           proxy_next_upstream error timeout http_404 http_502 http_403;
+        }
+    }	
+	
+	总结: 实现网站集群动静分离
+	01. 提高网站服务安全性
+	02. 管理操作工作简化
+	03. 可以换分不同人员管理不同集群服务器
+	
+	2) 根据用户访问的终端信息显示不同页面
+	第一个历程: 准备架构环境
+	iphone   www.oldboy.com  --- iphone_access 10.0.0.7:80  mobile移动端集群
+	谷歌     www.oldboy.com  --- google_access 10.0.0.8:80  web端集群
+	IE 360   www.oldboy.com  --- default_access 10.0.0.9:80 default端集群
+	
+	web01:
+	echo "iphone_access 10.0.0.7" >/html/www/oldboy.html
+	web02:
+	echo "google_access 10.0.0.8" >/html/www/oldboy.html
+	web03:
+	echo "default_access 10.0.0.9" >/html/www/oldboy.html
+
+    第二个历程: 编写负载均衡配置文件
+    [root@lb01 conf.d]# cat lb.conf
+    upstream web {
+       server 10.0.0.8:80;
+    }
+    upstream mobile {
+       server 10.0.0.7:80;
+    }
+    upstream default {
+       server 10.0.0.9:80;
+    }
+    
+    
+    server {
+        listen       80;
+        server_name  www.oldboy.com;
+        location / {
+           if ($http_user_agent ~* iphone) {
+              proxy_pass http://mobile;
+           }
+           if ($http_user_agent ~* Chrome) {
+             proxy_pass  http://web;
+           }
+           proxy_pass http://default;
+           proxy_set_header Host $host;
+           proxy_set_header X-Forwarded-For $remote_addr;
+           proxy_next_upstream error timeout http_404 http_502 http_403;
+        }
+    }
+    	
+	
+04. 高可用服务介绍说明
+    避免负载均衡服务出现单点问题
+	
+05. 高可用服务的原理
+    见图说明
+	
+06. 如何实现部署高可用服务
+    利用keepalived软件实现
+	作用:
+	1. 为LVS服务而诞生出来的   k8s + 容器技术docker 容器<--镜像<--仓库  春节抢红包
+                                keepalived + LVS负载均衡软件(4层)
+	2. 实现高可用服务功能
+	
+07. 高可用keepalived服务部署流程
+    第一个历程: 准备高可用服务架构
+	第二个历程: 安装部署keepalived软件 (lb01 lb02)
+	yum install -y keepalived
+	第三个历程: 编写keepalived配置文件
+	vim /etc/keepalived/keepalived.conf
+    GLOBAL	CONFIGURATION			--- 全局配置部分
+	VRRPD 	CONFIGURATION			--- VRRP协议配置部分
+    LVS 	CONFIGURATION			--- LVS服务管理配置部分
+    [root@lb01 ~]# cat /etc/keepalived/keepalived.conf 
+    ! Configuration File for keepalived
+   
+    global_defs {                  	--- 全局配置部分
+       notification_email {			--- 设置发送邮件信息的收件人
+         acassen@firewall.loc
+         failover@firewall.loc
+         sysadmin@firewall.loc
+       }
+       notification_email_from oldboy@163.com   --- 设置连接的邮件服务器信息
+       smtp_server 163.smtp.xxx_
+       smtp_connect_timeout 30 
+       router_id LVS_DEVEL           --- 高可用集群主机身份标识(集群中主机身份标识名称不能重复)
+    }
+   
+    vrrp_instance oldboy {           --- Vrrp协议家族 oldboy
+        state MASTER                 --- 标识所在家族中的身份 (MASTER/BACKUP)
+        interface eth0               --- 指定虚拟IP地址出现在什么网卡上
+        virtual_router_id 51         --- 标识家族身份信息 多台高可用服务配置要一致 
+        priority 100                 --- 设定优先级 优先级越高,就越有可能成为主
+        advert_int 1                 --- 定义组播包发送的间隔时间(秒)  主和备配置一样  1
+        authentication {             --- 实现通讯需要有认证过程
+            auth_type PASS
+            auth_pass 1111
+        }
+        virtual_ipaddress {          --- 配置虚拟IP地址信息
+            192.168.200.16
+            192.168.200.17
+            192.168.200.18
+        }
+    }
+
+    lb01配置信息:
+    [root@lb01 ~]# cat /etc/keepalived/keepalived.conf 
+    ! Configuration File for keepalived
+    
+    global_defs {
+        router_id lb01
+    }
+   
+    vrrp_instance oldboy {
+        state MASTER
+        interface eth0
+        virtual_router_id 51
+        priority 150
+        advert_int 1
+        authentication {
+            auth_type PASS
+            auth_pass 1111
+        }
+        virtual_ipaddress {
+            10.0.0.3/24
+        }
+    }
+    lb02配置信息:
+    ! Configuration File for keepalived
+    
+    global_defs {
+       router_id lb02
+    }
+    
+    vrrp_instance oldboy {
+        state BACKUP
+        interface eth0
+        virtual_router_id 51
+        priority 100
+        advert_int 1
+        authentication {
+            auth_type PASS
+            auth_pass 1111
+        }
+        virtual_ipaddress {
+            10.0.0.3/24
+        }   
+    }
+    
+    第三个历程: 启动keepalived服务
+    ...
+
+	第四个历程: 修改域名和IP地址解析关系
+     
+08. 高可用服务企业应用
+    1. 高可用服务常见异常问题---脑裂问题
+	出现原因: 
+	高可用备服务器接收不到主服务器发送的组播包,备服务器上会自动生成VIP地址
+
+    物理原因:
+	高可用集群之间通讯线路出现问题
+	逻辑原因:
+	有安全策略阻止
+	
+	如何解决脑裂问题:
+	01. 进行监控,发出告警
+	备服务器出现VIP地址的原因:
+	a 主服务器出现故障
+	b 出现脑裂问题
+	#!/bin/bash
+    ip a s eth0|grep "10.0.0.3" >/dev/null
+    if [ $? -eq 0 ]
+    then
+      echo "keepalived服务出现异常,请进行检查"|mail -s 异常告警-keepalived  330882721@qq.com
+    fi
+	
+	shell脚本进行比较判断
+	-eq  等于
+	-ne  不等于
+	-lt  小于
+	-gt  大于
+	-le  小于等于
+	-ge  大于等于
+	
+	02. 直接关闭一台服务器的keepalived服务
+	
+	2. 如何实现keepalived服务自动释放vip地址资源
+	nginx(皇帝) + keepalived(妃子): nginx服务停止(皇帝死了),keepalived也必须停止(殉情)
+	
+	第一个历程: 编写监控nginx服务状态监控
+    #!/bin/bash
+    num=`ps -ef|grep -c [n]ginx`
+    if [ $num -lt 2 ]
+    then
+       systemctl stop keepalived
+    fi
+
+	第二个历程: 测试监控脚本
+
+	第三个历程: 实时监控nginx服务状态---keepalived配置文件
+	check_web=/server/scripts/check_web.sh
+    vrrp_script check_web {
+       script "/server/scripts/check_web.sh"   --- 定义需要监控脚本(脚本是执行权限)   
+       interval 2                              --- 执行脚本的间隔时间(秒)  
+       weight 2                                --- ???
+    }
+
+    $check_web
+    track_script {                             
+         check_web                             --- 调用执行你的脚本信息
+    }	
+	
+    keepalived信息配置	
+    [root@lb01 scripts]# cat /etc/keepalived/keepalived.conf
+    ! Configuration File for keepalived
+     global_defs {
+       router_id lb01
+    }
+    
+    vrrp_script check_web {
+     script "/server/scripts/check_web.sh"  
+     interval 3   
+     weight 2
+    }
+    
+    vrrp_instance oldboy {
+        state MASTER
+        interface eth0
+        virtual_router_id 51
+        priority 150
+        advert_int 1
+        authentication {
+            auth_type PASS
+            auth_pass 1111
+        }
+        virtual_ipaddress {
+         10.0.0.3/24
+        }
+       track_script {
+             check_web
+       }
+    }
+	
+	3. 如何高可用集群双主配置
+	第一个历程: 编写lb01服务器keepalived配置文件
+	[root@lb01 ~]# cat /etc/keepalived/keepalived.conf
+    ! Configuration File for keepalived
+     global_defs {
+       router_id lb01
+    }
+    
+    
+    vrrp_instance oldboy {
+        state MASTER
+        interface eth0
+        virtual_router_id 51
+        priority 150
+        advert_int 1
+        authentication {
+            auth_type PASS
+            auth_pass 1111
+        }
+        virtual_ipaddress {
+         10.0.0.3/24
+        }
+    }
+    vrrp_instance oldgirl {
+        state BACKUP
+        interface eth0
+        virtual_router_id 52
+        priority 100
+        advert_int 1
+        authentication {
+            auth_type PASS
+            auth_pass 1111
+        }
+        virtual_ipaddress {
+         10.0.0.4/24
+        }
+    }
+    	
+	第二个历程: 编写lb02服务器keepalived配置文件	
+	! Configuration File for keepalived
+    global_defs {
+       router_id lb02
+    }
+    
+    vrrp_instance oldboy {
+        state BACKUP
+        interface eth0
+        virtual_router_id 51
+        priority 100
+        advert_int 1
+        authentication {
+            auth_type PASS
+            auth_pass 1111
+        }
+        virtual_ipaddress {
+            10.0.0.3/24
+        }
+    }
+    vrrp_instance oldgirl {
+        state MASTER
+        interface eth0
+        virtual_router_id 52
+        priority 150
+        advert_int 1
+        authentication {
+            auth_type PASS
+            auth_pass 1111
+        }
+        virtual_ipaddress {
+            10.0.0.4/24
+        }
+    }
+	
+	第三个历程: 编写域名和IP地址解析信息
+	进行抓包查看:
+	www.oldboy.com --- 10.0.0.3(10.0.0.5)
+	10.0.0.1       --- 10.0.0.3
+	10.0.0.5       --- 10.0.0.7
+	10.0.0.7       --- 10.0.0.5
+	10.0.0.3       --- 10.0.0.1
+	
+	bbs.oldboy.com --- 10.0.0.4(10.0.0.6)
+	10.0.0.1       --- 10.0.0.4
+	10.0.0.6       --- 10.0.0.7
+	10.0.0.7       --- 10.0.0.6
+	10.0.0.4       --- 10.0.0.1
+	
+	4. 高可用服务安全访问配置(负载均衡服务)
+    第一个历程: 修改nginx负载均衡文件
+    upstream oldboy {
+       server 10.0.0.7:80;
+       server 10.0.0.8:80;
+       server 10.0.0.9:80;
+    }
+    server {
+        listen       10.0.0.3:80;
+        server_name  www.oldboy.com;
+        location / {
+           proxy_pass http://oldboy;
+           proxy_set_header Host $host;
+           proxy_set_header X-Forwarded-For $remote_addr;
+           proxy_next_upstream error timeout http_404 http_502 http_403;
+        }
+    }
+    server {
+        listen       10.0.0.4:80;
+        server_name  bbs.oldboy.com;
+        location / {
+           proxy_pass http://oldboy;
+           proxy_set_header Host $host;
+           proxy_set_header X-Forwarded-For $remote_addr;
+        }
+    }
+	
+	第二个历程: 修改内核文件
+	异常问题:
+	01. 如何设置监听网卡上没有的地址
+	解决: 需要修改内核信息
+	echo 'net.ipv4.ip_nonlocal_bind = 1' >>/etc/sysctl.conf
+    sysctl -p 
+
+	第三个历程: 重启nginx负载均衡服务
+	systemctl restart nginx
+
+09. 高可用服务课程总结
+    1) 负载均衡服务扩展补充
+	   根据用uri信息进行负载均衡(动静分离架构)
+	   根据user_agent信息进行负载均衡(手机用户和浏览器访问用户页面信息可以不一致)
+	2) 高可用服务作用(避免出现单点故障)
+	3) keepalived高可用服务
+	   1. 管理LVS负载均衡软件
+	   2. 实现高可用功能(vrrp原理)
+	4) keepalived服务配置文件 
+    5) keepalived服务企业应用
+	   1. 可能出现脑裂问题       	--- 脚本编写
+	   2. 如何实现自动释放资源 	--- 脚本(监控web服务)  修改keepalived文件
+	   3. 如何实现双主配置        	--- 编写keepalived配置文件  编写多个vrrp实例
+	   4. 如何实现负载均衡安全访问 --- 编写负载均衡nginx配置文件 配置监听vip地址信息
+	
+
+作业:
+01. 如何实现keepalived服务实时监控---while循环
+02. nginx服务停止 keepalived服务也自动停止
+    nginx服务启动 keepalived服务自动恢复 ???  --- weight
+03. 预习: zbbix监控服务 (基础部分(手工配置)+高级部分(自动监控))
+    克隆好一台zabbix服务器 --- zabbix软件安装好 yum
+    
+
+
+  

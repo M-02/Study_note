@@ -1,0 +1,276 @@
+===========================================================================================
+# 老男孩教育：                                                                            #
+# www.oldboyedu.com                                                                       #
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               #
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 #
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码        #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     #
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      #
+# 冰冰		 150 1078 5220		41117483												  #
+===========================================================================================
+
+老男孩教育北京57期-day23-系统磁盘管理说明
+==============================
+
+00. 课程回顾说明
+    1) 磁盘的体系结构
+	   第一层: 外部结构(主轴 盘片 磁头) 内部结构(0磁道 1扇区 柱面)
+	           磁盘读写数据的原理(磁头先做电子运动,径向运动)
+			   磁盘容量计算方法
+       第二层: 磁盘阵列 LVM???
+	           不同阵列级别概念  raid1 raid0 raid5 raid10
+			   1) 容量方面
+			   2) 性能方面
+			   3) 安全方面
+               掌握如何配置阵列
+       第三层: 磁盘分区
+	   第四层: 创建文件系统(xfs-centos7 ext3-centos6)
+       第五层: 磁盘应用管理(mount)
+
+
+01. 磁盘体系结构-第二层: LVM 
+    LVM: 可以实现磁盘分区空间弹性缩容和扩容
+	     在企业一般不对有数据的分区进行缩容处理
+
+02. 磁盘体系结构-第三层: 磁盘分区说明
+    预备知识:
+    1. 系统启动引导记录	MBR
+	   MBR存放在磁盘的0磁头 0磁道 1扇区中 512字节
+	   a 加载引导启动系统文件数据信息     446
+	   b 分区表的信息                     64字节分区
+
+	2. 分区表概念:
+	   一个分区表中包含: (sda)
+	   主分区     --- 最多4个  表示方式 sda1 sda2 sda3 sda4  
+	   扩展分区   --- 只有1个  表示方式 sda5(扩展分区中逻辑分区)
+	   PS: 扩展分区不能直接使用,需要建立逻辑分区才能使用
+	   
+	   问题一: 如果主分区已经有4个了 还能再有扩展分区
+               最终磁盘只有4个分区
+			   
+	   问题二: 如何有更多的分区
+	           有主分区 还要有扩展分区
+			   3个主分区  1扩展分区---逻辑分区
+       
+    磁盘如何进行分区:
+	方法一: fdisk (磁盘小于2T)
+	环境准备: 需要准备两块磁盘 10M 100M
+	确认检查: 
+	[root@oldboy-xiaodao.com.cn ~]# fdisk -l
+    Disk /dev/sdb: 10 MB, 10485760 bytes, 20480 sectors
+    Units = sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+	
+	Disk /dev/sdc: 106 MB, 106954752 bytes, 208896 sectors
+    Units = sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+	进行分区操作:
+	fdisk /dev/sdb   --- 对磁盘进行分区命令
+	Command action
+    d   delete a partition				--- 删除一个分区
+    l   list known partition types		--- 列出分区类型(8e  Linux LVM)
+    m   print this menu                 --- 输出帮助信息
+    n   add a new partition             --- 创建新的分区
+    p   print the partition table       --- 输出分区信息
+    q   quit without saving changes     --- 不做任何改变进行退出
+    t   change a partition's system id  --- 改变分区类型
+    w   write table to disk and exit    --- 保存分区配置
+
+	创建主分区操作
+	Command (m for help): n   创建分区
+    Partition type:
+       p   primary (0 primary, 0 extended, 4 free)
+       e   extended
+    Select (default p): p     指定创建的是主分区
+    Partition number (1-4, default 1): 1      指定分区号码
+    First sector (2048-20479, default 2048): 
+    Using default value 2048
+    Last sector, +sectors or +size{K,M,G} (2048-20479, default 20479): +5M   指定分区大小
+    Partition 1 of type Linux and of size 5 MiB is set
+
+	创建扩展分区
+	Command (m for help): n   
+    Partition type:
+       p   primary (1 primary, 0 extended, 3 free)
+       e   extended
+    Select (default p): e    指定创建扩展分区
+    Partition number (2-4, default 2): 
+    First sector (12288-20479, default 12288): 
+    Using default value 12288
+    Last sector, +sectors or +size{K,M,G} (12288-20479, default 20479): 不输大小表示剩余全部空间
+    Using default value 20479
+    Partition 2 of type Extended and of size 4 MiB is set
+
+	创建逻辑分区:
+	Command (m for help): n
+    Partition type:
+       p   primary (1 primary, 1 extended, 2 free)
+       l   logical (numbered from 5)
+    Select (default p): l         需要首先创建好扩展分区
+    Adding logical partition 5
+    First sector (14336-20479, default 14336): 
+    Using default value 14336
+    Last sector, +sectors or +size{K,M,G} (14336-20479, default 20479): 
+    Using default value 20479
+    Partition 5 of type Linux and of size 3 MiB is set
+
+	输出分区信息 
+	Command (m for help): p
+    Disk /dev/sdb: 10 MB, 10485760 bytes, 20480 sectors
+    Units = sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disk label type: dos
+    Disk identifier: 0x43a2def7
+    
+       Device Boot      Start         End      Blocks   Id  System
+    /dev/sdb1            2048       12287        5120   83  Linux
+    /dev/sdb2           12288       20479        4096    5  Extended
+    /dev/sdb5           14336       20479        3072   83  Linux
+
+	调整分区类型
+	Command (m for help): t
+    Partition number (1,2, default 2): 1
+    Hex code (type L to list all codes): 8e
+    Changed type of partition 'Linux' to 'Linux LVM'
+	
+	删除分区操作
+	Command (m for help): d
+    Partition number (1,2,5, default 5): 5
+    Partition 5 is deleted
+
+	方法二: parted (大于2T)
+	当一个分区大小超过2T时, 不能再使用MBR引导记录, 使用GPT来识别大容量磁盘
+	parted /dev/sdd
+	分区方法:
+	mklabel（创建分区表 MRB-msdos/gpt）              
+            create a new disklabel (partition table)    mklabel gpt
+    
+	mkpart	（创建新的分区） 
+	        make a partition                            mkpart primary 0 20M
+    print（显示分区表信息）
+          display the partition table
+
+    rm（删除指定分区信息）
+         delete partition NUMBER
+    quit（退出分区界面）
+    exit program
+	
+	修改分区引导记录信息
+	(parted) mklabel gpt                                                      
+    Warning: Partition(s) on /dev/sdd are being used.
+    Ignore/Cancel? Ignore 
+	
+	创建分区信息
+	(parted) mkpart primary 0 2100G
+	
+	删除分区方法
+	rm  分区号码
+
+	
+03. 磁盘体系结构-第四层: 创建文件系统(格式化处理)
+    文件系统有什么: 采用相应机制存储和管理数据
+	centos5: ext2 ext3 
+    centos6: ext4
+	centos7: xfs     
+	         特点: 在数据库服务器中可以更高效存储数据信息
+	               在格式化磁盘时, 效率更高(大的磁盘)
+	nfs 网络文件系统  分布式文件系统
+
+    在格式化前需要执行以下命令
+    partprobe  /dev/sdb     --- 告知内核系统已经对磁盘进行了分区
+   
+	做格式化处理:
+	mkfs.ext4 /dev/sdb1
+	mkfs.xfs  /dev/sdb1     --- 无法识别小分区信息(10M以下)
+	mkfs -t xfs /dev/sdb1
+	
+04. 磁盘体系结构-第五层: 进行磁盘挂载
+    mount /dev/sdb1 /mnt
+
+05. 如何实现自动挂载分区(/dev/sdc1  /mnt_100M)
+    mount /dev/sdc1 /mnt_100M
+	方法一: 将挂载命令放入到/etc/rc.local文件中
+    vim /etc/rc.local
+	mount /dev/sdc1 /mnt_100M
+	
+	说明: 需要确保rc.local目录具有执行权限
+	[root@oldboy-xiaodao.com.cn ~]# ll -d /etc/rc.local 
+    lrwxrwxrwx. 1 root root 13 Dec 29 16:33 /etc/rc.local -> rc.d/rc.local
+    [root@oldboy-xiaodao.com.cn ~]# ll -d /etc/rc.d/rc.local 
+    -rwxr-xr-x. 1 root root 499 Jan 29 11:33 /etc/rc.d/rc.local
+
+	方法二: 利用fstab文件实现分区自动挂载
+	vim /etc/fstab
+	设备文件    挂载点目录  文件系统类型   挂载的参数信息    是否进行备份    是否检查磁盘
+	/dev/sdc1   /mnt_100M   xfs            defaults           0              0
+	
+ 
+06. 企业案例: tomcat(网站服务)--java语言编写的程序, 运行过程中比较消耗内存
+              临时需要添加内存 --- 将硬盘空间临时充当内存使用  -- swap分区
+			  如何调正swap分区大小
+	第一个里程: 从磁盘中取出一定空间重当内存使用
+    [root@oldboy-xiaodao.com.cn ~]# dd if=/dev/zero of=/tmp/1G  bs=100M  count=10
+    10+0 records in
+    10+0 records out
+    1048576000 bytes (1.0 GB) copied, 25.9294 s, 40.4 MB/s
+
+    第二个里程: 定义文件可以被swap分区使用
+	[root@oldboy-xiaodao.com.cn ~]# ll /tmp/1G -h
+    -rw-r--r-- 1 root root 1000M Jan 29 11:54 /tmp/1G
+    [root@oldboy-xiaodao.com.cn ~]# file /tmp/1G
+    /tmp/1G: data
+    [root@oldboy-xiaodao.com.cn ~]# mkswap /tmp/1G
+    Setting up swapspace version 1, size = 1023996 KiB
+    no label, UUID=a10ad568-60c9-4311-9e09-e6db844d6130
+    [root@oldboy-xiaodao.com.cn ~]# file /tmp/1G
+    /tmp/1G: Linux/i386 swap file (new style), version 1 (4K pages), size 255999 pages, no label, UUID=a10ad568-60c9-4311-9e09-e6db844d6130
+
+    第三个里程: 让swap分区可以加载swap文件
+    [root@oldboy-xiaodao.com.cn ~]# swapon /tmp/1G
+    swapon: /tmp/1G: insecure permissions 0644, 0600 suggested.
+    [root@oldboy-xiaodao.com.cn ~]# free -h
+                  total        used        free      shared  buff/cache   available
+    Mem:           1.9G         99M        734M        9.5M        1.1G        1.7G
+    Swap:          2.0G          0B        2.0G
+    
+    将swap空间进行减小
+    [root@oldboy-xiaodao.com.cn ~]# swapoff /tmp/1G
+    [root@oldboy-xiaodao.com.cn ~]# free -h
+                  total        used        free      shared  buff/cache   available
+    Mem:           1.9G         98M        734M        9.5M        1.1G        1.7G
+    Swap:          1.0G          0B        1.0G
+
+
+
+	
+	
+假期作业:
+总结:
+01. 原理概念总结
+    a 虚拟机访问外网原理(nat 桥接 仅主机)
+    b inode和block
+    c 软连接和硬链接区别
+    d 正则表达式符号信息 (特殊符号 通配符号 正则符号(扩展 基础))
+    e 系统读写数据原理
+    f 系统权限说明 (目录 文件权限)
+    g 如何让普通用户获得root权限
+    h 总结定时任务的编写规范
+    i 磁盘读写数据原理
+    j 阵列级别进行总结
+02. 总结命令及参数 60-70 
+    
+扩展:
+01. 扩展梳理系统中运算的方法(shell)
+02. 扩展掌握LVM配置方法
+03. 如何利用fdisk 进行对2T以上磁盘分区
+
+预习:
+01. 运维网络基础知识(6天)
+    http://bbs.hh010.com/forum-463-1.html  
+02. 综合架构
+
+

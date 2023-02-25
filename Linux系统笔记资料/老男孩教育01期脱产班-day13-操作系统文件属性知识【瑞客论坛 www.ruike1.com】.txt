@@ -1,0 +1,263 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day13-操作系统文件属性知识
+==================================	
+
+00. 课程介绍部分
+	1. 第四阶段回顾 ****
+	2. 第五阶段回顾 ****
+    3. 文件属性信息 ***** 
+	   什么是软链接和硬链接?
+	   什么是数据存储的inode和block?
+	   文件类型都有哪些?
+	
+01. 课程知识回顾
+    1) vim的常见错误
+	2) vim的执行原理(理解复述 学着画图)
+	3) 查看文本信息命令 cat less/more head tail
+	4) 直接编辑文件信息 echo cat(编写多行) {} 序列符号
+    5) 进行筛选过滤信息 grep sed awk
+	6) 进行信息内容替换 sed tr
+	   [root@oldboyedu ~]# cat /oldboy/oldgirl.txt 
+       oldboy01
+       oldboy02
+       [root@oldboyedu ~]# tr "a-z" "A-Z" < /oldboy/oldgirl.txt 
+       OLDBOY01
+       OLDBOY02
+
+	作业题目:
+	01. tail命令参数 -f 或者 -F
+	    tail -f追踪文件信息时: 文件被删除或移动走, 需要进行重新追踪
+		tail -F追踪文件信息时: 文件被删除或移动轴, 不需要进行重新追踪,只要文件恢复回来会继续追踪
+		
+		日志文件: 文件数据会不断增加,历史悠久的日志文件会清空
+		tail -F 日志信息 
+	02. tr命令替换信息的原理
+        [root@oldboyedu ~]# tr "o l d g i r l" "o l d b o y " </oldboy/test.txt 
+        oydboyy01  ok
+        oyddob01   ok
+        oydboyy02  ok
+        oyddob02   ok
+	    为什么文件信息替换乱了
+		
+		oldgirl  oldboy  > oydboyy      
+		o - o    
+		d - d 
+		g - b
+		i - o
+		r - y
+		l - y
+		
+		o l d d o g >>  o 
+		
+        替换信息的情况: tr命令替换信息是1对1的替换
+		01. 替换的内容字符数 > 修改后的内容字符数   abcd > 123
+		    [root@oldboyedu ~]# echo abcd|tr "abcd" "123"
+            1233
+        02. 替换的内容字符数 < 修改后的内容字符数   abc  < 1234
+		    [root@oldboyedu ~]# echo abcd|tr "abc" "1234"
+            123d
+		03. 替换的内容字符数 = 修改后的内容字符数   abcd = 1234
+		    [root@oldboyedu ~]# echo abcd|tr "abcd" "1234"
+            1234
+        04. 极特殊情况 
+		    abcba 12345  54345
+			c - 3
+			b - 4
+			a - 5
+			
+        问题: oldboy -- oldgirl --> ildgir
+
+02. 第四个阶段回顾: 目录结构知识回顾
+    如何卸载软件:
+    01. yum erase cowsay -y	  --- 极其不建议
+    erase          Remove a package or packages from your system
+    02. rpm -e 软件名称  --nodeps  --- 推荐使用
+	   
+
+03. 第五个阶段回顾: 系统优化知识回顾
+    1) 查看系统信息的方法 uname cat /etc/redhat-release
+	2) 系统用户信息设置
+	   创建用户: useradd 
+       方法一: 创建多个用户(借助nodepad++)
+	   alt+c功能: 可以生成数字序列
+       方法二: 借助sed命令创建多个用户???
+       方法三: 利用shell脚本的 循环语句
+       [root@oldboyedu ~]# for num in {01..20};do useradd oldgirl$num;done
+       [root@oldboyedu ~]# for num in {01..20};do id oldgirl$num;done
+       uid=1021(oldgirl01) gid=1021(oldgirl01) groups=1021(oldgirl01)
+       uid=1022(oldgirl02) gid=1022(oldgirl02) groups=1022(oldgirl02)
+       uid=1023(oldgirl03) gid=1023(oldgirl03) groups=1023(oldgirl03)
+       uid=1024(oldgirl04) gid=1024(oldgirl04) groups=1024(oldgirl04)
+       uid=1025(oldgirl05) gid=1025(oldgirl05) groups=1025(oldgirl05)
+       uid=1026(oldgirl06) gid=1026(oldgirl06) groups=1026(oldgirl06)
+       uid=1027(oldgirl07) gid=1027(oldgirl07) groups=1027(oldgirl07)
+       uid=1028(oldgirl08) gid=1028(oldgirl08) groups=1028(oldgirl08)
+       uid=1029(oldgirl09) gid=1029(oldgirl09) groups=1029(oldgirl09)
+       uid=1030(oldgirl10) gid=1030(oldgirl10) groups=1030(oldgirl10)
+       uid=1031(oldgirl11) gid=1031(oldgirl11) groups=1031(oldgirl11)
+       uid=1032(oldgirl12) gid=1032(oldgirl12) groups=1032(oldgirl12)
+       uid=1033(oldgirl13) gid=1033(oldgirl13) groups=1033(oldgirl13)
+       uid=1034(oldgirl14) gid=1034(oldgirl14) groups=1034(oldgirl14)
+       uid=1035(oldgirl15) gid=1035(oldgirl15) groups=1035(oldgirl15)
+       uid=1036(oldgirl16) gid=1036(oldgirl16) groups=1036(oldgirl16)
+       uid=1037(oldgirl17) gid=1037(oldgirl17) groups=1037(oldgirl17)
+       uid=1038(oldgirl18) gid=1038(oldgirl18) groups=1038(oldgirl18)
+       uid=1039(oldgirl19) gid=1039(oldgirl19) groups=1039(oldgirl19)
+       uid=1040(oldgirl20) gid=1040(oldgirl20) groups=1040(oldgirl20)
+
+       设置密码信息:
+	   01. 交换式设置密码
+	   passwd 用户名 -- 输入两次密码
+	   02. 免交互设置密码
+	   [root@oldboyedu ~]# echo 123456|passwd --stdin oldboy02
+       Changing password for user oldboy02.
+       passwd: all authentication tokens updated successfully.
+
+       创建用户同时,设置用户密码信息
+	   useradd olddog01 ;echo 123456|passwd --stdin olddog01
+
+04. 操作系统文件属性概念
+    [root@oldboyedu ~]# ls -li /etc/
+    total 1092
+	                      第一个部分:文件属性               第二个部分:文件名称
+     34141705 d rwxr-xr-x.  3 root root      101 Mar 28 10:42 abrt
+     34022854 - rw-r--r--.  1 root root       16 Mar 28 10:45 adjtime
+     33590855 - rw-r--r--.  1 root root     1518 Jun  7  2013 aliases
+     33554501 - rw-r--r--.  1 root root    12288 Mar 28 10:48 aliases.db
+     33583487 d rwxr-xr-x.  2 root root      236 Mar 28 10:42 alternatives
+     34105318 - rw-------.  1 root root      541 Apr 11  2018 anacrontab
+     33862777 - rw-r--r--.  1 root root       55 Apr 11  2018 asound.conf
+     34193678 d rwxr-x---.  3 root root       43 Mar 28 10:42 audisp
+    101181822 d rwxr-x---.  3 root root       83 Mar 28 10:48 audit
+	   01     02  03       04 05   06         07    08
+  
+    01. 文件数据的inode信息: index node == 索引节点  
+	    作用: 快递从磁盘中找到数据信息
+		
+    02. 文件的数据类型: 文件 目录 链接文件 设备文件
+	    PS: linux系统中一切皆文件
+		作用: 指明数据的文件类型
+	
+	03. 权限位信息: r ead  读  w rite 写  execute 执行
+	    作用: 控制让不同的用户对文件可以有不同的权限
+                 
+    04. 文件目录的硬链接数: 就类似于超市的多个门
+	    作用: 可以多个路径查看数据信息
+		
+    05. 文件所属用户信息(属主): 数据(孩子小于16岁) (属主)监护人
+	    作用: 文件的创建或者拥有者
+		
+	06. 文件所属组信息(属组):   数据(孩子小于16岁) (属主)监护人父亲 (属组)亲人 (隔壁老王)其他用户
+	    作用: 文件或数据的所属用户组
+ 
+    07. 文件的大小信息
+	
+	08. 文件的时间信息
+ 
+ 
+05. 文件属性详细说明--文件类型
+    1. 文件类型概念
+	windows: 区分文件的类型 扩展名
+	linux:   不用扩展名来区分文件类型
+	
+	2. linux系统区分文件类型方法
+	a 颜色区分
+	b 利用属性信息区分
+	  ls -l 
+	  d rwxr-xr-x. 3 root root 100 Apr  1 11:00 oldboy01
+      d rwxr-xr-x. 2 root root   6 Apr 12 11:19 oldboy.jpg
+      - rw-r--r--. 1 root root  35 Apr 12 08:52 oldboy.txt
+      - rw-r--r--. 1 root root  18 Apr 11 10:23 oldgirl.txt
+      - rw-r--r--. 1 root root   4 Apr 11 12:29 test01.txt
+      - rw-r--r--. 1 root root  65 Apr 11 12:21 test.txt
+    c 利用特殊命令区分
+	  [root@oldboyedu ~]# file /oldboy/oldboy.jpg
+      /oldboy/oldboy.jpg: directory
+      [root@oldboyedu ~]# file /oldboy/oldboy.txt
+      /oldboy/oldboy.txt: ASCII text
+  
+    3. linux系统中的常见文件类型
+	   *d   -- 目录文件类型
+	   *-   -- 普通文件 
+	        ①. 纯文本文件 text /etc/hosts		--- 文本文件(可以直接编辑查看的普通文件)
+            ②. 二进制文件 binary /bin/ls      	--- 命令文件(不可以编辑)
+            ③. 数据型文件 data /tmp/etc.tar.gz	--- 数据文件(压缩的文件)
+	   *l   -- 链接文件(快捷方式)
+	        创建方法: ln -s /oldboy/oldboy.txt /oldboy/oldboy_link.txt  
+		                      源文件             快捷方式(软链接文件)
+	   c/b -- 块文件/字符文件(设备文件)
+	          块文件: 存储的设备文件  光驱设备文件 磁盘
+			  字符文件: 根本停不下来的输出字符信息
+	   
+	          磁盘设备文件 /dev/sda          磁盘文件
+              随机设备文件 /dev/urandom      
+              输出设备文件 /dev/zero         黑洞出口文件???  磁盘分区
+              输入设备文件 /dev/null         黑洞入口文件???  定时任务
+	          
+       s   -- socket文件(网络编程)
+	   
+	04. 扩展命令说明:
+	    a 显示文件信息类型命令: file
+		b 显示命令绝对路径信息: which
+		  [root@oldboyedu ~]# which cat
+          /usr/bin/cat
+		c 显示命令路径以及文件: whereis 
+		  作用: 显示命令路径以及命令相关的帮助手册文件路径
+		d 快速定位文件路径信息 locate updatadb
+		  locate 文件名称 	--- 可以显示文件所在的路径信息
+		  updatedb         	--- 建立文件和目录结构对应关系,便于检索
+          PS: 默认centos7没有以上命令,需要安装软件
+		  yum install -y mlocate
+		e 快速查找数据信息命令  
+          find命令语法
+          find 找寻的路径范围 -type 类型信息 -name "文件名称"	  
+		  
+		  [root@oldboyedu etc]# find  /etc -type f -name "ifcfg-eth0"
+          /etc/sysconfig/network-scripts/ifcfg-eth0
+
+          问题: 一个文件名称没有记全,如何查看文件路径
+          [root@oldboyedu etc]# find  /etc -type f -name "*eth0"
+          /etc/sysconfig/network-scripts/ifcfg-eth0
+          [root@oldboyedu etc]# find  /etc -type f -name "if*h0"
+          /etc/sysconfig/network-scripts/ifcfg-eth0
+ 
+06. 课程知识回顾总结
+    1) 阶段三进行了回顾
+	2) 阶段四和五进行了回顾
+	3) 了解文件属性相关信息 inode 文件类型 权限 硬链接数 属主 属组 数据大小 数据修改时间
+	4) 详细了解了文件类型
+	   常见的类型有哪些
+	   扩展的文件相关命令
+	   find 找寻文件所在路径
+ 
+基础作业:
+01. 总结find命令 
+02. 总结文件属性信息 
+
+
+扩展作业:
+01. 如何产生随机字符信息
+    利用/dev/urandom文件生成随机数 
+	新来10个运维 10个账号 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+       

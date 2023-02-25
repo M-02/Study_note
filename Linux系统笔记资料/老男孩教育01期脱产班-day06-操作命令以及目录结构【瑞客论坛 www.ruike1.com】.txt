@@ -1,0 +1,163 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day06-操作命令以及目录结构
+==================================	
+00. 课程介绍部分
+    1）操作命令进行补充
+	2）快捷方式的使用方法
+	3）vi的详细使用技巧
+	4）系统的目录结构，系统文件进行解释说明
+ 
+01. 课程知识回顾
+    1）文件相关的命令 
+	   touch 空文件
+       ls -l 查看文件属性信息	   
+       ls -ld
+	   vi    打开文件进行编辑
+	   echo  只是将信息显示到屏幕上
+	   echo >>  将屏幕上显示的内容重定向输出到指定文件中
+	   cp    备份数据的命令
+	         备份文件信息   cp 要备份的文件  文件备份保存的其它路径
+             备份目录信息   cp -r 备分的目录    保存到的路径
+	   rm    删除数据信息
+	         rm 数据信息      会有提示
+			 rm -f 数据信息   不会有提示
+			 rm -rf 目录信息  不会有提示
+	   mv    移动数据信息（目录 文件）
+             数据信息进行重命名
+			 
+    2）快捷方式的使用方法
+       ctrl+a     将光标快速移动到行首
+	   ctrl+e     将光标快速移动到行尾
+	   ctrl+?? ?? 将光标按单词快速左右移动
+	   ctrl+w     将空格分隔的一个字符串整体进行删除（剪切）
+	   ctrl+u     将光标所在位置到行首内容进行删除（剪切）
+	   ctrl+k     将光标所在位置到行尾内容进行删除（剪切）
+	   ctrl+y     粘贴剪切的内容
+	   ctrl+s     xshell进入到了锁定状态 suo锁
+	   ctrl+q     解除锁定状态           quit推出锁定状态
+	   
+02. 系统的目录结构 
+    linux目录结构：  一切从根开始，一个倒挂的树
+	windows目录结构：按照盘符进行划分 C盘:
+	linux系统中的挂载技术？？？
+	让用户可以将一个目录作为一个存储设备的挂载点，通过挂载点可以看到存储设备中的数据
+	
+	实际操作演示linux系统挂载过程？
+	第一个步骤：拥有一个存储设备-光驱
+	使光驱加载光盘
+	
+	第二个步骤：在linux系统中找到光驱设备
+	[root@oldboyedu oldboy]# ls -l /dev/cdrom 
+    lrwxrwxrwx. 1 root root 3 Mar 29 12:02 /dev/cdrom -> sr0
+
+	第三个步骤：需要将存储设备进行挂载
+	挂载命令语法格式：
+	mount 挂载设备文件信息 挂载点（目录信息）
+	PS：挂载点目录必须存在
+	mount /dev/cdrom /mnt
+	
+	[root@oldboyedu /]# mount /dev/cdrom /mnt
+    mount: /dev/sr0 is write-protected, mounting read-only
+    [root@oldboyedu /]# cd /mnt
+    [root@oldboyedu mnt]# ls
+    CentOS_BuildTag  EULA  images    LiveOS    repodata              RPM-GPG-KEY-CentOS-Testing-7
+    EFI              GPL   isolinux  Packages  RPM-GPG-KEY-CentOS-7  TRANS.TBL
+    [root@oldboyedu mnt]# cd
+    [root@oldboyedu ~]# umount /mnt
+    [root@oldboyedu ~]# cd /mnt
+    [root@oldboyedu mnt]# ls
+    [root@oldboyedu mnt]# 
+
+03. 系统的基础目录结构
+    [root@oldboyedu /]# ls -l /
+    total 20
+    lrwxrwxrwx.   1 root root    7 Mar 28 10:40 bin（快捷方式） -> usr/bin
+    dr-xr-xr-x.   5 root root 4096 Mar 28 10:45 boot
+    drwxr-xr-x.  19 root root 3180 Mar 29 12:02 dev
+    drwxr-xr-x.  79 root root 8192 Apr  2 08:41 etc
+    drwxr-xr-x.   3 root root   20 Mar 28 10:45 home
+    lrwxrwxrwx.   1 root root    7 Mar 28 10:40 lib -> usr/lib
+    lrwxrwxrwx.   1 root root    9 Mar 28 10:40 lib64 -> usr/lib64
+    drwxr-xr-x.   2 root root    6 Apr 11  2018 media
+    drwxr-xr-x.   2 root root    6 Apr 11  2018 mnt
+    drwxr-xr-x.   2 root root    6 Apr 11  2018 opt
+    dr-xr-xr-x. 103 root root    0 Mar 29 12:02 proc           目录中的数据都存储到内存
+    dr-xr-x---.   2 root root  135 Mar 28 12:33 root
+    drwxr-xr-x.  25 root root  680 Apr  1 11:42 run
+    lrwxrwxrwx.   1 root root    8 Mar 28 10:40 sbin -> usr/sbin
+    drwxr-xr-x.   2 root root    6 Apr 11  2018 srv
+    dr-xr-xr-x.  13 root root    0 Mar 29 12:02 sys
+    drwxrwxrwt.  11 root root 4096 Apr  2 09:37 tmp
+    drwxr-xr-x.  13 root root  155 Mar 28 10:40 usr
+    drwxr-xr-x.  19 root root  267 Mar 28 10:48 var
+	
+04. 详细了解目录结构中总要文件数据信息
+    1. 重要文件-网卡配置文件 （重点）
+	1）文件内容信息
+	[root@oldboyedu oldboy]# ls /etc/sysconfig/network-scripts/ifcfg-eth0 
+    /etc/sysconfig/network-scripts/ifcfg-eth0
+    [root@oldboyedu tmp]# cat /etc/sysconfig/network-scripts/ifcfg-eth0
+    TYPE=Ethernet       --指定网络类型 以太网Ethernet 电话10M 军用（帧中继） 金融公司（FastEthernet）
+    BOOTPROTO=none      --网络启动协议 如何让主机得到IP地址
+	                      a 自己手动配置 none static（静态）
+						  b 自动获取地址 dhcpd（了解）
+    NAME=eth0           -- 主机网卡的名称 逻辑名称
+    UUID=31d48995-e74f-4f99-8e19-0da439ea257b   -- 虚拟主机，会给每个硬件一个标识
+    DEVICE=eth0         -- 主机网卡的名称 设备名称物理名称
+    ONBOOT=yes          -- 设置网卡是否处于开启状态（激活状态）
+    IPADDR=10.0.0.200   -- 静态配置IP地址 标识主机身份 相当于人的名字
+    PREFIX=24           -- 定义网络中可以有多少主机    房间里面可以有多少人         
+    GATEWAY=10.0.0.2    -- 一个网络到另一个网络的必经之路  人从一个国家到另一个国家必经之路（海关）
+    DNS1=223.5.5.5      -- DNS（建立名称和IP地址的对应关系） 14.215.177.38 -- 名称
+
+    2）配置文件修改重启服务
+	方法一：
+	systemctl restart network  针对所有网卡进行重启
+	systemctl status  network  
+	方法二：企业中常见用法
+	ifdown eth0 && ifup eth0   针对指定网卡进行重启
+
+    异常问题：网卡配置文件正确，无法重启网络服务
+	systemctl stop NetworkManager   网络管理服务关闭
+	
+    2.重要文件-DNS解析配置文件	（了解）
+	  [root@oldboyedu ~]# vi /etc/resolv.conf 
+      # Generated by NetworkManager
+      search com
+      nameserver 10.10.10.10
+
+05. 课程知识点总结
+    1）介绍了系统常用快捷方式
+	2）系统挂载概念 
+	3）根目录下的常见目录结构 bin etc usr var home
+	4）网卡配置文件 
+	5）DNS解析文件
+	
+基础作业：
+01. 总结命令快捷方式
+02. 总结存储设备挂载步骤 
+03. 总结目录结构作用
+
+预习作业：
+01. 预习系统的启动级别
+02. 预习系统的启动顺序	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

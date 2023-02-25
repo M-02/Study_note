@@ -1,0 +1,304 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day07-操作命令以及目录结构
+==================================	
+00. 课程介绍部分
+    1）系统目录重要文件
+	2）系统命令
+	3）vi使用技巧
+ 
+01. 课程知识回顾
+    1）系统挂载概念
+	   当磁盘存储数据之后，需要将一个目录和磁盘建立关系（挂载）
+	   进入到目录（挂载点）中，就可以看到磁盘中的数据
+	2）系统的目录结构
+	   /bin /sbin  
+	   /home /root
+	   /usr  /opt
+	   /etc   
+	   /var  
+	   /proc  
+	3）重要目录数据 /etc
+       网卡配置文件  /etc/sysconfig/network-scripts/ifcfg-eth0
+	   DNS1=XXXXX
+	   DNS2=XXXXX
+       systemctl stop NetworkManager
+       解析配置文件  DNS配置文件 /etc/resolv.conf	   
+	   nameserver 114.114.114.114
+
+02. 详细掌握/etc目录中的重要数据
+	1. 主机名称文件配置文件 （重要）
+	   如何修改主机名称：  
+       centos7：
+	   临时修改：
+	   hostname oldboy-sz-01
+	   永久修改：（重启系统才能加载配置文件）
+	   [root@oldboy-sz-01 ~]# cat /etc/hostname 
+       oldboy-sz-01
+	   
+	   通过命令：直接可以即临时修改，又永久修改
+	   hostnamectl set-hostname oldboysz-01
+
+	   centos6：
+	   临时修改：
+	   hostname oldboy-sz-01
+	   永久修改：
+	   vi /etc/sysconfig/network
+
+	   补充：如何查看系统版本
+	   [root@oldboy-sz-01 ~]# cat /etc/redhat-release 
+       CentOS Linux release 7.5.1804 (Core) 
+	
+	2. 解析映射文件 （重要）
+	   hosts文件：在本地建立IP地址和主机名称的对应关系
+	   windows本地解析文件位置：C:\Windows\System32\drivers\etc\hosts
+	   linux本地解析文件位置：  
+	   [root@oldboysz-01 ~]# cat /etc/hosts
+       127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+       ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+       10.0.0.200  oldboyedu.com
+	   
+	3. 磁盘挂载文件
+	   /etc/fstab  --- 实现存储设备开启自动挂载配置文件
+	   [root@oldboysz-01 mnt]# cat /etc/fstab 
+       UUID=e2fc8646-2b36-47cc-a35a-8c13208f4d0b /       xfs     defaults        0 0
+       UUID=34fc45ba-c38c-42bc-a120-90f9d5dd2382 /boot   xfs     defaults        0 0
+       UUID=62100743-6f8a-4f83-a37d-e2088c4830e2 swap    swap    defaults        0 0
+       定义存储设备文件信息                     挂载点  
+       /dev/cdrom                                /mnt    ？？？  defaults        0 0
+	   
+	4. 开机自动加载文件
+	   ls /etc/rc.local
+	   [root@oldboysz-01 ~]# ls -l /etc/rc.local 
+       lrwxrwxrwx. 1 root root 13 Mar 28 10:41 /etc/rc.local -> rc.d/rc.local
+       [root@oldboysz-01 ~]# ls -l /etc/rc.d/rc.local 
+       -rw-r--r--. 1 root root 495 Apr  3 09:39 /etc/rc.d/rc.local
+       [root@oldboysz-01 ~]# chmod +x /etc/rc.d/rc.local
+       [root@oldboysz-01 ~]# ls -l /etc/rc.d/rc.local 
+       -rwxr-xr-x. 1 root root 495 Apr  3 09:39 /etc/rc.d/rc.local
+	   
+	   vi /etc/rc.local
+       systemctl start sshd
+       总结：rc.loacl文件作用
+	   01. 文件中的内容信息，会在系统启动之后进行加载
+	   02. 文件中的编写内容，一定是命令信息
+	   
+	   练习：实现开机自动创建/oldgirl/oldgirl.txt文件
+	         并且文件中有"oldgirl.com"信息内容
+	   vi /etc/rc.local
+	   echo "oldgirl.com" > /oldgirl/oldgirl.txt
+	   PS: 运维人员工作的宗旨：简单 高效 稳定
+	   
+	5. 系统运行级别：（重点 面试题）
+	   windows--系统出现故障--安全模式
+	   系统启动：服务程序 网络 安全服务 --启动级别
+	             系统服务启动           -- 启动级别
+	   查看系统运行级别方法：
+	   [root@oldboysz-01 ~]# runlevel
+       N 3
+       切换运行级别：
+	   临时调整：
+	   init 切换的运行级别
+	   永久调整：
+	   centos6：
+	   vi /etc/inittab
+	   centos7：
+	   查看所有target信息
+	   [root@oldboysz-01 ~]# ls -l /usr/lib/systemd/system/runlevel*target
+       lrwxrwxrwx. 1 root root 15 Mar 28 10:41 /usr/lib/systemd/system/runlevel0.target -> poweroff.target
+       lrwxrwxrwx. 1 root root 13 Mar 28 10:41 /usr/lib/systemd/system/runlevel1.target -> rescue.target
+       lrwxrwxrwx. 1 root root 17 Mar 28 10:41 /usr/lib/systemd/system/runlevel2.target -> multi-user.target
+       lrwxrwxrwx. 1 root root 17 Mar 28 10:41 /usr/lib/systemd/system/runlevel3.target -> multi-user.target
+       lrwxrwxrwx. 1 root root 17 Mar 28 10:41 /usr/lib/systemd/system/runlevel4.target -> multi-user.target
+       lrwxrwxrwx. 1 root root 16 Mar 28 10:41 /usr/lib/systemd/system/runlevel5.target -> graphical.target
+       lrwxrwxrwx. 1 root root 13 Mar 28 10:41 /usr/lib/systemd/system/runlevel6.target -> reboot.target
+       永久设置运行级别 
+       [root@oldboysz-01 ~]# systemctl set-default rescue.target
+       Removed symlink /etc/systemd/system/default.target.
+       Created symlink from /etc/systemd/system/default.target to /usr/lib/systemd/system/rescue.target.
+       检查默认运行级别
+       [root@oldboysz-01 ~]# systemctl get-default
+       rescue.target
+	   
+	   centos6 
+	   启动级别：
+	   00  系统的关机级别   init 0 进入到关机状态
+	   01  系统的单用户模式 用于修复系统 或重置密码信息     没有网络
+	   02  系统的多用户模式                                  没有网络
+	   03  系统的多用户模式 正常系统运行级别多用户模式级别  有网络
+	   04  预留级别
+	   05  图形化界面级别
+	   06  系统的重启级别   
+	   
+	   centos7
+	   启动级别：target目标
+	   00  系统的关机级别   init 1 进入到维修模式                       poweroff.target
+	   01  系统的单用户模式 用于修复系统 或重置密码信息	             rescue.target
+	   02  系统的多用户模式                                  没有网络   multi-user.target
+	   03  系统的多用户模式 正常系统运行级别多用户模式级别  有网络     multi-user.target
+	   04  预留级别                                                     multi-user.target
+       05  图形化界面级别                                              graphical.target
+	   06  系统的重启级别                                               reboot.target
+ 	   总结： 
+	   01. 每个级别有什么用
+	   02. 如何查看此时系统运行级别
+	   03. 如何修改设置运行级别
+	
+	6. 变量加载文件
+	   什么是变量
+	   两中方式解释：
+	   1 看书
+	     目录  内容
+		 变量  变量值
+	   2 小学算术题
+	     x+1=5 x=4
+		 x=4
+		 x+y=5 y=1
+		 
+		 x=4
+         已知变量=数值
+		 变量=变量值
+	   
+	   设置变量方法 
+	   [root@oldboysz-01 ~]# X=1234
+       调取变量方法
+       [root@oldboysz-01 ~]# echo $X
+       1234
+	   
+	   脚本概念：
+	   01. 将多个命令整合在一个文件
+	   02. 通过执行加载一个文件可以完成多件事
+	   
+	   脚本文件
+	   [root@oldboysz-01 ~]# vi oldboy.sh 
+       dir=oldgirl
+       mkdir /$dir/oldboy01
+       mkdir /$dir/oldboy02
+       mkdir /$dir/oldboy03
+	   
+	   /etc/profile  
+	   作用：让变量信息永久生效
+	   直接让文件生效方法：
+	   source /etc/profile
+	   x=11
+	   
+	   系统中变量的类型：
+	   普通变量：需要人为设置
+	   环境变量：系统默认就有的变量
+	   
+	   环境变量PATH作用
+	   [root@oldboysz-01 ~]# echo $PATH
+       /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
+       [root@oldboysz-01 ~]# which cat
+       /usr/bin/cat
+       [root@oldboysz-01 ~]# cat /etc/hosts
+       127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+       ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+       10.0.0.200  oldboyedu.com
+       [root@oldboysz-01 ~]# ls /oldboy
+       oldboy01  oldboy02  oldboy03
+       [root@oldboysz-01 ~]# mv /usr/bin/cat /oldboy
+       [root@oldboysz-01 ~]# ls /usr/bin/cat
+       ls: cannot access /usr/bin/cat: No such file or directory
+       [root@oldboysz-01 ~]# cat /etc/hosts
+       -bash: /usr/bin/cat: No such file or directory
+      
+	   修改PATH环境变量方法：
+	   临时修改： 
+	   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/oldboy
+	   永久设置：
+	   vi /etc/profile 
+	   export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin:/oldboy
+
+       系统别名概念
+	   [root@oldboysz-01 ~]# ls -l /etc/hosts
+       -rw-r--r--. 1 root root 184 Apr  3 09:09 /etc/hosts
+       [root@oldboysz-01 ~]# ll /etc/hosts
+       -rw-r--r--. 1 root root 184 Apr  3 09:09 /etc/hosts
+	   说明: ll命令就是ls -l命令的别名
+	   作用: 别名可以使命令操作更加简单
+	   
+	   需求01: 如何让一下命令操作简单
+	   cat /etc/sysconfig/network-scripts/ifcfg-eth => catnet
+	   
+	   查看系统别名默认设置:
+	   [root@oldboysz-01 ~]# alias 
+       alias cp='cp -i'
+       alias egrep='egrep --color=auto'
+       alias fgrep='fgrep --color=auto'
+       alias grep='grep --color=auto'
+       alias l.='ls -d .* --color=auto'
+       alias ll='ls -l --color=auto'
+       alias ls='ls --color=auto'
+       alias mv='mv -i'
+       alias rm='rm -i'
+       alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
+
+       设置命名的语法:
+	   alias 别名名称='命令信息'
+	   alias catnet='cat /etc/sysconfig/network-scripts/ifcfg-eth'
+	   [root@oldboysz-01 ~]# alias
+       alias catnet='cat /etc/sysconfig/network-scripts/ifcfg-eth0'
+	   
+	   需求02：rm 命令执行 == echo "rm command is weixian,not use"
+	   alias rm='echo rm command is weixian,not use'
+	   [root@oldboysz-01 ~]# rm -rf /oldboy/
+       rm command is weixian,not use -rf /oldboy/
+	   
+	   使别名功能失效：
+	   01. 取消别名
+	       unalias rm
+       02. 利用撬棍
+	       \rm -rf /oldboy
+	   03. 绝对路径方式执行命令
+	       /usr/bin/rm -rf /oldgirl
+
+	   总结：/etc/profile文件作用
+	   01. 永久设置变量信息
+	   02. 设置别名信息
+	
+03. 系统中重要数据文件
+    1. 主机名称文件
+       /etc/hostname（catos7）
+	   /etc/sysconfig/network（centos6）
+	   如何修改主机名称 （临时修改 永久修改）
+	2. 本地解析文件
+	   /etc/hosts  
+	3. 磁盘开机自动挂载文件
+       /etc/fstab 
+    4. 系统开机自动命令信息的文件
+       /etc/rc.local    --- 设置服务器开机启动命令
+    5. 系统运行级别
+       /etc/inittab                     --- 配置centos6运行级别
+       systemctl set-default xx.target  --- 配置centos7运行级别	   
+	   系统中有什么运行级别 7种
+	   单用户级别如何重置密码
+	6. 系统的变量和别名配置文件
+	   /etc/profile 
+	   什么是系统变量--脚本？？ 变量==目录==已知变量
+	   什么是环境变量
+	   01. 系统默认设置好的变量
+	   02. 又大写字母组成变量
+	   什么是系统别名？
+	
+	
+基础作业：
+01. 如何实现光驱开机自动挂载
+02. 总结系统7个运行级别作用
+    centos7 查看运行级别方法 以及永久设置方法
+03. 利用单用户模式重置密码方法 centos7 
+04. 如何永久设置别名 rm别名
+	
+	
+扩展作业：
+01. 安装部署一个centos6的系统	
+	

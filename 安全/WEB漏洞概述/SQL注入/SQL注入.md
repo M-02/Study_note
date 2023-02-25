@@ -8,9 +8,9 @@ http://www.sql.com/xxx.php?id=1
 假设ID为存在注入的参数
 http://www.sql.com/xxx.php?id=1'
 语句报错
-http://www.sq1.com/xxx.php?id=1 and 1=1
+http://www.sql.com/xxx.php?id=1 and 1=1
 页面正常返回结果
-http://www.sq1.com/xxx.php?id=1 and 1=2
+http://www.sql.com/xxx.php?id=1 and 1=2
 页面返回错误
 ```
 
@@ -27,7 +27,7 @@ id ='$'
 id ='1'
 id ='1''
 id = '1' and '1'='1'
-http://www.sq1.com/xxx.php?id=1' and '1'='2 页面返回错误
+http://www.sql.com/xxx.php?id=1' and '1'='2 页面返回错误
 ```
 
 在学习owasp相关文章时，发现他们通常将sql注入攻击分为三类:

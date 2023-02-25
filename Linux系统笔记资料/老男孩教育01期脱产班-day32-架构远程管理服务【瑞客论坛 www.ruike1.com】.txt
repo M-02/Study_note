@@ -1,0 +1,197 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day32-综合架构远程管理服务(SSH)
+==================================	
+
+00. 课程介绍部分
+    1) 远程管理服务器介绍
+	2) SSH远程管理服务远程连接的原理
+	3) SSH远程连接方式 秘钥连接方法
+	4) SSH服务的配置文件 /etc/ssh/sshd_config
+	5) SSH远程连接安全防范思路(防止入侵)
+	6) 总结SSH服务相关命令 ssh scp
+	7) ansible批量管理服务介绍  saltstack 
+	8) ansible软件部署
+	9) ansible服务简单应用
+
+01. 课程知识回顾
+    1) 实时同步服务原理
+	   a 部署好rsync守护进程  传输数据
+	   b 部署好inotify软件    监控数据变化
+	   c 部署安装sersync软件  将rsync+inotify软件结合
+    2) 相关软件部署安装
+    3) sersync的配置过程
+       rsync命令掌握sersync服务配置方法	
+    
+02. 远程管理服务概念介绍
+    SSH     安全的远程连接    数据信息是加密的  22   SSH服务默认可以root用户远程连接         系统远程连接
+	TELNET  不安全的远程连接  数据信息是明文的  23   telnet服务默认不可以让root用户远程连接  网络设备远程连接
+
+	补充: 什么是shell
+    1. 每连接登录到一个linux系统中,就是一个shell
+    2. 可以一个linux系统有多个会话连接,每一个会话都是一个shell
+    3. 系统中用户可以实现相互转换,每转换一个用户就是一个shell
+    shell特点说明:
+	1. 一般命令行临时配置的信息,只会影响当前shell
+    2. 命令配置的信息如果想生效,需要切换shell	    eg: 修改主机名称
+	
+03. SSH服务连接工作原理(数据加密)
+    私钥: 钥匙
+	公钥: 锁头
+	第一个步骤: 客户端  			执行远程连接命令
+	第二个步骤: 客户端  服务端    	建立三次握手过程
+	第三个步骤: 服务端            	让客户端进行确认是否接收服务端公钥信息
+	第四个步骤: 客户端            	进行公钥确认,接收到公钥信息
+	第五个步骤: 服务端            	让客户端确认登录用户密码信息
+	第六个步骤: 客户端             	进行密码信息确认
+	第七个步骤: 客户端  服务端    	远程连接建立成功
+
+	私钥和公钥作用:
+	01. 利用私钥和公钥对数据信息进行加密处理
+	02. 利用公钥和私钥进行用户身份认证
+	
+	基于密码的方式进行远程连接: 公钥和私钥只能完成数据加密过程
+	基于秘钥的方式进行远程连接: 公钥和私钥可以完成身份认证工作
+	
+04. SSH远程连接的方式
+    a 基于口令的方式进行远程连接  连接比较麻烦		连接不太安全
+	b 基于秘钥的方式进行远程连接  连接方便    		连接比较安全
+
+    基于秘钥方式连接过程(原理)
+	1. 客户端(管理端)    执行命令创建秘钥对
+	2. 客户端(管理端)    建立远程连接(口令),发送公钥信息
+	3. 客户端(管理端)    再次建立远程连接
+	4. 服务端(被管理端)  发送公钥质询信息(你要是能打开我的锁头吗)
+	5. 客户端(管理端)    处理公钥质询信息(钥匙将锁头打开),将质询结果返回给服务端
+	6. 服务端(被管理端)  接收到质询结果,建立好远程连接
+	
+05. SSH实现基于秘钥连接的部署步骤
+    准备工作:
+	准备好一台管理服务器
+	
+	第一个历程: 管理端创建秘钥对信息
+	[root@m01 ~]# ssh-keygen -t dsa
+    Generating public/private dsa key pair.
+    Enter file in which to save the key (/root/.ssh/id_dsa): 
+    Created directory '/root/.ssh'.
+    Enter passphrase (empty for no passphrase): 
+    Enter same passphrase again: 
+    Your identification has been saved in /root/.ssh/id_dsa.
+    Your public key has been saved in /root/.ssh/id_dsa.pub.
+	
+	第二个历程: 管理端需要将公钥进行分发
+	ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.31
+	
+	第三个历程: 进行远程连接测试
+	ssh 172.16.1.41   --- 不用输入密码信息可以直接连接
+	
+    问题: 
+	01. 如何实现批量管理多台主机
+	    如何编写脚本进行批量分发公钥???
+
+    编写脚本最简单方式: 堆命令
+	
+	#!/bin/bash
+	for ip in 31 7 41
+    do 
+	  ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.$ip
+    done	
+	问题: 有交互过程
+	01. 需要有确认yes或no
+	02. 需要输入密码信息    OK
+	03. 服务端端口号变化了,如何分发公钥
+	
+	如何不用交互输入密码信息,进行远程连接分发公钥:
+	第一步骤: 下载安装软件
+	yum install -y sshpass
+	
+	第二步骤: 执行免交互方式分发公钥命令
+	sshpass -p123456 ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.41
+	
+	如何不要输入连接yes或no的确认信息
+	ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.41 "-o StrictHostKeyChecking=no"
+	
+	服务端口号发生变化,如何进行批量分发公钥
+	sshpass -p123456 ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.41 -p 52113 "-o StrictHostKeyChecking=no"
+
+    分发公钥脚本:
+	[root@m01 scripts]# vim fenfa_pub_key.sh
+    #!/bin/bash
+    
+    for ip in {1..100}
+    do
+      echo "==================== host 172.16.1.$ip pub-key start fenfa ==================== "
+      sshpass -p123456 ssh-copy-id -i /root/.ssh/id_dsa.pub root@172.16.1.$ip "-o StrictHostKeyChecking=no" &>/dev/null
+      echo -e "host 172.16.1.$ip fenfa success."
+      echo "==================== host 172.16.1.$ip fenfa end ==================== "
+      echo ""
+    done 
+
+    分发公钥检查脚本(批量管理脚本)  --- 串型批量管理
+    [root@m01 scripts]# cat check_pub_key.sh 
+    #!/bin/bash
+    CMD=$1
+    for ip in {7,31,41}
+    do
+      echo "==================== host 172.16.1.$ip check ==================== "
+      ssh 172.16.1.$ip $CMD 
+      echo ""
+    done 
+
+06. SSH服务配置文件
+    /etc/ssh/sshd_config
+	Port 22                   --- 修改服务端口信息
+	ListenAddress 0.0.0.0     --- 监听地址 指定一块网卡能够接受远程访问请求  *****
+	                              PS: 指定监听地址只能是本地网卡上有的地址
+	PermitEmptyPasswords no   --- 是否允许远程用户使用空密码登录,默认不允许
+	PermitRootLogin yes       --- 是否禁止root用户远程连接主机 建议改为no
+	GSSAPIAuthentication no   --- 是否开启GSSAPI认证功能 不用的时候关闭 
+	UseDNS no                 --- 是否开启反向DNS解析功能 建议进行关闭
+	
+							
+07. SSH远程服务防范入侵的案例
+    1. 用密钥登录，不用密码登陆
+	2、牤牛阵法：解决SSH安全问题
+	   a.防火墙封闭SSH,指定源IP限制(局域网、信任公网)
+       b.开启SSH只监听本地内网IP（ListenAddress 172.16.1.61）。
+    3、尽量不给服务器外网IP
+    4、最小化（软件安装-授权）
+    5、给系统的重要文件或命令做一个指纹
+	   /etc/passwd md5sum 11110000aaaabbbb   监控	
+	   inotify /bin                          监控
+    6、给他锁上 chattr +i
+
+08. SSH相关的命令总结   
+    ssh-keygen
+	ssh-copy-id
+	sshpass 
+	ssh 
+	scp 
+	sftp 172.16.1.41
+	ls       查看远程ftp服务器信息
+	cd   --- 查看远程ftp服务器信息
+	lls      查看本地ftp客户端信息
+	lcd  --- 查看本地ftp客户端信息
+	get  --- 下载信息
+	put  --- 上传信息
+	help --- 查看命令帮助
+	bye  --- 退出ftp连接
+   
+作业:
+01. 利用脚本实现实时同步
+    while循环	 
+02. 如何实现xshell也是基于秘钥方式连接主机	
+03. 提前安装部署好ansible软件
+    在管理端服务器上: yum install -y ansible    
+    
+
+

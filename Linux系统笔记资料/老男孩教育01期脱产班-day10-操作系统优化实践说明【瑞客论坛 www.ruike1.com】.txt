@@ -1,0 +1,265 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：		    QQ号码    	#
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day10-操作系统优化说明
+==================================	
+
+00. 课程介绍部分
+    1. 操作系统优化 
+	2. 阶段总结回顾
+    
+01. 课程知识回顾
+    1. vi的使用方法技巧
+    2. 系统的信息查看方法 文件/命令
+	3. 系统用户创建 用户切换 以及查看确认
+	4. 系统的命令提示符优化
+	   a 命令提示符格式进行优化
+	   b 命令提示符颜色优化
+	   如何让命令提示符是彩色的:
+	   export PS1='\[\e[32;1m\]  [\u@\h \W]\$   \[\e[0m\]'
+	               开始设置颜色 设置颜色的信息 结束颜色设置
+	   export PS1='[\[\e[32;1m\]\u@\[\e[33;1m\]\h\[\e[34;1m\] \W\[\e[0m\]]\$ '
+	5. 系统的yum源文件优化
+	   a 将yum基础的源进行了优化 (阿里云--清华源)
+	   b 将yum扩展的源进行了优化 (阿里云--清华源)
+	   
+	   如何确认软件是否安装
+	   a 重新再yum安装一遍
+	   b 利用rpm命令也可以管理检查软件是否安装
+	     查看软件是否安装: 
+		 [root@oldboyedu ~]# rpm -qa sl   -q表示查询 -a表示所有
+         sl-5.02-1.el7.x86_64
+		 查看软件包中有哪些信息
+         [root@oldboyedu ~]# rpm -ql cowsay  -l表示列表显示
+         /usr/bin/animalsay
+         /usr/bin/cowsay
+         /usr/bin/cowthink
+         查看文件信息属于哪个软件大礼包
+		 [root@oldboyedu ~]# which ssh
+         /usr/bin/ssh
+         [root@oldboyedu ~]# rpm -qf /usr/bin/ssh
+         openssh-clients-7.4p1-16.el7.x86_64
+
+         [root@oldboyedu ~]# rpm -qf `which ssh`
+         openssh-clients-7.4p1-16.el7.x86_64
+         PS: 有些命令名称和软件包的名称是不相同的
+	   
+	   补充: linux和windows软件安装程序区别
+	   xxx.exe -- windows 安装程序
+	   xxx.rpm -- linux   安装程序
+
+
+02. 系统安全相关优化(将一些安全服务进行关闭)
+    1. 防火墙服务程序
+	   centos6
+	   查看防护墙服务状态
+	   /etc/init.d/iptables status
+	   
+	   临时关闭防火墙服务
+	   /etc/init.d/iptables stop
+	   /etc/init.d/iptables status
+	   
+	   永久关闭防火墙服务
+	   chkconfig iptables off
+	   
+	   centos7
+	   查看防火墙服务状态
+	   systemctl status firewalld
+	   
+	   临时关闭防火墙服务
+	   systemctl stop firewalld
+	   systemctl status firewalld  -- 操作完确认
+	   
+	   永久关闭防火墙服务
+	   systemctl disable firewalld
+	   
+	   补充: 查看服务状态信息简便方法
+	   systemctl is-active firewalld   --- 检查服务是否正常运行
+	   systemctl is-enabled firewalld  --- 检查确认服务是否开机运行
+	
+	
+	2. 系统的selinux服务程序
+	   selinux服务对root用户权限进行控制
+	   很多企业中:selinux服务默认关闭
+	   centos6==centos7 
+	   临时关闭:
+	   检查确认: 
+	   getenforce    --- 确认selinux服务是否开启或是关闭的
+	   如何关闭:  
+	   [root@oldboyedu ~]# setenforce 
+       usage:  setenforce [ Enforcing | Permissive | 1 | 0 ]
+       Enforcing   1  --- 临时开启selinux
+	   Permissive  0  --- 临时关闭selinux
+	   
+	   setenforce 0   --- 临时关闭selinux服务
+
+	   永久关闭:
+	   enforcing 	- SELinux security policy is enforced.  
+					  selinux服务处于正常开启状态
+       permissive 	- SELinux prints warnings instead of enforcing.
+					  selinux服务被临时关闭了
+       disabled 	- No SELinux policy is loaded.
+					  selinux服务彻底关闭
+	   vi /etc/selinux/config
+	   SELINUX=disabled
+       PS: 如果想让selinux配置文件生效,重启系统
+	   
+03. 字符编码优化
+    什么是字符编码: 可以实现对非英文字符的支持
+    计算机操作系统是谁发明的?  --美国人--英语	
+	支持中文比较好的编码:
+	UTF-8 比较通用
+	GBK   比较国际通用
+	
+	出现乱码的原因:
+	01. 系统字符集设置有问题
+	02. 远程软件字符集设置有问题
+	03. 文件编写字符集和系统查看的字符集不统一
+	
+	系统中字符集编码设置方法
+	centos6 
+	查看默认编码信息:
+	[root@oldboyedu ~]# echo $LANG   --- LANG用于设置字符编码信息
+    en_US.UTF-8
+	
+	临时修改:
+    [root@oldboyedu ~]# echo $LANG
+    en_US.UTF-8
+	LANG=XXX
+	
+	永久修改:
+	方法一:
+	[root@oldboyedu ~]# tail -5 /etc/profile
+    export LANG='en_US.UTF-8'
+	
+	方法二:
+	vi /etc/sysconfig/i18n
+	LANG='en_US.UTF-8
+    source /etc/sysconfig/i18n
+
+	centos7 
+	查看默认编码信息
+	[root@oldboyedu ~]# echo $LANG
+    en_US.UTF-8
+
+    临时修改:
+	[root@oldboyedu ~]# echo $LANG
+    en_US.UTF-8
+	LANG=XXX
+
+	永久修改:
+	方法一: 更加有先
+    [root@oldboyedu ~]# tail -5 /etc/profile
+    export LANG='en_US.UTF-8'
+	方法二:
+	[root@oldboyedu ~]# cat /etc/locale.conf 
+    LANG="zh_CN.UTF-8"
+	
+	补充：一条命令即临时设置，又永久设置
+	localectl set-locale LANG=zh_CN.GBK
+
+04. 使xshell软件远程连接速度加快
+    第一个步骤：修改ssh服务配置文件
+	vi /etc/ssh/sshd_config
+	79  GSSAPIAuthentication no
+	115 UseDNS no
+	
+	第二个步骤：修改hosts文件
+	[root@oldboyedu ~]# vi /etc/hosts
+    10.0.0.200  oldboyedu.com
+	
+	第三个步骤：重启ssh远程服务
+	systemctl restart sshd
+	
+06. 系统基础优化总结
+    1）命令提示符优化 
+	2）下载yum源优化
+	3）安全相关优化
+	   防火墙优化  selinux优化
+	4）字符集优化
+	   可以显示中文
+	   避免出现乱码
+	5）SSH远程连接优化
+	
+	
+07. 课程阶段回顾部分
+    1. 不会的东西要先记下来
+    2. 什么叫做知识掌握了
+	   a 作用清楚
+	   b 操作熟练
+	   c 知识原理可以绘图 
+	   PS：给不清楚人能讲明白
+	   
+	第一个阶段：服务器硬件知识和系统概念  OK
+    第二个阶段：系统安装部署和远程连接
+    第三个阶段：系统管理基础操作命令（新增命令）
+    第四个阶段：目录结构知识
+    第五个阶段：系统基础优化部分
+
+08. 服务器硬件知识和系统概念
+    服务器硬件组成 ***
+	电源 cpu 内存 磁盘 风扇
+	
+    服务器核心知识 *****
+	1. 服务器介绍部分 **
+	   
+	2. 服务器硬件详述 *****
+	电源：
+	供电 冗余能力（双路 UPS 发电机）
+	CPU：
+	2个作用 处理任务 控制硬件）
+	路数 核数
+	内存：
+	存储设备 临时存储
+	缓冲（写）：将数据写入到内存 
+	缓存（读）：读取内存中的数据
+	程序 -- 开发人员编写的代码
+	进程 -- 运行起来的程序
+	守护进程-- 一直运行的进程
+	磁盘：(机械硬盘)
+	存储设备 永久存储
+	磁盘的接口类型：SAS > SCSI > SATA 
+	RAID（阵列卡）
+	01. 是一块磁盘容量更大
+	02. 数据存储更安全
+	03. 数据存储效率更高
+	配置raid方法
+	raid0 raid1 （忽略）
+	远程管理卡
+	01. 可以远程开机
+	02. 远程安装系统
+	
+	
+    服务器系统知识 ***
+	操作系统组成   鸡蛋（内核 解释器 应用程序）
+	QQ软件聊天
+	人操作软件（你好）--- 解释器 ---内核 --  计算机硬件（二进制）（网卡）
+	系统发展过程   
+    谭邦宁    	--- 发明了教学用的unix系统
+    斯托曼	  	--- 想法：发明出类似unix更好的系统
+	                FSF: 建立了一个公司,自由软件基金会
+					GNU：发明出类似unix更好的系统  内核  解释器 软件程序
+	                GPL：通用许可协议
+	脱袜子      --- 发明出了linux早期内核雏形
+	PS GNU项目+linux内核雏形==linux
+	
+	常见系统发行版本：
+	redhat：收费
+	centos：免费
+	   
+基础作业:
+01. 一个软件安装好了,如何利用rpm命令进行卸载
+02. 总结第一个阶段课程知识
+03. 进行一天课程内容复述，录音（全民K歌）
+	
+扩展作业:
+01. 如何创建多个用户(创建50个用户 oldboy1..oldboy100)
+       

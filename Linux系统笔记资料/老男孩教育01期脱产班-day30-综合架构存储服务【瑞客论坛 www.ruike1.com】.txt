@@ -1,0 +1,293 @@
+=============================================================================================
+# 老男孩教育：                                                                            	#
+# www.oldboyedu.com                                                                       	#
+# 邮件：miaokm@oldboyedu.com(189 1048 1057)                                               	#
+# 地址：北京市昌平区顺沙路8号院汇德商厦4F                                                 	#
+# 资源老师   手机电话：		    QQ号码        资源老师： 手机电话：	QQ号码    	    #
+# 飞雪		 135 5261 2571		80042789      小雨		 186 0046 2391      390320151     	#
+# 歪歪		 189 1171 8229		70271111      丹丹		 158 1059 0206      41117397      	#
+# 冰冰		 150 1078 5220		41117483												  	#
+=============================================================================================
+
+老男孩深圳脱产01-day30-综合架构存储服务
+==================================	
+
+00. 课程介绍部分
+    1) 存储服务的概念
+	2) 存储服务的部署(NFS)
+	3) 存储服务的配置
+	   服务端配置操作
+	   客户端配置操作
+	4) 存储服务的原理(数据无法存储)
+	5) 客户端挂载应用
+	   mount -o ro
+	6) 存储服务企业应用
+
+  
+01. 课程知识回顾
+    1) 项目完成前项目规划(和领导确认)
+	2) 按照规划一步一步完成任务
+	   如何编写脚本实现运维自动化(逻辑)
+	3) 进行检查测试
+	
+02. NFS存储服务概念介绍
+    NFS是Network File System的缩写,中文意思是网络文件共享系统，
+	它的主要功能是通过网络（一般是局域网）让不同的主机系统之间可以共享文件或目录
+	存储服务的种类
+	用于中小型企业: 实现数据共享存储
+	FTP(文件传输协议)   
+	运维01    服务器A  服务器B     FTP服务器
+	运维02    服务器C  服务器D
+    中小型电商公司(游戏点卡 游戏币 道具 Q币 充值话费) --- 财务对账信息(数据库) --- 对账文件 --- FTP服务器
+    权限(用户认证的权限  存储目录的权限(用户))
+	获取数据的方式 ??? SSH远程服务 sFTP
+	samba     windows--linux之间数据传输  Linux部署samba
+	NFS       linux--linux之间数据传输
+    用于门户网站:
+	一个用户    -- 存储服务器
+	上万个用户  -- 存储服务器
+	利用分布式存储   
+	Moosefs（mfs） 比较落伍,初学学习比较简单
+	GlusterFS      
+	FastDFS        企业应用较多
+	
+03. NFS存储服务作用
+    1) 实现数据的共享存储
+    2) 编写数据操作管理
+    3) 节省购买服务器磁盘开销 淘宝--上万 用电开销	
+	
+04. NFS服务部署流程	
+    RPC: 远程过程调用服务程序--- 相当于租房的中介(网络编程支持)
+	服务端部署
+	第一个历程: 下载安装软件
+	rpm -qa|grep -E "nfs|rpc"
+	yum install -y nfs-utils rpcbind
+
+    第二个历程: 编写nfs服务配置文件
+	vim /etc/exports (man exports)
+	01     02(03)
+	01: 设置数据存储的目录 /data
+	02: 设置网络一个白名单 (允许哪些主机连接到存储服务器进行数据存储)
+	03: 配置存储目录的权限信息 存储目录一些功能
+	/data   172.16.1.0/24(rw,sync)
+
+    第三个历程: 创建一个存储目录
+	mkdir /data
+	chown nfsnobody.nfsnobody /data
+	
+    第四个历程: 启动服务程序
+	先启动 rpc服务
+	systemctl start rpcbind.service 
+    systemctl enable rpcbind.service
+	再启动 nfs服务
+	systemctl start nfs
+    systemctl enable nfs
+	
+	客户端部署
+	第一个历程: 安装nfs服务软件
+	yum install -y nfs-utils
+
+	第二个历程: 实现远程挂载共享目录
+	mount -t nfs 172.16.1.31:/data  /mnt 
+	
+05. NFS服务工作原理:
+    服务端:
+	1. 启动rpc服务,开启111端口
+	2. 启动nfs服务
+	3. 实现nfs服务进程和端口好的注册
+	
+	补充: 检查nfs服务进程与端口注册信息
+	没有注册时候：
+	[root@nfs01 ~]# rpcinfo -p 172.16.1.31
+    program vers proto   port  service
+     100000    4   tcp    111  portmapper
+     100000    3   tcp    111  portmapper
+     100000    2   tcp    111  portmapper
+     100000    4   udp    111  portmapper
+     100000    3   udp    111  portmapper
+     100000    2   udp    111  portmapper
+	nfs服务注册之后信息：
+	[root@nfs01 ~]# rpcinfo -p 172.16.1.31
+    program vers proto   port  service
+     100000    4   tcp    111  portmapper
+     100000    3   tcp    111  portmapper
+     100000    2   tcp    111  portmapper
+     100000    4   udp    111  portmapper
+     100000    3   udp    111  portmapper
+     100000    2   udp    111  portmapper
+     100024    1   udp  53997  status
+     100024    1   tcp  49863  status
+     100005    1   udp  20048  mountd
+     100005    1   tcp  20048  mountd
+     100005    2   udp  20048  mountd
+     100005    2   tcp  20048  mountd
+     100005    3   udp  20048  mountd
+     100005    3   tcp  20048  mountd
+
+	客户端:
+	1. 建立TCP网络连接
+	2. 客户端执行挂载命令，进行远程挂载
+	3. 可以实现数据远程传输存储
+	
+06. nfs服务端详细配置说明	
+	实现多个网段主机可以进行挂载
+	第一种方法：
+	/data   172.16.1.0/24(rw,sync) 10.0.0.0/24(rw,sync)
+	第二种方法：
+	/data   172.16.1.0/24(rw,sync) 
+	/data   10.0.0.0/24(rw,sync)
+	
+	总结：共享目录的权限和哪些因素有关：
+	1）和存储目录的本身权限有关 （755 属主：nfsnobody）
+	2）和配置文件中的权限配置有关 rw/ro  xxx_squash  anonuid/anongid
+    3）和客户端挂载命令的参数有关  ro
+	？？
+	
+	NFS配置参数权限
+    rw   -- 存储目录是否有读写权限
+	ro   -- 存储目录是否时只读权限
+	sync   -- 同步方式存储数据 直接将数据保存到磁盘（数据存储安全）
+	async  -- 异步方式存储数据 直接将数据保存到内存（提高数据存储效率）
+	no_root_squash  -- 不要将root用户身份进行转换   
+	root_squash     -- 将root用户身份进行转换
+	all_squash      -- 将所有用户身份都进行转换 
+	no_all_squash   -- 不要将普通用户身份进行转换
+
+    操作演示all_squash参数功能：
+	vim /etc/exports
+	/data   172.16.1.0/24(ro,sync,all_squash)
+    [oldboy@backup mnt]$ touch oldboy_data.txt
+    [oldboy@backup mnt]$ ll
+    total 4
+    -rw-rw-r-- 1 nfsnobody nfsnobody 0 May  9 12:11 oldboy_data.txt
+
+    操作演示no_all_squash参数功能：
+	[root@nfs01 ~]# vim /etc/exports
+    /data   172.16.1.0/24(rw,sync,no_all_squash)
+    [oldboy@backup mnt]$ touch oldboy_data02.txt
+    touch: cannot touch ‘oldboy_data02.txt’: Permission denied
+    解决权限问题：
+    [root@nfs01 ~]# chmod o+w /data/
+    [root@nfs01 ~]# ll /data/ -d
+    drwxr-xrwx. 2 nfsnobody nfsnobody 52 May  9 12:11 /data/
+	[oldboy@backup mnt]$ touch oldboy_data02.txt
+    [oldboy@backup mnt]$ ll
+    total 4
+    -rw-r--r-- 1 nfsnobody nfsnobody 7 May  9 10:57 backup_data.txt
+    -rw-rw-r-- 1 oldboy    oldboy    0 May  9 12:17 oldboy_data02.txt
+    -rw-rw-r-- 1 nfsnobody nfsnobody 0 May  9 12:11 oldboy_data.txt
+
+    操作演示root_squash参数功能：
+	vim /etc/exports
+    /data   172.16.1.0/24(rw,sync,root_squash)
+	[root@backup mnt]# touch root_data.txt
+    [root@backup mnt]# ll
+    -rw-r--r-- 1 nfsnobody nfsnobody 0 May  9 12:20 root_data.txt
+	
+	操作演示no_root_squash参数功能
+    [root@backup mnt]# ll
+    total 4
+    -rw-r--r-- 1 root      root      0 May  9 12:23 root_data02.txt
+
+	企业互联网公司如何配置NFS 各种squash参数
+	保证网站存储服务器用户数据安全性：
+	no_all_squash  需要进行配置   共享目录权限为www（确保客户端用户 服务端用户 uid数值一致）
+	root_squash    需要进行配置   root---nfsnobody    data目录---www
+	以上默认配置（很多服务默认配置都是从安全角度出发）
+	如何查看nfs默认配置
+	cat /var/lib/nfs/etab    --- 记录nfs服务的默认配置记录信息
+	/data   172.16.1.0/24(rw,sync,wdelay,hide,nocrossmnt,secure,root_squash,no_all_squash,no_subtree_check,secure_locks,acl,n
+    o_pnfs,anonuid=65534,anongid=65534,sec=sys,rw,secure,root_squash,no_all_squash)
+	
+	如何让root用户可以操作管理www用户管理的data目录
+	root  --- root_squash --- www  ---操作--- data目录
+	anonuid=65534,anongid=65534    --- 可以指定映射的用户信息
+
+	修改映射用户：www=1002
+	/data   172.16.1.0/24(rw,sync,anonuid=1002,anongid=1002)
+	
+	企业中如何编辑nfs配置文件
+	01. 通用方法 *****
+	/data   172.16.1.0/24(rw,sync)
+	02. 特殊情况 （让部分人员不能操作存储目录 可以看目录中的数据）
+	/data   10.0.0.0/24(ro,sync)
+	03. 修改默认的匿名用户
+	/data   10.0.0.0/24(ro,sync,anonuid=xxx,anongid=xxx)
+	
+	nfs服务问题：
+	01. nfs服务器重启，挂载后创建数据比较慢
+	服务器重启方式不正确
+	服务重启：
+	01. restart 重启服务             	强制断开所有连接            用户感受不好
+	02. reload  重启服务（平滑重启） 	强制断开没有数据传输的连接  提升用户感受
+	
+07. nfs客户端详细配置说明	
+    mount -t nfs 172.16.1.31:/data  /mnt	
+	
+	如何实现自动挂载：
+	01. 利用rc.local
+	echo "mount -t nfs 172.16.1.31:/data /mnt" >>/etc/rc.local
+	02. 利用fstab文件
+	vim /etc/fstab
+	172.16.1.31:/data                         /mnt                    nfs     defaults        0 0
+    特殊的服务已经开启了
+	
+	centos6：无法实现网路存储服务自动挂载原因
+	根据系统服务启动顺序
+	按照顺序依次启动  network服务--- sshd服务--- crond服务--- rsync服务--- rpcbind服务---  nfs服务
+	先加载/etc/fstab  ---  network服务  --- autofs服务
+	
+	autofs服务程序：开机自动启动
+	服务启动好之后，重新加载fstab  
+	
+	centos7：无法实现网路存储服务自动挂载原因
+	根据系统服务启动顺序
+	network服务
+	sshd服务
+	crond服务
+	rsync服务
+	先加载/etc/fstab  network服务
+	autofs==centos7？？
+	
+	客户端mount命令参数
+	rw   --- 实现挂载后挂载点目录可读可写  （默认）
+	ro   --- 实现挂载后挂载点目录可读可写
+	suid --- 在共享目录中可以让setuid权限位生效  （默认）
+  nosuid --- 在共享目录中可以让setuid权限位失效   提供共享目录的安全性
+	exec --- 共享目录中的执行文件可以直接执行
+  noexec --- 共享目录中的执行文件可以无法直接执行 提供共享目录的安全性
+	auto --- 可以实现自动挂载     mount -a 实现加载fstab文件自动挂载
+  noauto --- 不可以实现自动挂载
+  nouser --- 禁止普通用户可以卸载挂载点
+    user --- 允许普通用户可以卸载挂载点
+	[oldboy@web01 ~]$ umount /mnt
+    umount: /mnt: umount failed: Operation not permitted
+
+	客户端如何卸载
+	umount -lf /mnt    --- 强制卸载挂载点
+	-l  不退出挂载点目录进行卸载  
+	-f  强制进行卸载操作
+	
+08. 课程总结：
+    1）NFS存储服务器概念
+	2）NFS存储工作原理图 
+	3）NFS存储服务部署
+	4）NFS服务端详细配置说明
+	   服务端配置参数  xxx_squash 
+    5) NFS客户端详细配置说明
+       如何实现自动挂载 
+       客户端挂载参数说明	man mount   
+	   如何强制卸载共享目录   	
+	
+作业：
+01. 实现fatab文件自动挂载的特殊服务是什么？
+02. 研究user参数作用
+03. NFS服务部署过程	
+
+实时同步服务
+SSH远程服务
+
+
+
+
+
