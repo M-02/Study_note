@@ -10,7 +10,20 @@ xss分类:
 两类:持久型和非持久型
 三类:反射型、存储型、DOM型
 
+- 反射型 XSS，恶意脚本来自当前的 HTTP 请求。
+- 存储型 XSS，恶意脚本来自网站的数据库。
+- 基于 DOM 的 XSS，漏洞存在于客户端代码中，而不是服务器端代码中。
+
 ## 漏洞危害
+
+利用跨站点脚本漏洞的攻击者通常能够：
+
+- 冒充或伪装成受害用户。
+- 执行用户能够执行的任何操作。
+- 读取用户能够访问的任何数据。
+- 捕获用户的登录凭据。
+- 对网站进行虚拟污损。
+- 将木马功能注入网站。
 
 信息窃取:用户凭证、用户账号密码
 键盘记录
@@ -24,6 +37,8 @@ xss蠕虫
 ## 漏洞利用
 
 ### 反射型XSS
+
+是最简单的跨站点脚本。当应用程序在 HTTP 请求中接收数据并以不安全的方式在即时响应中包含该数据时，就会出现这种情况。
 
 ```
 <script>alert(1111)</script>
@@ -50,13 +65,34 @@ hi"><script>alert(document.cookie)</script>
 
 ### DOM型XSS
 
+文档对象模型 (DOM) 是 Web 浏览器对页面元素的分层表示。网站可以使用 JavaScript 来操作 DOM 的节点和对象以及它们的属性。DOM 操作本身不是问题。但是，不安全地处理数据的 JavaScript 可能会引发各种攻击。当网站包含采用攻击者可控值（称为源）并将其传递到危险函数（称为接收器）的 JavaScript 时，就会出现基于 DOM 的漏洞
+
+以下是可用于利用各种DOM漏洞的典型来源：
+
+```
+document.URL 
+document.documentURI 
+document.URLUnencoded 
+document.baseURI 
+location 
+document.cookie 
+document.referrer 
+window.name 
+history.pushState 
+history.replaceState 
+localStorage 
+sessionStorage 
+IndexedDB (mozIndexedDB, webkitIndexedDB, msIndexedDB) 
+Database
+```
+
 ```
 'onclick="alert(123)">
 ```
 
 ### XSS模糊测试
 
-xss_payload.txt
+xss备忘清单https://portswigger.net/web-security/cross-site-scripting/cheat-sheet
 
 ```
 <script>alert(8888 )</script> 
