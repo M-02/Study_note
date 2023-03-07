@@ -1,5 +1,7 @@
 # CSRF漏洞原理
 
+CSRF全称：Cross-site request forgery，即，跨站请求伪造，也被称为 “One Click Attack” 或 “Session Riding”，通常缩写为CSRF或者XSRF，是一种对网站的恶意利用。举个生活中的例子：就是某个人点了个奇怪的链接，自己什么也没输，但自己的qq号或其他的号就被盗了。即该攻击可以在受害者不知情的情况下以受害者名义伪造请求，执行恶意操作，具有很大的危害性。
+
 浏览器跨域策略
 
 浏览器同源策略
@@ -37,12 +39,24 @@ HttpOnly: 加以限制，使得cookie不能被JavaScript脚本访问(意味着�
 5.CSRF结合XSS攻击受害者路由器
 
 ```
-http://daishen.ltd:1111/vulnerabilities/csrf/?password_new=123&password_conf=123&Change=Change
+http://xxx.com/vulnerabilities/csrf/?password_new=123&password_conf=123&Change=Change
 ```
+
+# CSRF 是如何工作的？
+
+要使用CSRF 攻击，必须具备三个关键条件：
+
+- **一个相关的动作。**应用程序中存在攻击者有理由诱导的操作。这可能是特权操作（例如修改其他用户的权限）或针对用户特定数据的任何操作（例如更改用户自己的密码）。
+- **基于 cookie 的会话处理。**执行该操作涉及发出一个或多个 HTTP 请求，应用程序仅依赖会话 cookie 来识别发出请求的用户。没有其他机制来跟踪会话或验证用户请求。
+- **没有不可预测的请求参数。**执行操作的请求不包含任何参数，其值攻击者无法确定或猜测。例如，当导致用户更改密码时，如果攻击者需要知道现有密码的值，则该函数不易受到攻击。
 
 # CSRF检测方法
 
-查看是否有csrf_tokne，没有任何验证，可能存在漏洞
+1、看验证来源不-修复
+
+2、看凭据有无csrf_tokne
+
+3、看关键操作有无验证
 
 csrf+xss实例
 
@@ -56,7 +70,7 @@ csrf+xss实例
 </head>
 <body>
 <!--讲下面的ip地址改为自己的靶场地址-->
-<script src="http://daishen.ltd:1111/vulnerabilities/csrf/?password_new=password&password_conf=password&Change=Change"
+<script src="http://xxx.com/vulnerabilities/csrf/?password_new=password&password_conf=password&Change=Change"
 </body>
 </html>
 ```
@@ -65,21 +79,35 @@ csrf+xss实例
 
 1.不要使用get请求，建议所有的涉及到数据的地方都使用post请求。
 
-2.加入csrf_tokne验证或者验证码
+2.加入csrf_tokne（令牌）验证或者验证码，令牌是由服务器端应用程序生成并与客户端共享的唯一、秘密且不可预测的值。当尝试执行敏感操作（例如提交表单）时，客户端必须在请求中包含正确的 CSRF 令牌。这使得攻击者很难代表受害者构造有效请求。
 
-3.加入referer判断请求地址是否来源于当前页面
+3.加入referer，使用 HTTP Referer 标头来尝试抵御 CSRF 攻击，通过验证请求是否来自应用程序自己的域。这通常不如 CSRF 令牌验证有效。
 
 # CSRF绕过方法
 
-![image-20210615161659041](D:\BaiduNetdiskDownload\安全\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615161659041.png)
+令牌验证取决于请求方法：有的csrf token只验证post请求，利用burp将post请求转换为get请求
 
-![image-20210615161802996](D:\BaiduNetdiskDownload\安全\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615161802996.png)
+令牌验证取决于令牌存在：删除csrf token部分
 
-![image-20210615161855295](D:\BaiduNetdiskDownload\安全\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615161855295.png)
+令牌未绑定到用户会话：csrf token未绑定用户，使用其他用户生成的csrf token攻击
 
-![image-20210615161933240](D:\BaiduNetdiskDownload\安全\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615161933240.png)
+令牌绑定到非会话 cookie：伪造cookie攻击
 
-![image-20210615162104224](D:\BaiduNetdiskDownload\安全\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615162104224.png)
+Referer 验证取决于标头是否存在：删除referer表头
 
-![image-20210615162212003](D:\BaiduNetdiskDownload\安全\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615162212003.png)
+不严谨的Referer 验证：直接伪造referer来源
+
+csrf token存在上下文
+
+![image-20210615161659041](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615161659041.png)
+
+![image-20210615161802996](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615161802996.png)
+
+![image-20210615161855295](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615161855295.png)
+
+![image-20210615161933240](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615161933240.png)
+
+![image-20210615162104224](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615162104224.png)
+
+![image-20210615162212003](D:\BaiduNetdiskDownload\笔记\安全\WEB漏洞概述\CSRF跨站请求伪造\CSRF跨站请求伪造.assets\image-20210615162212003.png)
 
